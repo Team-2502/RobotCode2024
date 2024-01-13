@@ -1,30 +1,44 @@
-
-import cv2
 import numpy as np
-img = cv2.imread('new_image.jpg')
-cv2.imshow('Original Image', img)
-cv2.waitKey(0)
-hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+import cv2
 
-# lower range of red color in HSV
-lower_range = (0, 100, 50)
+kernal = np.ones((7,7), "uint8")
+camera = cv2.VideoCapture(0) # First webcam (video0)
 
-# upper range of red color in HSV
-upper_range = (10, 255, 255)
+while camera.isOpened():
+    success, frame = camera.read()
+    if not success:
+        break
+    hsv_img = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    cv2.imshow('raw', frame)
 
+    # lower range of red color in HSV
+    lower_range = (0, 100, 50)
+    upper_range = (10, 255, 255)
+    mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
-mask = cv2.inRange(hsv_img, lower_range, upper_range)
+    lower_range = (170,100,50)
+    upper_range = (180,255,255)
+    mask1 = cv2.inRange(hsv_img, lower_range, upper_range)
 
+    mask = mask + mask1
 
-lower_range = (170,100,50)
-upper_range = (180,255,255)
-mask1 = cv2.inRange(hsv_img, lower_range, upper_range)
+    mask = cv2.dilate(mask, kernal)
 
-mask = mask + mask1
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-color_image = cv2.bitwise_and(img, img, mask=mask)
+    for pic, contour in enumerate (contours):
+        area = cv2.contourArea(contour)
+        if (area > 28):
+            x,y,w,h = cv2.boundingRect(contour)
+            frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
 
-# Display the color of the image
-cv2.imshow('Coloured Image', color_image)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+            cv2.putText(frame, "Enemy!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
+
+    color_image = cv2.bitwise_and(frame, frame, mask=mask)
+
+    # Display the color of the image
+    cv2.imshow('Coloured Image', color_image)
+    if cv2.waitKey(10) & 0xFF == ord('q'):
+        camera.release()
+        cv2.destroyAllWindows()
+        break
