@@ -12,12 +12,12 @@ while camera.isOpened():
     cv2.imshow('raw', frame)
 
     # lower range of red color in HSV
-    lower_range = (0, 100, 50)
-    upper_range = (2, 245, 245)
+    lower_range = (2, 5, 5)
+    upper_range = (4.9, 255, 255)
     mask = cv2.inRange(hsv_img, lower_range, upper_range)
-
-    lower_range = (170,100,50)
-    upper_range = (180,245,245)
+    
+    lower_range = (5.1, 5, 5)
+    upper_range = (30,255,255)
     mask1 = cv2.inRange(hsv_img, lower_range, upper_range)
 
     mask = mask + mask1
@@ -25,6 +25,7 @@ while camera.isOpened():
     mask = cv2.erode(mask, kernal)
     mask = cv2.erode(mask, kernal)
     mask = cv2.dilate(mask, kernal)
+
 
     #frame = cv2.bitwise_and(frame, frame, mask=mask)
 
@@ -36,7 +37,7 @@ while camera.isOpened():
             x,y,w,h = cv2.boundingRect(contour)
             frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
 
-            cv2.putText(frame, "Enemy!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
+            cv2.putText(frame, "Note!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
 
 
     # Display the color of the image
@@ -44,4 +45,4 @@ while camera.isOpened():
     if cv2.waitKey(10) & 0xFF == ord('q'):
         camera.release()
         cv2.destroyAllWindows()
-        break
+        break   
