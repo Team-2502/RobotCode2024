@@ -14,7 +14,7 @@ while camera.isOpened():
     # lower range of red color in HSV
     lower_range = (4.5, 5, 5)
     upper_range = (4.9, 255, 255)
-    mask = cv2.inRanggithe(hsv_img, lower_range, upper_range)
+    mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
     lower_range = (5.1, 5, 5)
     upper_range = (30,255,255)
