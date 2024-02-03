@@ -32,7 +32,7 @@ public final class Main {
   private static native void rustentry(); // stub for entrypoint
   static {
     System.load( // load rust static library
-      Filesystem.getDeployDirectory() + "/libfrcrs.so"
+      Filesystem.getDeployDirectory() + "/libRobotCode2024.so"
     );
   }
   public static void main(String... args) {
