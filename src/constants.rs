@@ -9,3 +9,9 @@ pub const BL_TURN: i32 = 8;
 
 pub const BR_DRIVE: i32 = 10;
 pub const BR_TURN: i32 = 11;
+
+pub const INTAKE_ROLLER_LEFT: i32 = 1;
+pub const INTAKE_ROLLER_RIGHT: i32 = 2;
+
+pub const INTAKE_ACTUATE_LEFT: i32 = 3;
+pub const INTAKE_ACTUATE_RIGHT: i32 = 4;
