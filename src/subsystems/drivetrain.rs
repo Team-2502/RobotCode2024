@@ -1,6 +1,8 @@
 use frcrs::ctre::{ControlMode, Talon};
 use frcrs::drive::{Swerve, ToTalonEncoder};
 use frcrs::navx::NavX;
+use uom::si::angle::degree;
+use uom::si::f64::Angle;
 use crate::constants::*;
 
 pub struct Drivetrain {
@@ -66,8 +68,8 @@ impl Drivetrain {
         self.br_turn.set(ControlMode::Position, wheel_speeds.wa3.talon_encoder_ticks());
     }
 
-    pub fn get_angle(&self) -> f64 {
-        self.navx.get_angle()
+    pub fn get_angle(&self) -> Angle {
+        Angle::new::<degree>(self.navx.get_angle())
     }
 
     pub fn reset_angle(&self) {

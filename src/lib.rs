@@ -1,6 +1,7 @@
 mod container;
 mod subsystems;
 mod constants;
+mod swerve;
 
 use frcrs::is_teleop;
 use frcrs::networktables::SmartDashboard;
