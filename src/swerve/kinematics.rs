@@ -68,8 +68,10 @@ impl SwerveBuilder {
 }*/
 
 use std::f64::consts::PI;
-use uom::num_traits::{Pow, PrimInt};
+use uom::{num_traits::{Pow, PrimInt}, si::{angle::degree, f64::Length, length::inch}};
+use uom::si::f64::*;
 use frcrs::networktables::SmartDashboard;
+use nalgebra::Vector2;
 
 pub struct WheelSpeeds {
     pub ws1: f64,
@@ -83,22 +85,45 @@ pub struct WheelSpeeds {
     pub wa4: f64,
 }
 
-pub struct Swerve;
+pub type ModulePosition = Vector2<f64>;
+pub struct ModuleState {
+    pub speed: f64,
+    pub angle: Angle,
+}
+
+pub struct Swerve {
+    positions: Vec<ModulePosition>,
+}
 
 impl Swerve {
-    pub fn calculate(fwd: f64, str: f64, rot: f64, angle: f64) -> WheelSpeeds {
-        let temp = (fwd * angle.cos()) + (str * angle.sin());
-        let new_str = (-fwd * angle.sin()) + (str * angle.cos());
+    pub fn rectangle(width: Length, height: Length) -> Self { 
+        let mut positions: Vec<ModulePosition> = Vec::new();
+
+        let x = width.get::<inch>() / 2.0;
+        let y = height.get::<inch>() / 2.0;
+        positions.push(ModulePosition::new(x, y));
+        positions.push(ModulePosition::new(-x, y));
+        positions.push(ModulePosition::new(x, -y));
+        positions.push(ModulePosition::new(-x, -y));
+
+        Self { positions } 
+    }
+
+    pub fn calculate(transform: Vector2<f64>, rotation: f64, heading: Angle) -> WheelSpeeds {
+        let fwd = transform.y;
+        let str = transform.x;
+        let temp = (fwd * heading.cos()) + (str * heading.sin());
+        let new_str = (-fwd * heading.sin()) + (str * heading.cos());
         let new_fwd = temp;
 
         let wheelbase = 32.;
         let track_width = 32.;
         let r = f64::sqrt((wheelbase.pow(2) + track_width.pow(2)) as f64);
 
-        let a: f64 = new_str - rot * (wheelbase / r);
-        let b: f64 = new_str + rot * (wheelbase / r);
-        let c: f64 = new_fwd - rot * (track_width / r);
-        let d: f64 = new_fwd + rot * (track_width / r);
+        let a: f64 = new_str - rotation * (wheelbase / r);
+        let b: f64 = new_str + rotation * (wheelbase / r);
+        let c: f64 = new_fwd - rotation * (track_width / r);
+        let d: f64 = new_fwd + rotation * (track_width / r);
 
         let mut ws1 = f64::sqrt(b.pow(2) + c.pow(2));
         let mut ws2 = f64::sqrt(b.pow(2) + d.pow(2));
