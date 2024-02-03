@@ -1,14 +1,13 @@
 use frcrs::rev::MotorType::Brushless;
-use frcrs::rev::{Spark, SparkMax};
+use frcrs::rev::{Spark, SparkFlex, SparkMax};
 use crate::constants::*;
 
 pub struct Shooter {
     feeder_top: Spark,
     feeder_bottom: Spark,
 
-    // Todo: change to spark flex
-    shooter_top: Spark,
-    shooter_bottom: Spark,
+    shooter_top: SparkFlex,
+    shooter_bottom: SparkFlex,
 }
 
 impl Shooter {
@@ -17,8 +16,8 @@ impl Shooter {
             feeder_top: Spark::new(SHOOTER_FEEDER_TOP, Brushless),
             feeder_bottom: Spark::new(SHOOTER_FEEDER_BOTTOM, Brushless),
 
-            shooter_top: Spark::new(SHOOTER_TOP, Brushless),
-            shooter_bottom: Spark::new(SHOOTER_BOTTOM, Brushless)
+            shooter_top: SparkFlex::new(SHOOTER_TOP, Brushless),
+            shooter_bottom: SparkFlex::new(SHOOTER_BOTTOM, Brushless)
         }
     }
 
