@@ -55,18 +55,22 @@ impl Drivetrain {
     pub fn set_speeds(&self, fwd: f64, str: f64, rot: f64) {
         let wheel_speeds = Swerve::calculate(fwd, str, rot, self.navx.get_angle());
 
-        self.fr_drive.set(ControlMode::Percent, wheel_speeds.ws2);
-        self.fl_drive.set(ControlMode::Percent, wheel_speeds.ws1);
+        self.fr_drive.set(ControlMode::Percent, wheel_speeds.ws1);
+        self.fl_drive.set(ControlMode::Percent, wheel_speeds.ws2);
         self.bl_drive.set(ControlMode::Percent, wheel_speeds.ws4);
         self.br_drive.set(ControlMode::Percent, wheel_speeds.ws3);
 
-        self.fr_turn.set(ControlMode::Position, wheel_speeds.wa2.talon_encoder_ticks());
-        self.fl_turn.set(ControlMode::Position, wheel_speeds.wa1.talon_encoder_ticks());
+        self.fr_turn.set(ControlMode::Position, wheel_speeds.wa1.talon_encoder_ticks());
+        self.fl_turn.set(ControlMode::Position, wheel_speeds.wa2.talon_encoder_ticks());
         self.bl_turn.set(ControlMode::Position, wheel_speeds.wa4.talon_encoder_ticks());
         self.br_turn.set(ControlMode::Position, wheel_speeds.wa3.talon_encoder_ticks());
     }
 
     pub fn get_angle(&self) -> f64 {
         self.navx.get_angle()
+    }
+
+    pub fn reset_angle(&self) {
+        self.navx.reset_angle()
     }
 }
