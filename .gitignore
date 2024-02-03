@@ -1,1 +1,5 @@
 /target
+/javastub
+Makefile
+.idea
+Cargo.lock
