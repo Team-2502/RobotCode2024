@@ -32,17 +32,11 @@ public final class Main {
   private static native void rustentry(); // stub for entrypoint
   static {
     System.load( // load rust static library
-      Filesystem.getDeployDirectory() + "/libRobotCode2024.so"
+      Filesystem.getDeployDirectory() + "/libfrcrs.so"
     );
   }
   public static void main(String... args) {
     rustentry();
-    //SmartDashboard.putNumber("Some", 4);
-    //CANSparkMax spark = new CANSparkMax(5, CANSparkMaxLowLevel.MotorType.kBrushless);
-    //com.revrobotics.CANSparkMaxLowLevel.MotorType.fromId(1);
-    //DriverStation.reportWarning("In Teleop!", false);
-    //DriverStationJNI.observeUserProgramStarting();
-    //RobotBase.startRobot(Robot::new);
   }
 }
 

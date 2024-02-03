@@ -5,9 +5,10 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.kauailabs.navx.frc.AHRS;
+import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.revrobotics.CANSparkMax.IdleMode;
-import com.revrobotics.CANSparkMax.ControlType;
+import static com.revrobotics.CANSparkMax.IdleMode;
+import static com.revrobotics.CANSparkMax.ControlType;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
 import static edu.wpi.first.wpilibj.RobotBase.isReal;
