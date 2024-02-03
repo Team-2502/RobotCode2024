@@ -13,7 +13,7 @@ use frcrs::init_hal;
 use frcrs::hal_report;
 use frcrs::input::Joystick;
 use crate::container::{container, stop_all};
-use crate::subsystems::{Drivetrain, Intake};
+use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 
 #[call_from_java("frc.robot.Main.rustentry")]
 fn entrypoint() {
@@ -34,6 +34,8 @@ fn entrypoint() {
 
     let drivetrain = Drivetrain::new();
     let intake = Intake::new();
+    let shooter = Shooter::new();
+    let climber = Climber::new();
 
     loop {
         refresh_data();
@@ -47,10 +49,12 @@ fn entrypoint() {
                     &operator,
                     &drivetrain,
                     &intake,
+                    &shooter,
+                    &climber
                 );
             }
             false => {
-                stop_all(&drivetrain, &intake);
+                stop_all(&drivetrain, &intake, &shooter, &climber);
             }
         };
     }

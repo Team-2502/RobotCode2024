@@ -1,8 +1,9 @@
 use frcrs::input::Joystick;
 use frcrs::networktables::SmartDashboard;
-use crate::subsystems::{Drivetrain, Intake, Shooter};
+use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 
-pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joystick, drivetrain: &Drivetrain, intake: &Intake, shooter: &Shooter) {
+pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joystick, drivetrain: &Drivetrain, intake: &Intake,
+                 shooter: &Shooter, climber: &Climber) {
     drivetrain.set_speeds(-left_drive.get_y(), -left_drive.get_x(), right_drive.get_z());
 
     SmartDashboard::put_number("Angle".to_owned(), drivetrain.get_angle());
@@ -44,9 +45,19 @@ pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joyst
     } else {
         shooter.stop_feeder();
     }
+
+    if left_drive.get(2) {
+        climber.set(0.5)
+    } else if right_drive.get(2) {
+        climber.set(-0.5);
+    } else {
+        climber.stop();
+    }
 }
 
-pub fn stop_all(drivetrain: &Drivetrain, intake: &Intake) {
+pub fn stop_all(drivetrain: &Drivetrain, intake: &Intake, shooter: &Shooter, climber: &Climber) {
     drivetrain.stop();
     intake.stop();
+    shooter.stop();
+    climber.stop();
 }

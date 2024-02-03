@@ -23,3 +23,7 @@ pub const SHOOTER_FEEDER_BOTTOM: i32 = 6;
 
 pub const SHOOTER_TOP: i32 = 7;
 pub const SHOOTER_BOTTOM: i32 = 8;
+
+
+pub const CLIMBER_LEFT: i32 = 9;
+pub const CLIMBER_RIGHT: i32 = 10;
