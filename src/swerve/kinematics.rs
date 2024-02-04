@@ -71,13 +71,41 @@ use std::f64::consts::{PI, FRAC_PI_2, FRAC_2_PI};
 use uom::{num_traits::{Pow, PrimInt}, si::{angle::{degree, radian}, f64::Length, length::inch}};
 use uom::si::f64::*;
 use frcrs::networktables::SmartDashboard;
-use nalgebra::{Vector2, Rotation2};
+use nalgebra::{Vector2, Rotation2, ComplexField};
 
 pub type WheelSpeeds = Vec<ModuleState>;
 pub type ModulePosition = Vector2<f64>;
+#[derive(Debug, PartialEq, PartialOrd)]
 pub struct ModuleState {
     pub speed: f64,
     pub angle: Angle,
+}
+
+impl ModuleState {
+    /// change this module to be equivalent, but close to other
+    fn optimize(mut self, other: &ModuleState) -> Self {
+        let angle = self.angle.get::<degree>();
+        let other_angle = other.angle.get::<degree>();
+
+        let mut difference = ( other_angle - angle + 180. ) % 360. - 180.;
+        if difference < -180. { difference += 360. };
+
+
+        let negate = difference.abs() > 90.;
+
+        if negate {
+            self.speed *= -1.;
+
+            if difference > 0. {
+                difference = 180. - difference;
+            } else {
+                difference = -180. - difference;
+            }
+        }
+
+        self.angle = self.angle - Angle::new::<degree>(difference);
+        self
+    }
 }
 
 pub struct Swerve {
@@ -98,16 +126,16 @@ impl Swerve {
         Self { positions } 
     }
 
+    /// Calculate module speeds from the given transform and rotation
+    ///
+    /// input units are from -1 to 1, with 1 being the maximum motor speed
     pub fn calculate(&self, transform: Vector2<f64>, rotation: f64) -> WheelSpeeds {
-        let forward = transform.y;
-        let right = transform.x;
-
         let center_of_rotation = Vector2::zeros(); // relative to center of robot
         let rotation_transform = Rotation2::new(FRAC_PI_2); // 90 degrees
 
         let mut speeds = Vec::new();
 
-        for module in self.positions {
+        for module in self.positions.clone() {
             // constant component
             let mut vector = transform;
 
@@ -201,8 +229,32 @@ impl ToTalonEncoder for f64 {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Instant;
-    use crate::drive::{Swerve, ToTalonEncoder};
+    use frcrs::drive::{Swerve, ToTalonEncoder};
+    use uom::si::{f64::Angle, angle::degree};
+
+    use crate::swerve::kinematics::ModuleState;
+
+    #[test]
+    fn opposite() {
+        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(180.) };
+        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
+        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(180.) };
+
+        let to = this.optimize(&other);
+
+        assert_eq!(to, goal);
+    }
+
+    #[test]
+    fn close() {
+        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(45. + 180.) };
+        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
+        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(180.) };
+
+        let to = this.optimize(&other);
+
+        assert_eq!(to, goal);
+    }
 
     #[test]
     fn place_in_scope() {

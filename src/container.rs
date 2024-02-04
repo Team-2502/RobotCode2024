@@ -1,12 +1,13 @@
 use frcrs::input::Joystick;
 use frcrs::networktables::SmartDashboard;
+use uom::si::angle::degree;
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 
 pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joystick, drivetrain: &Drivetrain, intake: &Intake,
                  shooter: &Shooter, climber: &Climber) {
     drivetrain.set_speeds(-left_drive.get_y(), -left_drive.get_x(), right_drive.get_z());
 
-    SmartDashboard::put_number("Angle".to_owned(), drivetrain.get_angle());
+    SmartDashboard::put_number("Angle".to_owned(), drivetrain.get_angle().get::<degree>());
 
     let mut shooting = false;
 
