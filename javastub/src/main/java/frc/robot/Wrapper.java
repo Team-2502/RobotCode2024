@@ -1,15 +1,16 @@
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.CANSparkLowLevel.MotorType;
 import static com.revrobotics.CANSparkMax.IdleMode;
+import com.revrobotics.CANSparkFlex;
 import static com.revrobotics.CANSparkMax.ControlType;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import com.ctre.phoenix6.hardware.TalonFX;
 
 import static edu.wpi.first.wpilibj.RobotBase.isReal;
 
@@ -26,6 +27,10 @@ public class Wrapper {
     public static IdleMode kCoast() { return IdleMode.kCoast; }
 
     public static ControlType kPosition() { return ControlType.kPosition; }
+
+    public static CANSparkFlex createSparkFlex(int id) { return new CANSparkFlex(id, MotorType.kBrushless); }
+
+    public static void sparkFollow(CANSparkMax leader, CANSparkMax follower, boolean invert) { follower.follow(leader, invert); }
 
     public static void startNetworkTables() {
         NetworkTableInstance inst = NetworkTableInstance.getDefault();
@@ -51,6 +56,8 @@ public class Wrapper {
     public static ControlMode ctrePosition() {
         return ControlMode.Position;
     }
+
+    public static TalonFX createTalonFX(int id, String bus) { return new TalonFX(id, bus); }
 
     //public static TalonFXInvertType TalonFXCounterClockwise() { return TalonFXInvertType.CounterClockwise; }
 }

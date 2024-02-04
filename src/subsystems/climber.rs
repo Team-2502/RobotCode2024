@@ -29,8 +29,8 @@ impl Climber {
     }
 
     pub fn set(&self, value: f64) {
-        self.left.set(value);
-        self.right.set(-value);
+        self.left.set(-value);
+        self.right.set(value);
     }
 
     pub fn set_left(&self, value: f64) {
