@@ -67,24 +67,13 @@ impl SwerveBuilder {
     }
 }*/
 
-use std::f64::consts::PI;
-use uom::{num_traits::{Pow, PrimInt}, si::{angle::degree, f64::Length, length::inch}};
+use std::f64::consts::{PI, FRAC_PI_2, FRAC_2_PI};
+use uom::{num_traits::{Pow, PrimInt}, si::{angle::{degree, radian}, f64::Length, length::inch}};
 use uom::si::f64::*;
 use frcrs::networktables::SmartDashboard;
-use nalgebra::Vector2;
+use nalgebra::{Vector2, Rotation2};
 
-pub struct WheelSpeeds {
-    pub ws1: f64,
-    pub ws2: f64,
-    pub ws3: f64,
-    pub ws4: f64,
-
-    pub wa1: f64,
-    pub wa2: f64,
-    pub wa3: f64,
-    pub wa4: f64,
-}
-
+pub type WheelSpeeds = Vec<ModuleState>;
 pub type ModulePosition = Vector2<f64>;
 pub struct ModuleState {
     pub speed: f64,
@@ -109,39 +98,37 @@ impl Swerve {
         Self { positions } 
     }
 
-    pub fn calculate(transform: Vector2<f64>, rotation: f64, heading: Angle) -> WheelSpeeds {
-        let fwd = transform.y;
-        let str = transform.x;
-        let temp = (fwd * heading.cos()) + (str * heading.sin());
-        let new_str = (-fwd * heading.sin()) + (str * heading.cos());
-        let new_fwd = temp;
+    pub fn calculate(&self, transform: Vector2<f64>, rotation: f64) -> WheelSpeeds {
+        let forward = transform.y;
+        let right = transform.x;
 
-        let wheelbase = 32.;
-        let track_width = 32.;
-        let r = f64::sqrt((wheelbase.pow(2) + track_width.pow(2)) as f64);
+        let center_of_rotation = Vector2::zeros(); // relative to center of robot
+        let rotation_transform = Rotation2::new(FRAC_PI_2); // 90 degrees
 
-        let a: f64 = new_str - rotation * (wheelbase / r);
-        let b: f64 = new_str + rotation * (wheelbase / r);
-        let c: f64 = new_fwd - rotation * (track_width / r);
-        let d: f64 = new_fwd + rotation * (track_width / r);
+        let mut speeds = Vec::new();
 
-        let mut ws1 = f64::sqrt(b.pow(2) + c.pow(2));
-        let mut ws2 = f64::sqrt(b.pow(2) + d.pow(2));
-        let mut ws3 = f64::sqrt(a.pow(2) + d.pow(2));
-        let mut ws4 = f64::sqrt(a.pow(2) + c.pow(2));
+        for module in self.positions {
+            // constant component
+            let mut vector = transform;
 
-        let wa1 = b.atan2(c) * (180. / PI);
-        let wa2 = b.atan2(d) * (180. / PI);
-        let wa3 = a.atan2(d) * (180. / PI);
-        let wa4 = a.atan2(c) * (180. / PI);
+            let position = module - center_of_rotation;
+            let unit_rotation = rotation_transform * position.normalize();
 
-        let mut max = ws1;
-        if ws2 > max { max = ws2; } else if ws3 > max { max = ws3; } else if ws4 > max { max = ws4 }
+            // rotation
+            vector += unit_rotation * rotation;
+
+            let angle = f64::atan2(vector.x, vector.y);
+
+            speeds.push(ModuleState {
+                speed: vector.magnitude(),
+                angle: Angle::new::<radian>(angle),
+            });
+        }
+
+        // normalize speeds
+        let mut max = speeds.iter().map(|m| m.speed.abs()).fold(0., f64::max);
         if max > 1. {
-            ws1 /= max;
-            ws2 /= max;
-            ws3 /= max;
-            ws4 /= max;
+            speeds.iter_mut().map(|s| s.speed /= max);
         }
 
         /*SmartDashboard::put_number("fl turn".to_owned(), wa2);
@@ -149,17 +136,7 @@ impl Swerve {
         SmartDashboard::put_number("bl turn".to_owned(), wa3);
         SmartDashboard::put_number("br turn".to_owned(), wa4);*/
 
-        WheelSpeeds {
-            ws1,
-            ws2,
-            ws3,
-            ws4,
-
-            wa1,
-            wa2,
-            wa3,
-            wa4
-        }
+        speeds
     }
 
     pub fn optimize(target_speed: f64, target_angle: f64, current_angle: f64) -> (f64, f64) {
