@@ -11,8 +11,9 @@ crate-type = ["cdylib"]
 [dependencies]
 j4rs_derive = "0.1.0"
 j4rs = "0.12.0"
-frcrs = { path = "../frcrs" }
+uom = { version = "0.35.0", features = ["f64"] }
+nalgebra = "0.32.3"
 
-#[dependencies.frcrs]
-#git = "https://www.github.com/Team-2502/frcrs.git"
-#branch = "comp"
+[dependencies.frcrs]
+git = "https://www.github.com/Team-2502/frcrs.git"
+branch = "comp"
