@@ -1,4 +1,4 @@
-use frcrs::ctre::{ControlMode, Talon};
+use frcrs::ctre::{ControlMode, Falcon, Kraken};
 use frcrs::drive::{ToTalonEncoder};
 use frcrs::navx::NavX;
 use nalgebra::Vector2;
@@ -11,17 +11,17 @@ use crate::swerve::kinematics::Swerve;
 pub struct Drivetrain {
     navx: NavX,
 
-    fr_drive: Talon,
-    fr_turn: Talon,
+    fr_drive: Kraken,
+    fr_turn: Falcon,
 
-    fl_drive: Talon,
-    fl_turn: Talon,
+    fl_drive: Kraken,
+    fl_turn: Falcon,
 
-    bl_drive: Talon,
-    bl_turn: Talon,
+    bl_drive: Kraken,
+    bl_turn: Falcon,
 
-    br_drive: Talon,
-    br_turn: Talon,
+    br_drive: Kraken,
+    br_turn: Falcon,
 
     kinematics: Swerve,
 }
@@ -31,17 +31,17 @@ impl Drivetrain {
         Self {
             navx: NavX::new(),
 
-            fr_drive: Talon::new(FR_DRIVE, Some("can0".to_owned())),
-            fr_turn: Talon::new(FR_TURN, Some("can0".to_owned())),
+            fr_drive: Kraken::new(FR_DRIVE, Some("can0".to_owned())),
+            fr_turn: Falcon::new(FR_TURN, Some("can0".to_owned())),
 
-            fl_drive: Talon::new(FL_DRIVE, Some("can0".to_owned())),
-            fl_turn: Talon::new(FL_TURN, Some("can0".to_owned())),
+            fl_drive: Kraken::new(FL_DRIVE, Some("can0".to_owned())),
+            fl_turn: Falcon::new(FL_TURN, Some("can0".to_owned())),
 
-            bl_drive: Talon::new(BL_DRIVE, Some("can0".to_owned())),
-            bl_turn: Talon::new(BL_TURN, Some("can0".to_owned())),
+            bl_drive: Kraken::new(BL_DRIVE, Some("can0".to_owned())),
+            bl_turn: Falcon::new(BL_TURN, Some("can0".to_owned())),
 
-            br_drive: Talon::new(BR_DRIVE, Some("can0".to_owned())),
-            br_turn: Talon::new(BR_TURN, Some("can0".to_owned())),
+            br_drive: Kraken::new(BR_DRIVE, Some("can0".to_owned())),
+            br_turn: Falcon::new(BR_TURN, Some("can0".to_owned())),
 
             kinematics: Swerve::rectangle(Length::new::<inch>(25.), Length::new::<inch>(25.)),
         }

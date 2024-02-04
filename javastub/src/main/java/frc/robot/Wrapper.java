@@ -1,7 +1,6 @@
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
@@ -56,8 +55,6 @@ public class Wrapper {
     public static ControlMode ctrePosition() {
         return ControlMode.Position;
     }
-
-    public static TalonFX createTalonFX(int id, String bus) { return new TalonFX(id, bus); }
 
     //public static TalonFXInvertType TalonFXCounterClockwise() { return TalonFXInvertType.CounterClockwise; }
 }

@@ -3,6 +3,7 @@ mod subsystems;
 mod constants;
 mod swerve;
 
+use frcrs::ctre::{Falcon};
 use frcrs::is_teleop;
 use frcrs::networktables::SmartDashboard;
 use frcrs::observe_user_program_starting;
