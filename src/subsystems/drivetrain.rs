@@ -61,6 +61,19 @@ impl Drivetrain {
         self.br_turn.stop();
     }
 
+    fn get_speeds(&self) -> Vec<ModuleState> {
+        let mut speeds = Vec::new();
+        
+        let fr = ModuleState { 
+            speed: 0., 
+            angle: self.fr_turn.get().from_talon_encoder_ticks(), 
+        };
+
+        speeds.push(value);
+
+        spees
+    }
+
     pub fn set_speeds(&self, fwd: f64, str: f64, rot: f64) {
         let transform = Vector2::new(fwd, str);
         let wheel_speeds = self.kinematics.calculate(transform, rot);
