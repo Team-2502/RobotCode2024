@@ -1,9 +1,12 @@
 use frcrs::ctre::{ControlMode, Talon};
-use frcrs::drive::{Swerve, ToTalonEncoder};
+use frcrs::drive::{ToTalonEncoder};
 use frcrs::navx::NavX;
+use nalgebra::Vector2;
 use uom::si::angle::degree;
-use uom::si::f64::Angle;
+use uom::si::f64::{Angle, Length};
+use uom::si::length::inch;
 use crate::constants::*;
+use crate::swerve::kinematics::Swerve;
 
 pub struct Drivetrain {
     navx: NavX,
@@ -19,6 +22,8 @@ pub struct Drivetrain {
 
     br_drive: Talon,
     br_turn: Talon,
+
+    kinematics: Swerve,
 }
 
 impl Drivetrain {
@@ -37,6 +42,8 @@ impl Drivetrain {
 
             br_drive: Talon::new(BR_DRIVE, Some("can0".to_owned())),
             br_turn: Talon::new(BR_TURN, Some("can0".to_owned())),
+
+            kinematics: Swerve::rectangle(Length::new::<inch>(25.), Length::new::<inch>(25.)),
         }
     }
 
@@ -55,17 +62,18 @@ impl Drivetrain {
     }
 
     pub fn set_speeds(&self, fwd: f64, str: f64, rot: f64) {
-        let wheel_speeds = Swerve::calculate(fwd, str, rot, self.navx.get_angle());
+        let transform = Vector2::new(fwd, str);
+        let wheel_speeds = self.kinematics.calculate(transform, rot);
 
-        self.fr_drive.set(ControlMode::Percent, wheel_speeds.ws1);
-        self.fl_drive.set(ControlMode::Percent, wheel_speeds.ws2);
-        self.bl_drive.set(ControlMode::Percent, wheel_speeds.ws4);
-        self.br_drive.set(ControlMode::Percent, wheel_speeds.ws3);
+        self.fr_drive.set(ControlMode::Percent, wheel_speeds[0].speed);
+        self.fl_drive.set(ControlMode::Percent, wheel_speeds[1].speed);
+        self.bl_drive.set(ControlMode::Percent, wheel_speeds[2].speed);
+        self.br_drive.set(ControlMode::Percent, wheel_speeds[3].speed);
 
-        self.fr_turn.set(ControlMode::Position, wheel_speeds.wa1.talon_encoder_ticks());
-        self.fl_turn.set(ControlMode::Position, wheel_speeds.wa2.talon_encoder_ticks());
-        self.bl_turn.set(ControlMode::Position, wheel_speeds.wa4.talon_encoder_ticks());
-        self.br_turn.set(ControlMode::Position, wheel_speeds.wa3.talon_encoder_ticks());
+        self.fr_turn.set(ControlMode::Position, wheel_speeds[0].angle.get::<degree>().talon_encoder_ticks());
+        self.fl_turn.set(ControlMode::Position, wheel_speeds[1].angle.get::<degree>().talon_encoder_ticks());
+        self.bl_turn.set(ControlMode::Position, wheel_speeds[2].angle.get::<degree>().talon_encoder_ticks());
+        self.br_turn.set(ControlMode::Position, wheel_speeds[3].angle.get::<degree>().talon_encoder_ticks());
     }
 
     pub fn get_angle(&self) -> Angle {
