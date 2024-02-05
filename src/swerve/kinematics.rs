@@ -98,12 +98,17 @@ impl ModuleState {
         if negate {
             self.speed *= -1.;
 
-            if difference > 0. {
-                difference = 180. - difference;
-            } else {
-                difference = -180. - difference;
-            }
-            self.angle = self.angle - Angle::new::<degree>(difference);
+            dbg!(difference);
+            //if difference > 0. {
+            //    difference = 180. - difference;
+            //} else {
+            //    difference = -180. - difference;
+            //}
+            difference = 180. - difference;
+
+            difference %= 360.;
+            dbg!(difference);
+            self.angle = Angle::new::<degree>(difference);
         }
 
         dbg!(cycles);
@@ -243,7 +248,7 @@ mod tests {
     fn opposite() {
         let this = ModuleState { speed: 1., angle: Angle::new::<degree>(180.) };
         let other = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
-        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(180.) };
+        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(0.) };
 
         let to = this.optimize(&other);
 
@@ -276,7 +281,7 @@ mod tests {
     fn close_opposite() {
         let this = ModuleState { speed: 1., angle: Angle::new::<degree>(45. + 180.) };
         let other = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
-        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(180.) };
+        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(45.) };
 
         let to = this.optimize(&other);
 
