@@ -56,5 +56,13 @@ public class Wrapper {
         return ControlMode.Position;
     }
 
+    public static ControlMode ctrePercent() {
+      return ControlMode.PercentOutput;
+    }
+
+    /*public static void setSpeed(TalonFX motor, double speed) {
+      motor.set(ControlMode.PercentOutput, speed);
+    }*/
+
     //public static TalonFXInvertType TalonFXCounterClockwise() { return TalonFXInvertType.CounterClockwise; }
 }
