@@ -83,10 +83,10 @@ impl Drivetrain {
         let wheel_speeds: Vec<ModuleState> = wheel_speeds.into_iter().zip(measured.iter())
             .map(|(calculated,measured)| calculated.optimize(measured)).collect();
 
-        self.fr_drive.set(ControlMode::Percent, wheel_speeds[0].speed);
-        self.fl_drive.set(ControlMode::Percent, wheel_speeds[1].speed);
-        self.bl_drive.set(ControlMode::Percent, wheel_speeds[2].speed);
-        self.br_drive.set(ControlMode::Percent, wheel_speeds[3].speed);
+        self.fr_drive.set(wheel_speeds[0].speed);
+        self.fl_drive.set(wheel_speeds[1].speed);
+        self.bl_drive.set(wheel_speeds[2].speed);
+        self.br_drive.set(wheel_speeds[3].speed);
 
         self.fr_turn.set(ControlMode::Position, wheel_speeds[0].angle.get::<degree>().talon_encoder_ticks());
         self.fl_turn.set(ControlMode::Position, wheel_speeds[1].angle.get::<degree>().talon_encoder_ticks());

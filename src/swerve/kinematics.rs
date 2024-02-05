@@ -164,9 +164,9 @@ impl Swerve {
         }
 
         // normalize speeds
-        let mut max = speeds.iter().map(|m| m.speed.abs()).fold(0., f64::max);
+        let max = speeds.iter().map(|m| m.speed.abs()).fold(0., f64::max);
         if max > 1. {
-            speeds.iter_mut().map(|s| s.speed /= max);
+            speeds.iter_mut().for_each(|s| s.speed /= max);
         }
 
         /*SmartDashboard::put_number("fl turn".to_owned(), wa2);
