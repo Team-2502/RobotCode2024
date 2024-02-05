@@ -6,7 +6,7 @@ use uom::si::angle::degree;
 use uom::si::f64::{Angle, Length};
 use uom::si::length::inch;
 use crate::constants::*;
-use crate::swerve::kinematics::Swerve;
+use crate::swerve::kinematics::{Swerve, ModuleState};
 
 pub struct Drivetrain {
     navx: NavX,
@@ -63,20 +63,25 @@ impl Drivetrain {
 
     fn get_speeds(&self) -> Vec<ModuleState> {
         let mut speeds = Vec::new();
-        
-        let fr = ModuleState { 
-            speed: 0., 
-            angle: self.fr_turn.get().from_talon_encoder_ticks(), 
-        };
 
-        speeds.push(value);
+        for module in [&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn] {
+            speeds.push(ModuleState { 
+                speed: 0., 
+                angle: module.get(),
+            });
+        }
 
-        spees
+        speeds
     }
 
     pub fn set_speeds(&self, fwd: f64, str: f64, rot: f64) {
         let transform = Vector2::new(fwd, str);
         let wheel_speeds = self.kinematics.calculate(transform, rot);
+
+        let measured = self.get_speeds();
+
+        let wheel_speeds: Vec<ModuleState> = wheel_speeds.into_iter().zip(measured.iter())
+            .map(|(calculated,measured)| calculated.optimize(measured)).collect();
 
         self.fr_drive.set(ControlMode::Percent, wheel_speeds[0].speed);
         self.fl_drive.set(ControlMode::Percent, wheel_speeds[1].speed);

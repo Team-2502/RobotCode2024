@@ -83,9 +83,11 @@ pub struct ModuleState {
 
 impl ModuleState {
     /// change this module to be equivalent, but close to other
-    fn optimize(mut self, other: &ModuleState) -> Self {
+    pub fn optimize(mut self, other: &ModuleState) -> Self {
         let angle = self.angle.get::<degree>();
         let other_angle = other.angle.get::<degree>();
+
+        let cycles = other_angle as usize / 360;
 
         let mut difference = ( other_angle - angle + 180. ) % 360. - 180.;
         if difference < -180. { difference += 360. };
@@ -101,9 +103,12 @@ impl ModuleState {
             } else {
                 difference = -180. - difference;
             }
+            self.angle = self.angle - Angle::new::<degree>(difference);
         }
 
-        self.angle = self.angle - Angle::new::<degree>(difference);
+        dbg!(cycles);
+        self.angle += Angle::new::<degree>((360 * cycles) as f64);
+
         self
     }
 }
@@ -120,8 +125,8 @@ impl Swerve {
         let y = height.get::<inch>() / 2.0;
         positions.push(ModulePosition::new(x, y));
         positions.push(ModulePosition::new(-x, y));
-        positions.push(ModulePosition::new(x, -y));
         positions.push(ModulePosition::new(-x, -y));
+        positions.push(ModulePosition::new(x, -y));
 
         Self { positions } 
     }
@@ -246,7 +251,29 @@ mod tests {
     }
 
     #[test]
+    fn close_cycle() {
+        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(45.) };
+        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(360.) };
+        let goal = ModuleState { speed: 1., angle: Angle::new::<degree>(360. + 45.) };
+
+        let to = this.optimize(&other);
+
+        assert_eq!(to, goal);
+    }
+
+    #[test]
     fn close() {
+        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(45.) };
+        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
+        let goal = ModuleState { speed: 1., angle: Angle::new::<degree>(45.) };
+
+        let to = this.optimize(&other);
+
+        assert_eq!(to, goal);
+    }
+
+    #[test]
+    fn close_opposite() {
         let this = ModuleState { speed: 1., angle: Angle::new::<degree>(45. + 180.) };
         let other = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
         let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(180.) };
