@@ -1,0 +1,20 @@
+[package]
+name = "RobotCode2024"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+j4rs_derive = "0.1.0"
+j4rs = "0.12.0"
+uom = { version = "0.35.0", features = ["f64"] }
+nalgebra = "0.32.3"
+
+[dependencies.frcrs]
+git = "https://www.github.com/Team-2502/frcrs.git"
+branch = "comp"
+#path = "../frcrs"
