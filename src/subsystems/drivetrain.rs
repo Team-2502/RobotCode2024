@@ -1,4 +1,4 @@
-use frcrs::ctre::{ControlMode, Falcon, Kraken};
+use frcrs::ctre::{ControlMode, Falcon, Kraken, talon_encoder_tick};
 use frcrs::drive::{ToTalonEncoder};
 use frcrs::navx::NavX;
 use nalgebra::Vector2;
@@ -94,10 +94,10 @@ impl Drivetrain {
         //self.bl_drive.set(wheel_speeds[2].speed);
         //self.br_drive.set(wheel_speeds[3].speed);
 
-        self.fr_turn.set(ControlMode::Position, -wheel_speeds[0].angle.get::<degree>().talon_encoder_ticks());
-        self.fl_turn.set(ControlMode::Position, -wheel_speeds[1].angle.get::<degree>().talon_encoder_ticks());
-        self.bl_turn.set(ControlMode::Position, -wheel_speeds[2].angle.get::<degree>().talon_encoder_ticks());
-        self.br_turn.set(ControlMode::Position, -wheel_speeds[3].angle.get::<degree>().talon_encoder_ticks());
+        self.fr_turn.set(ControlMode::Position, -wheel_speeds[0].angle.get::<talon_encoder_tick>());
+        self.fl_turn.set(ControlMode::Position, -wheel_speeds[1].angle.get::<talon_encoder_tick>());
+        self.bl_turn.set(ControlMode::Position, -wheel_speeds[2].angle.get::<talon_encoder_tick>());
+        self.br_turn.set(ControlMode::Position, -wheel_speeds[3].angle.get::<talon_encoder_tick>());
     }
 
     pub fn get_angle(&self) -> Angle {

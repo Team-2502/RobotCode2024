@@ -93,13 +93,13 @@ impl ModuleState {
         if difference.abs() > 90. {
             self.speed *= -1.;
 
+            dbg!(difference);
+
             if difference > 0. {
-                difference = 180. - difference;
+                difference = -180. + difference;
             } else {
                 difference = 180. + difference;
             }
-
-            difference %= 360.;
         }
 
         self.angle = other.angle + Angle::new::<degree>(difference);
@@ -306,6 +306,17 @@ mod tests {
         let this = ModuleState { speed: 1., angle: Angle::new::<degree>(-360. * 2. + 1.) };
         let other = ModuleState { speed: 1., angle: Angle::new::<degree>(360. + 180.) };
         let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(360. + 180. + 1.) };
+
+        let to = this.optimize(&other);
+
+        assert_eq!(to, goal);
+    }
+
+    #[test]
+    fn negative_far_close_below() {
+        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(-360. * 2. - 30.) };
+        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(360. + 180.) };
+        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(360. + 180. - 30.) };
 
         let to = this.optimize(&other);
 
