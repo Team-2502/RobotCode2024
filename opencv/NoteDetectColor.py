@@ -12,12 +12,12 @@ while camera.isOpened():
     cv2.imshow('raw', frame)
 
     # lower range of red color in HSV
-    lower_range = (4.5, 0, 0)
+    lower_range = (4.5, 130, 0)
     upper_range = (4.9, 255, 255)
     mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
-    lower_range = (5.1, 1, 1)
-    upper_range = (53,255,255)
+    lower_range = (5.1, 130, 1)
+    upper_range = (35,255,255)
     mask1 = cv2.inRange(hsv_img, lower_range, upper_range)
 
     mask = mask + mask1
@@ -35,7 +35,10 @@ while camera.isOpened():
         area = cv2.contourArea(contour)
         if (area > 900):
             x,y,w,h = cv2.boundingRect(contour)
-            frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
+            #frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
+
+            center = (int(x+w/2),int(y+h/2))
+            frame = cv2.circle(frame, center, 4, (0,0,255), -1)
 
             cv2.putText(frame, "Note!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
 
