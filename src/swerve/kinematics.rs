@@ -90,12 +90,9 @@ impl ModuleState {
         let mut difference = ( angle - other_angle + 180. ) % 360. - 180.;
         if difference < -180. { difference += 360. };
 
-        let negate = difference.abs() > 90.;
-
-        if negate {
+        if difference.abs() > 90. {
             self.speed *= -1.;
 
-            dbg!(difference);
             if difference > 0. {
                 difference = 180. - difference;
             } else {
@@ -103,7 +100,6 @@ impl ModuleState {
             }
 
             difference %= 360.;
-            self.angle = Angle::new::<degree>(difference);
         }
 
         self.angle = other.angle + Angle::new::<degree>(difference);

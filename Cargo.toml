@@ -17,4 +17,3 @@ nalgebra = "0.32.3"
 [dependencies.frcrs]
 git = "https://www.github.com/Team-2502/frcrs.git"
 branch = "comp"
-#path = "../frcrs"
