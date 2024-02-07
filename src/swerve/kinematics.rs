@@ -128,10 +128,10 @@ impl Swerve {
 
         let x = width.get::<inch>() / 2.0;
         let y = height.get::<inch>() / 2.0;
-        positions.push(ModulePosition::new(x, y));
         positions.push(ModulePosition::new(-x, y));
-        positions.push(ModulePosition::new(-x, -y));
+        positions.push(ModulePosition::new(x, y));
         positions.push(ModulePosition::new(x, -y));
+        positions.push(ModulePosition::new(-x, -y));
 
         Self { positions } 
     }
@@ -155,7 +155,7 @@ impl Swerve {
             // rotation
             vector += unit_rotation * rotation;
 
-            let angle = f64::atan2(vector.x, vector.y);
+            let angle = f64::atan2(vector.x, vector.y) + FRAC_PI_2;
 
             speeds.push(ModuleState {
                 speed: vector.magnitude(),

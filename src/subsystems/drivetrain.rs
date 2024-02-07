@@ -2,7 +2,7 @@ use frcrs::ctre::{ControlMode, Falcon, Kraken};
 use frcrs::drive::{ToTalonEncoder};
 use frcrs::navx::NavX;
 use nalgebra::Vector2;
-use uom::si::angle::degree;
+use uom::si::angle::{degree, revolution};
 use uom::si::f64::{Angle, Length};
 use uom::si::length::inch;
 use crate::constants::*;
@@ -76,22 +76,28 @@ impl Drivetrain {
 
     pub fn set_speeds(&self, fwd: f64, str: f64, rot: f64) {
         let transform = Vector2::new(fwd, str);
-        let wheel_speeds = self.kinematics.calculate(transform, rot);
+        let wheel_speeds = self.kinematics.calculate(transform, -rot);
+
+        //self.fr_turn.set(control_mode, amount)
+
+        //self.fr_turn.set(ControlMode::Position, (0.).talon_encoder_ticks());
 
         let measured = self.get_speeds();
 
-        let wheel_speeds: Vec<ModuleState> = wheel_speeds.into_iter().zip(measured.iter())
-            .map(|(calculated,measured)| calculated.optimize(measured)).collect();
+        //println!("angle fr {}", measured[0].angle.get::<revolution>());
 
-        self.fr_drive.set(wheel_speeds[0].speed);
-        self.fl_drive.set(wheel_speeds[1].speed);
-        self.bl_drive.set(wheel_speeds[2].speed);
-        self.br_drive.set(wheel_speeds[3].speed);
+        //let wheel_speeds: Vec<ModuleState> = wheel_speeds.into_iter().zip(measured.iter())
+        //    .map(|(calculated,measured)| calculated.optimize(measured)).collect();
 
-        self.fr_turn.set(ControlMode::Position, wheel_speeds[0].angle.get::<degree>().talon_encoder_ticks());
-        self.fl_turn.set(ControlMode::Position, wheel_speeds[1].angle.get::<degree>().talon_encoder_ticks());
-        self.bl_turn.set(ControlMode::Position, wheel_speeds[2].angle.get::<degree>().talon_encoder_ticks());
-        self.br_turn.set(ControlMode::Position, wheel_speeds[3].angle.get::<degree>().talon_encoder_ticks());
+        //self.fr_drive.set(wheel_speeds[0].speed);
+        //self.fl_drive.set(wheel_speeds[1].speed);
+        //self.bl_drive.set(wheel_speeds[2].speed);
+        //self.br_drive.set(wheel_speeds[3].speed);
+
+        self.fr_turn.set(ControlMode::Position, -wheel_speeds[0].angle.get::<degree>().talon_encoder_ticks());
+        self.fl_turn.set(ControlMode::Position, -wheel_speeds[1].angle.get::<degree>().talon_encoder_ticks());
+        self.bl_turn.set(ControlMode::Position, -wheel_speeds[2].angle.get::<degree>().talon_encoder_ticks());
+        self.br_turn.set(ControlMode::Position, -wheel_speeds[3].angle.get::<degree>().talon_encoder_ticks());
     }
 
     pub fn get_angle(&self) -> Angle {
