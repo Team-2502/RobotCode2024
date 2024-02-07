@@ -1,72 +1,3 @@
-
-/*use crate::{Encoder, Motor};
-
-pub struct Motors {
-    fl_drive: dyn Motor,
-    fl_turn: dyn Motor,
-    fr_drive: dyn Motor,
-    fr_turn: dyn Motor,
-    bl_drive: dyn Motor,
-    bl_turn: dyn Motor,
-    br_drive: dyn Motor,
-    br_turn: dyn Motor,
-}
-
-pub struct Encoders {
-    fl: dyn Encoder,
-    fr: dyn Encoder,
-    bl: dyn Encoder,
-    br: dyn Encoder,
-}
-
-impl Encoders {
-    pub fn new(fl: Box<dyn Encoder>, fr: Box<dyn Encoder>, bl: Box<dyn Encoder>, br: Box<dyn Encoder>) -> Box<Self> {
-        Box::new(Self {
-            fl,
-            fr,
-            bl,
-            br
-        })
-    }
-}
-
-impl Motors {
-    pub fn new(fl_drive: Box<dyn Motor>, fr_drive: Box<dyn Motor>, bl_drive: Box<dyn Motor>, br_drive: Box<dyn Motor>,
-               fl_turn: Box<dyn Motor>, fr_turn: Box<dyn Motor>, bl_turn: Box<dyn Motor>, br_turn: Box<dyn Motor>) -> Box<Self> {
-        Box::new(Self {
-            fl_drive,
-            fl_turn,
-            fr_drive,
-            fr_turn,
-            bl_drive,
-            bl_turn,
-            br_drive,
-            br_turn,
-        })
-    }
-}
-
-pub struct SwerveBuilder {
-    motors: Motors,
-    encoders: Encoders,
-}
-
-impl SwerveBuilder {
-    pub fn new(fl_drive: Box<dyn Motor>, fr_drive: Box<dyn Motor>, bl_drive: Box<dyn Motor>, br_drive: Box<dyn Motor>,
-               fl_turn: Box<dyn Motor>, fr_turn: Box<dyn Motor>, bl_turn: Box<dyn Motor>, br_turn: Box<dyn Motor>,
-    fl_encoder: Box<dyn Encoder>, fr_encoder: Box<dyn Encoder>, bl_encoder: Box<dyn Encoder>, br_encoder: Box<dyn Encoder>) -> Box<Self> {
-
-        Box::new(Self {
-            motors: *Motors::new(fl_drive, fl_turn, fr_drive, fr_turn, bl_drive, bl_turn, br_drive, br_turn),
-            encoders: *Encoders::new(fl_encoder, fr_encoder, bl_encoder, br_encoder)
-        })
-    }
-
-    pub fn set_speeds(&self) {
-
-    }
-}*/
-
 use std::f64::consts::{PI, FRAC_PI_2, FRAC_2_PI};
 use uom::{num_traits::{Pow, PrimInt}, si::{angle::{degree, radian}, f64::Length, length::inch}};
 use uom::si::f64::*;
@@ -93,7 +24,7 @@ impl ModuleState {
         if difference.abs() > 90. {
             self.speed *= -1.;
 
-            dbg!(difference);
+            //dbg!(difference);
 
             if difference > 0. {
                 difference = -180. + difference;
@@ -158,11 +89,6 @@ impl Swerve {
         if max > 1. {
             speeds.iter_mut().for_each(|s| s.speed /= max);
         }
-
-        /*SmartDashboard::put_number("fl turn".to_owned(), wa2);
-        SmartDashboard::put_number("fr turn".to_owned(), wa1);
-        SmartDashboard::put_number("bl turn".to_owned(), wa3);
-        SmartDashboard::put_number("br turn".to_owned(), wa4);*/
 
         speeds
     }
