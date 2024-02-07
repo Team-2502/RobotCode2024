@@ -87,11 +87,8 @@ impl ModuleState {
         let angle = self.angle.get::<degree>();
         let other_angle = other.angle.get::<degree>();
 
-        let cycles = other_angle as usize / 360;
-
-        let mut difference = ( other_angle - angle + 180. ) % 360. - 180.;
+        let mut difference = ( angle - other_angle + 180. ) % 360. - 180.;
         if difference < -180. { difference += 360. };
-
 
         let negate = difference.abs() > 90.;
 
@@ -99,20 +96,17 @@ impl ModuleState {
             self.speed *= -1.;
 
             dbg!(difference);
-            //if difference > 0. {
-            //    difference = 180. - difference;
-            //} else {
-            //    difference = -180. - difference;
-            //}
-            difference = 180. - difference;
+            if difference > 0. {
+                difference = 180. - difference;
+            } else {
+                difference = 180. + difference;
+            }
 
             difference %= 360.;
-            dbg!(difference);
             self.angle = Angle::new::<degree>(difference);
         }
 
-        dbg!(cycles);
-        self.angle += Angle::new::<degree>((360 * cycles) as f64);
+        self.angle = other.angle + Angle::new::<degree>(difference);
 
         self
     }
@@ -282,6 +276,40 @@ mod tests {
         let this = ModuleState { speed: 1., angle: Angle::new::<degree>(45. + 180.) };
         let other = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
         let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(45.) };
+
+        let to = this.optimize(&other);
+
+        assert_eq!(to, goal);
+    }
+
+    #[test]
+    fn zero_negative() {
+        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(-360. * 2.) };
+        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
+        let goal = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
+
+        let to = this.optimize(&other);
+
+        assert_eq!(to, goal);
+
+    }
+
+    #[test]
+    fn zero_negative_far() {
+        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(-360. * 2.) };
+        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(360. + 180.) };
+        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(360. + 180.) };
+
+        let to = this.optimize(&other);
+
+        assert_eq!(to, goal);
+    }
+
+    #[test]
+    fn negative_far_close() {
+        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(-360. * 2. + 1.) };
+        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(360. + 180.) };
+        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(360. + 180. + 1.) };
 
         let to = this.optimize(&other);
 

@@ -67,7 +67,7 @@ impl Drivetrain {
         for module in [&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn] {
             speeds.push(ModuleState { 
                 speed: 0., 
-                angle: module.get(),
+                angle: -module.get(),
             });
         }
 
@@ -86,8 +86,8 @@ impl Drivetrain {
 
         //println!("angle fr {}", measured[0].angle.get::<revolution>());
 
-        //let wheel_speeds: Vec<ModuleState> = wheel_speeds.into_iter().zip(measured.iter())
-        //    .map(|(calculated,measured)| calculated.optimize(measured)).collect();
+        let wheel_speeds: Vec<ModuleState> = wheel_speeds.into_iter().zip(measured.iter())
+            .map(|(calculated,measured)| calculated.optimize(measured)).collect();
 
         //self.fr_drive.set(wheel_speeds[0].speed);
         //self.fl_drive.set(wheel_speeds[1].speed);
