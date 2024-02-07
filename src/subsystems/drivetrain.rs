@@ -1,8 +1,8 @@
 use frcrs::ctre::{ControlMode, Falcon, Kraken, talon_encoder_tick};
 use frcrs::drive::{ToTalonEncoder};
 use frcrs::navx::NavX;
-use nalgebra::Vector2;
-use uom::si::angle::{degree, revolution};
+use nalgebra::{Vector2, Rotation2};
+use uom::si::angle::{degree, revolution, radian};
 use uom::si::f64::{Angle, Length};
 use uom::si::length::inch;
 use crate::constants::*;
@@ -24,6 +24,8 @@ pub struct Drivetrain {
     br_turn: Falcon,
 
     kinematics: Swerve,
+
+    offset: Angle,
 }
 
 impl Drivetrain {
@@ -44,6 +46,8 @@ impl Drivetrain {
             br_turn: Falcon::new(BR_TURN, Some("can0".to_owned())),
 
             kinematics: Swerve::rectangle(Length::new::<inch>(25.), Length::new::<inch>(25.)),
+
+            offset: Angle::new::<degree>(0.),
         }
     }
 
@@ -75,7 +79,8 @@ impl Drivetrain {
     }
 
     pub fn set_speeds(&self, fwd: f64, str: f64, rot: f64) {
-        let transform = Vector2::new(fwd, str);
+        let mut transform = Vector2::new(fwd, str);
+        transform = Rotation2::new(-(self.get_angle() - self.offset).get::<radian>()) * transform;
         let wheel_speeds = self.kinematics.calculate(transform, -rot);
 
         //self.fr_turn.set(control_mode, amount)
@@ -106,5 +111,9 @@ impl Drivetrain {
 
     pub fn reset_angle(&self) {
         self.navx.reset_angle()
+    }
+
+    pub fn reset_heading(&mut self) {
+        self.offset = self.get_angle();
     }
 }

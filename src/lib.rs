@@ -34,7 +34,7 @@ fn entrypoint() {
     let right_drive = Joystick::new(0);
     let operator = Joystick::new(2);
 
-    let drivetrain = Drivetrain::new();
+    let mut drivetrain = Drivetrain::new();
     let intake = Intake::new();
     let shooter = Shooter::new();
     let climber = Climber::new();
@@ -49,7 +49,7 @@ fn entrypoint() {
                     &left_drive,
                     &right_drive,
                     &operator,
-                    &drivetrain,
+                    &mut drivetrain,
                     &intake,
                     &shooter,
                     &climber
