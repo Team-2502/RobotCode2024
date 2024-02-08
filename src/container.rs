@@ -3,13 +3,17 @@ use frcrs::networktables::SmartDashboard;
 use uom::si::angle::degree;
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 
-pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joystick, drivetrain: &Drivetrain, intake: &Intake,
+pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joystick, drivetrain: &mut Drivetrain, intake: &Intake,
                  shooter: &Shooter, climber: &Climber) {
-    //drivetrain.set_speeds(-left_drive.get_y(), -left_drive.get_x(), right_drive.get_z());
+    drivetrain.set_speeds(left_drive.get_y(), left_drive.get_x(), right_drive.get_z());
 
     SmartDashboard::put_number("Angle".to_owned(), drivetrain.get_angle().get::<degree>());
 
     let mut shooting = false;
+
+    if left_drive.get(3) {
+        drivetrain.reset_heading();
+    }
 
     if left_drive.get(1) {
         drivetrain.reset_angle();

@@ -1,8 +1,8 @@
-use frcrs::ctre::{ControlMode, Falcon, Kraken};
+use frcrs::ctre::{ControlMode, Falcon, Kraken, talon_encoder_tick};
 use frcrs::drive::{ToTalonEncoder};
 use frcrs::navx::NavX;
-use nalgebra::Vector2;
-use uom::si::angle::degree;
+use nalgebra::{Vector2, Rotation2};
+use uom::si::angle::{degree, revolution, radian};
 use uom::si::f64::{Angle, Length};
 use uom::si::length::inch;
 use crate::constants::*;
@@ -24,6 +24,8 @@ pub struct Drivetrain {
     br_turn: Falcon,
 
     kinematics: Swerve,
+
+    offset: Angle,
 }
 
 impl Drivetrain {
@@ -44,6 +46,8 @@ impl Drivetrain {
             br_turn: Falcon::new(BR_TURN, Some("can0".to_owned())),
 
             kinematics: Swerve::rectangle(Length::new::<inch>(25.), Length::new::<inch>(25.)),
+
+            offset: Angle::new::<degree>(0.),
         }
     }
 
@@ -67,7 +71,7 @@ impl Drivetrain {
         for module in [&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn] {
             speeds.push(ModuleState { 
                 speed: 0., 
-                angle: module.get(),
+                angle: -module.get(),
             });
         }
 
@@ -75,23 +79,30 @@ impl Drivetrain {
     }
 
     pub fn set_speeds(&self, fwd: f64, str: f64, rot: f64) {
-        let transform = Vector2::new(fwd, str);
-        let wheel_speeds = self.kinematics.calculate(transform, rot);
+        let mut transform = Vector2::new(fwd, str);
+        transform = Rotation2::new(-(self.get_angle() - self.offset).get::<radian>()) * transform;
+        let wheel_speeds = self.kinematics.calculate(transform, -rot);
+
+        //self.fr_turn.set(control_mode, amount)
+
+        //self.fr_turn.set(ControlMode::Position, (0.).talon_encoder_ticks());
 
         let measured = self.get_speeds();
+
+        //println!("angle fr {}", measured[0].angle.get::<revolution>());
 
         let wheel_speeds: Vec<ModuleState> = wheel_speeds.into_iter().zip(measured.iter())
             .map(|(calculated,measured)| calculated.optimize(measured)).collect();
 
-        self.fr_drive.set(wheel_speeds[0].speed);
-        self.fl_drive.set(wheel_speeds[1].speed);
-        self.bl_drive.set(wheel_speeds[2].speed);
-        self.br_drive.set(wheel_speeds[3].speed);
+        //self.fr_drive.set(wheel_speeds[0].speed);
+        //self.fl_drive.set(wheel_speeds[1].speed);
+        //self.bl_drive.set(wheel_speeds[2].speed);
+        //self.br_drive.set(wheel_speeds[3].speed);
 
-        self.fr_turn.set(ControlMode::Position, wheel_speeds[0].angle.get::<degree>().talon_encoder_ticks());
-        self.fl_turn.set(ControlMode::Position, wheel_speeds[1].angle.get::<degree>().talon_encoder_ticks());
-        self.bl_turn.set(ControlMode::Position, wheel_speeds[2].angle.get::<degree>().talon_encoder_ticks());
-        self.br_turn.set(ControlMode::Position, wheel_speeds[3].angle.get::<degree>().talon_encoder_ticks());
+        self.fr_turn.set(ControlMode::Position, -wheel_speeds[0].angle.get::<talon_encoder_tick>());
+        self.fl_turn.set(ControlMode::Position, -wheel_speeds[1].angle.get::<talon_encoder_tick>());
+        self.bl_turn.set(ControlMode::Position, -wheel_speeds[2].angle.get::<talon_encoder_tick>());
+        self.br_turn.set(ControlMode::Position, -wheel_speeds[3].angle.get::<talon_encoder_tick>());
     }
 
     pub fn get_angle(&self) -> Angle {
@@ -100,5 +111,9 @@ impl Drivetrain {
 
     pub fn reset_angle(&self) {
         self.navx.reset_angle()
+    }
+
+    pub fn reset_heading(&mut self) {
+        self.offset = self.get_angle();
     }
 }
