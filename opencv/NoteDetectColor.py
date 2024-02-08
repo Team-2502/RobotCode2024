@@ -49,3 +49,4 @@ while camera.isOpened():
         camera.release()
         cv2.destroyAllWindows()
         break   
+    
