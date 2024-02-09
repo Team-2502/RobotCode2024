@@ -1,9 +1,12 @@
 import numpy as np
 import cv2
+from networktables import NetworkTables
 
 kernal = np.ones((7,7), "uint8")
 camera = cv2.VideoCapture(0) # First webcam (video0)
- 
+sd = NetworkTables.getTable("SmartDashboard")
+NetworkTables.initialize(server="10.25.2.2")
+
 while camera.isOpened():
     success, frame = camera.read()
     if not success:
@@ -17,7 +20,7 @@ while camera.isOpened():
     mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
     lower_range = (5.1, 130, 1)
-    upper_range = (35,255,255)
+    upper_range = (50,255,255)
     mask1 = cv2.inRange(hsv_img, lower_range, upper_range)
 
     mask = mask + mask1
@@ -26,6 +29,8 @@ while camera.isOpened():
     mask = cv2.erode(mask, kernal)
     mask = cv2.dilate(mask, kernal)
 
+    cv2.imshow("mask", mask)
+
 
     #frame = cv2.bitwise_and(frame, frame, mask=mask)
 
@@ -33,7 +38,7 @@ while camera.isOpened():
 
     for pic, contour in enumerate (contours):
         area = cv2.contourArea(contour)
-        if (area > 900):
+        if (area > 2000):
             x,y,w,h = cv2.boundingRect(contour)
             #frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
 
@@ -42,6 +47,9 @@ while camera.isOpened():
 
             cv2.putText(frame, "Note!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
 
+    
+    sd.putNumber("andys number", 6)
+
 
     # Display the color of the image
     cv2.imshow('Highlighted', frame)
@@ -49,4 +57,7 @@ while camera.isOpened():
         camera.release()
         cv2.destroyAllWindows()
         break   
+
+
+
     
