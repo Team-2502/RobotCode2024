@@ -39,6 +39,7 @@ fn entrypoint() {
     let shooter = Shooter::new();
     let climber = Climber::new();
 
+    let mut last_loop = Instant::now();
     loop {
         refresh_data();
 
@@ -59,5 +60,9 @@ fn entrypoint() {
                 stop_all(&drivetrain, &intake, &shooter, &climber);
             }
         };
+
+        let elapsed = last_loop.elapsed().as_secs_f64();
+        SmartDashboard::put_number("loop rate (hz)".to_owned(), 1./elapsed);
+        last_loop = Instant::now();
     }
 }
