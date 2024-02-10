@@ -29,7 +29,7 @@ pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joyst
     let joystick_range = 0.04..1.;
     let power_translate = if right_drive.get(3) { 0.0..0.3 }
     else { 0.0..1. };
-    let power_rotate = if right_drive.get(3) { 0.0..0.27 }
+    let power_rotate = if right_drive.get(3) { 0.0..0.2 }
     else { 0.0..1. };
     let deadly = deadzone(left_drive.get_y(), &joystick_range, &power_translate);
     let deadlx = deadzone(left_drive.get_x(), &joystick_range, &power_translate);
