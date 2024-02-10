@@ -57,9 +57,9 @@ pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joyst
     }
 
     if operator.get(3) {
-        intake.set_actuate(0.35);
+        intake.set_actuate(0.6);
     } else if operator.get(4) {
-        intake.set_actuate(-0.2);
+        intake.set_actuate(-0.6);
     } else {
         intake.stop_actuate();
     }
