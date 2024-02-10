@@ -45,7 +45,7 @@ impl Drivetrain {
             br_drive: Kraken::new(BR_DRIVE, Some("can0".to_owned())),
             br_turn: Falcon::new(BR_TURN, Some("can0".to_owned())),
 
-            kinematics: Swerve::rectangle(Length::new::<inch>(25.), Length::new::<inch>(25.)),
+            kinematics: Swerve::rectangle(Length::new::<inch>(22.5), Length::new::<inch>(23.5)),
 
             offset: Angle::new::<degree>(0.),
         }
