@@ -1,72 +1,3 @@
-
-/*use crate::{Encoder, Motor};
-
-pub struct Motors {
-    fl_drive: dyn Motor,
-    fl_turn: dyn Motor,
-    fr_drive: dyn Motor,
-    fr_turn: dyn Motor,
-    bl_drive: dyn Motor,
-    bl_turn: dyn Motor,
-    br_drive: dyn Motor,
-    br_turn: dyn Motor,
-}
-
-pub struct Encoders {
-    fl: dyn Encoder,
-    fr: dyn Encoder,
-    bl: dyn Encoder,
-    br: dyn Encoder,
-}
-
-impl Encoders {
-    pub fn new(fl: Box<dyn Encoder>, fr: Box<dyn Encoder>, bl: Box<dyn Encoder>, br: Box<dyn Encoder>) -> Box<Self> {
-        Box::new(Self {
-            fl,
-            fr,
-            bl,
-            br
-        })
-    }
-}
-
-impl Motors {
-    pub fn new(fl_drive: Box<dyn Motor>, fr_drive: Box<dyn Motor>, bl_drive: Box<dyn Motor>, br_drive: Box<dyn Motor>,
-               fl_turn: Box<dyn Motor>, fr_turn: Box<dyn Motor>, bl_turn: Box<dyn Motor>, br_turn: Box<dyn Motor>) -> Box<Self> {
-        Box::new(Self {
-            fl_drive,
-            fl_turn,
-            fr_drive,
-            fr_turn,
-            bl_drive,
-            bl_turn,
-            br_drive,
-            br_turn,
-        })
-    }
-}
-
-pub struct SwerveBuilder {
-    motors: Motors,
-    encoders: Encoders,
-}
-
-impl SwerveBuilder {
-    pub fn new(fl_drive: Box<dyn Motor>, fr_drive: Box<dyn Motor>, bl_drive: Box<dyn Motor>, br_drive: Box<dyn Motor>,
-               fl_turn: Box<dyn Motor>, fr_turn: Box<dyn Motor>, bl_turn: Box<dyn Motor>, br_turn: Box<dyn Motor>,
-    fl_encoder: Box<dyn Encoder>, fr_encoder: Box<dyn Encoder>, bl_encoder: Box<dyn Encoder>, br_encoder: Box<dyn Encoder>) -> Box<Self> {
-
-        Box::new(Self {
-            motors: *Motors::new(fl_drive, fl_turn, fr_drive, fr_turn, bl_drive, bl_turn, br_drive, br_turn),
-            encoders: *Encoders::new(fl_encoder, fr_encoder, bl_encoder, br_encoder)
-        })
-    }
-
-    pub fn set_speeds(&self) {
-
-    }
-}*/
-
 use std::f64::consts::{PI, FRAC_PI_2, FRAC_2_PI};
 use uom::{num_traits::{Pow, PrimInt}, si::{angle::{degree, radian}, f64::Length, length::inch}};
 use uom::si::f64::*;
@@ -118,10 +49,10 @@ impl Swerve {
 
         let x = width.get::<inch>() / 2.0;
         let y = height.get::<inch>() / 2.0;
-        positions.push(ModulePosition::new(-x, y));
         positions.push(ModulePosition::new(x, y));
-        positions.push(ModulePosition::new(x, -y));
+        positions.push(ModulePosition::new(-x, y));
         positions.push(ModulePosition::new(-x, -y));
+        positions.push(ModulePosition::new(x, -y));
 
         Self { positions } 
     }
@@ -129,9 +60,13 @@ impl Swerve {
     /// Calculate module speeds from the given transform and rotation
     ///
     /// input units are from -1 to 1, with 1 being the maximum motor speed
+    ///
+    /// positive x is right
+    /// positive y is forward
+    /// positive rotation is clockwise
     pub fn calculate(&self, transform: Vector2<f64>, rotation: f64) -> WheelSpeeds {
         let center_of_rotation = Vector2::zeros(); // relative to center of robot
-        let rotation_transform = Rotation2::new(FRAC_PI_2); // 90 degrees
+        let rotation_transform = Rotation2::new(-FRAC_PI_2); // 90 degrees
 
         let mut speeds = Vec::new();
 
@@ -145,7 +80,7 @@ impl Swerve {
             // rotation
             vector += unit_rotation * rotation;
 
-            let angle = f64::atan2(vector.x, vector.y) + FRAC_PI_2;
+            let angle = f64::atan2(vector.x, vector.y);
 
             speeds.push(ModuleState {
                 speed: vector.magnitude(),
@@ -167,49 +102,6 @@ impl Swerve {
         speeds
     }
 
-    pub fn optimize(target_speed: f64, target_angle: f64, current_angle: f64) -> (f64, f64) {
-        let mut target_angle = Self::place_in_appropriate_0_to_360_scope(current_angle, target_angle);
-        //println!("{}", target_angle);
-
-        let delta = target_angle - current_angle;
-        let offset = if delta > 0. {
-            180.
-        } else { -180. };
-
-        return if delta.abs() > 90. {
-            (-target_speed, target_angle - offset)
-        } else {
-            (target_speed, target_angle - offset)
-        }
-    }
-
-    pub fn place_in_appropriate_0_to_360_scope(scope_ref: f64, new_angle: f64) -> f64 {
-        let mut lower_bound = 0.;
-        let mut upper_bound = 0.;
-        let mut _new_angle = new_angle;
-        let lower_offset = scope_ref % 360.;
-
-        if lower_offset >= 0. {
-            lower_bound = scope_ref - lower_offset;
-            upper_bound = scope_ref + (360. - lower_offset);
-        } else {
-            upper_bound = scope_ref - lower_offset;
-            lower_bound = scope_ref - (360. + lower_offset);
-        }
-        while _new_angle < lower_bound {
-            _new_angle += 360.;
-        }
-        while new_angle > upper_bound {
-            _new_angle -= 360.;
-        }
-        if _new_angle - scope_ref > 180. {
-            _new_angle -= 360.;
-        } else if _new_angle - scope_ref < -180. {
-            _new_angle += 360.;
-        }
-
-        _new_angle
-    }
 }
 
 pub trait ToTalonEncoder {
@@ -229,10 +121,45 @@ impl ToTalonEncoder for f64 {
 
 #[cfg(test)]
 mod tests {
-    use frcrs::drive::{Swerve, ToTalonEncoder};
-    use uom::si::{f64::Angle, angle::degree};
+    use frcrs::drive::{ ToTalonEncoder};
+    use nalgebra::Vector2;
+    use uom::si::{f64::{Angle, Length}, angle::degree, length::inch};
 
     use crate::swerve::kinematics::ModuleState;
+
+    use super::Swerve;
+
+    #[test]
+    fn forward() {
+        let width = Length::new::<inch>(25.);
+        let swerve = Swerve::rectangle(width, width);
+
+        let positions = swerve.calculate(Vector2::new(0.0, 1.0), 0.);
+
+        assert_eq!(positions[0].angle, Angle::new::<degree>(0.))
+    }
+
+    #[test]
+    fn right() {
+        let width = Length::new::<inch>(25.);
+        let swerve = Swerve::rectangle(width, width);
+
+        let positions = swerve.calculate(Vector2::new(1.0, 0.0), 0.);
+
+        assert_eq!(positions[0].angle, Angle::new::<degree>(90.))
+    }
+
+    #[test]
+    fn clockwise() {
+        let width = Length::new::<inch>(25.);
+        let swerve = Swerve::rectangle(width, width);
+
+        let positions = swerve.calculate(Vector2::new(0.0, 0.0), 1.);
+
+        assert_eq!(positions[0].angle, Angle::new::<degree>(135.));
+        //assert_eq!(positions[0].speed, 1.);
+        assert_eq!(positions[1].angle, Angle::new::<degree>(45.));
+    }
 
     #[test]
     fn opposite() {
@@ -317,85 +244,8 @@ mod tests {
         let this = ModuleState { speed: 1., angle: Angle::new::<degree>(-360. * 2. - 30.) };
         let other = ModuleState { speed: 1., angle: Angle::new::<degree>(360. + 180.) };
         let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(360. + 180. - 30.) };
-
         let to = this.optimize(&other);
 
         assert_eq!(to, goal);
     }
-
-    #[test]
-    fn place_in_scope() {
-        let angle = Swerve::place_in_appropriate_0_to_360_scope(720., 90.);
-
-        assert_eq!(810., angle);
-    }
-
-    #[test]
-    fn opt_invert() {
-        let angle = Swerve::optimize(1., 180., 0.);
-
-        let in_range = Swerve::place_in_appropriate_0_to_360_scope(0., angle.1);
-        assert_eq!((angle.0, in_range), (-1., 0.));
-    }
-
-    #[test]
-    fn calc() {
-        let wheel_speeds = Swerve::calculate(0.5, 0., 0., 0.);
-
-        assert_eq!((wheel_speeds.ws1, wheel_speeds.wa1), (0.5, 0.));
-    }
-
-    #[test]
-    fn opt() {
-        let wheel_speeds = Swerve::calculate(0.5, 0., 0., 0.);
-
-        let angle1 = Swerve::optimize(wheel_speeds.ws1, wheel_speeds.wa1, 0.);
-
-        assert_eq!((angle1.0, angle1.1), (0., 10.));
-    }
-
-    #[test]
-    fn opt_invert_high() {
-        let angle = Swerve::optimize(1., 180., 725.);
-
-        let in_range = Swerve::place_in_appropriate_0_to_360_scope(725., angle.1);
-        assert_eq!((angle.0, in_range), (-1., 720.));
-    }
-
-    /*#[test]
-    fn calculate_speed() {
-        let start = Instant::now();
-
-        let wheel_speeds = Swerve::calculate(0.5, 0.5,0.5, 142.15);
-
-        let fr_speeds = Swerve::optimize(
-            wheel_speeds.ws1, wheel_speeds.wa1, 2151.
-        );
-
-        let fl_speeds = Swerve::optimize(
-            wheel_speeds.ws2, wheel_speeds.wa2, 2615.
-        );
-
-        let bl_speeds = Swerve::optimize(
-            wheel_speeds.ws3, wheel_speeds.wa3, 2725.
-        );
-
-        let br_speeds = Swerve::optimize(
-            wheel_speeds.ws4, wheel_speeds.wa4, 2409.
-        );
-
-        let fr_turn_pos =  Swerve::place_in_appropriate_0_to_360_scope(
-            2151., fr_speeds.1).talon_encoder_ticks();
-
-        let fl_turn_pos = Swerve::place_in_appropriate_0_to_360_scope(
-            2615., fl_speeds.1).talon_encoder_ticks();
-
-        let bl_turn_pos = Swerve::place_in_appropriate_0_to_360_scope(
-            2725., bl_speeds.1).talon_encoder_ticks();
-
-        let br_turn_pos = Swerve::place_in_appropriate_0_to_360_scope(
-            2409., br_speeds.1).talon_encoder_ticks();
-
-        println!("{}μs", start.elapsed().as_micros());
-    }*/
 }
