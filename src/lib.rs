@@ -33,9 +33,9 @@ fn entrypoint() {
 
     SmartDashboard::init();
 
-    let left_drive = Joystick::new(1);
-    let right_drive = Joystick::new(0);
-    let operator = Joystick::new(2);
+    let mut left_drive = Joystick::new(1);
+    let mut right_drive = Joystick::new(0);
+    let mut operator = Joystick::new(2);
 
     let mut robot = Ferris::new();
 
@@ -47,9 +47,9 @@ fn entrypoint() {
         match is_teleop() {
             true => {
                 container(
-                    &left_drive,
-                    &right_drive,
-                    &operator,
+                    &mut left_drive,
+                    &mut right_drive,
+                    &mut operator,
                     &mut robot,
                 );
             }

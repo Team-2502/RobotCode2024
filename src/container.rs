@@ -21,7 +21,7 @@ impl Ferris {
     }
 }
 
-pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joystick, robot: &mut Ferris) {
+pub fn container(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &mut Ferris) {
     let drivetrain = &mut robot.drivetrain;
     let intake = &robot.intake;
     let shooter = &robot.shooter;
