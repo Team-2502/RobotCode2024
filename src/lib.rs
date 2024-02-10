@@ -34,10 +34,7 @@ fn entrypoint() {
     let right_drive = Joystick::new(0);
     let operator = Joystick::new(2);
 
-    let mut drivetrain = Drivetrain::new();
-    let intake = Intake::new();
-    let shooter = Shooter::new();
-    let climber = Climber::new();
+    let mut robot = Ferris::new();
 
     let mut last_loop = Instant::now();
     loop {
@@ -50,14 +47,11 @@ fn entrypoint() {
                     &left_drive,
                     &right_drive,
                     &operator,
-                    &mut drivetrain,
-                    &intake,
-                    &shooter,
-                    &climber
+                    &mut robot,
                 );
             }
             false => {
-                stop_all(&drivetrain, &intake, &shooter, &climber);
+                stop_all(&robot);
             }
         };
 

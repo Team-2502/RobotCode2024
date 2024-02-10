@@ -4,8 +4,28 @@ use uom::si::angle::degree;
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 use frcrs::deadzone;
 
-pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joystick, drivetrain: &mut Drivetrain, intake: &Intake,
-                 shooter: &Shooter, climber: &Climber) {
+pub struct Ferris {
+    drivetrain: Drivetrain, 
+    intake: Intake,
+    shooter: Shooter, 
+    climber: Climber
+}
+
+impl Ferris {
+    pub fn new() -> Self { 
+        let drivetrain = Drivetrain::new();
+        let intake = Intake::new();
+        let shooter = Shooter::new();
+        let climber = Climber::new();
+        Self { drivetrain, intake, shooter, climber } 
+    }
+}
+
+pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joystick, robot: &mut Ferris) {
+    let drivetrain = &mut robot.drivetrain;
+    let intake = &robot.intake;
+    let shooter = &robot.shooter;
+    let climber = &robot.climber;
     let joystick_range = 0.04..1.;
     let power_translate = if right_drive.get(3) { 0.0..0.3 }
     else { 0.0..1. };
@@ -78,9 +98,9 @@ pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joyst
     }
 }
 
-pub fn stop_all(drivetrain: &Drivetrain, intake: &Intake, shooter: &Shooter, climber: &Climber) {
-    drivetrain.stop();
-    intake.stop();
-    shooter.stop();
-    climber.stop();
+pub fn stop_all(robot: &Ferris) {
+    robot.drivetrain.stop();
+    robot.intake.stop();
+    robot.shooter.stop();
+    robot.climber.stop();
 }
