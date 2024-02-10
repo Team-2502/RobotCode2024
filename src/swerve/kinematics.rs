@@ -24,8 +24,6 @@ impl ModuleState {
         if difference.abs() > 90. {
             self.speed *= -1.;
 
-            dbg!(difference);
-
             if difference > 0. {
                 difference = -180. + difference;
             } else {

@@ -79,9 +79,9 @@ impl Drivetrain {
     }
 
     pub fn set_speeds(&self, fwd: f64, str: f64, rot: f64) {
-        let mut transform = Vector2::new(fwd, str);
+        let mut transform = Vector2::new(str, -fwd);
         transform = Rotation2::new(-(self.get_angle() - self.offset).get::<radian>()) * transform;
-        let wheel_speeds = self.kinematics.calculate(transform, -rot);
+        let wheel_speeds = self.kinematics.calculate(transform, rot);
 
         //self.fr_turn.set(control_mode, amount)
 
@@ -94,10 +94,10 @@ impl Drivetrain {
         let wheel_speeds: Vec<ModuleState> = wheel_speeds.into_iter().zip(measured.iter())
             .map(|(calculated,measured)| calculated.optimize(measured)).collect();
 
-        //self.fr_drive.set(wheel_speeds[0].speed);
-        //self.fl_drive.set(wheel_speeds[1].speed);
-        //self.bl_drive.set(wheel_speeds[2].speed);
-        //self.br_drive.set(wheel_speeds[3].speed);
+        self.fr_drive.set(wheel_speeds[0].speed);
+        self.fl_drive.set(wheel_speeds[1].speed);
+        self.bl_drive.set(wheel_speeds[2].speed);
+        self.br_drive.set(wheel_speeds[3].speed);
 
         self.fr_turn.set(ControlMode::Position, -wheel_speeds[0].angle.get::<talon_encoder_tick>());
         self.fl_turn.set(ControlMode::Position, -wheel_speeds[1].angle.get::<talon_encoder_tick>());
