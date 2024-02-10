@@ -80,7 +80,7 @@ impl Drivetrain {
 
     pub fn set_speeds(&self, fwd: f64, str: f64, rot: f64) {
         let mut transform = Vector2::new(str, -fwd);
-        transform = Rotation2::new(-(self.get_angle() - self.offset).get::<radian>()) * transform;
+        transform = Rotation2::new((self.get_angle() - self.offset).get::<radian>()) * transform;
         let wheel_speeds = self.kinematics.calculate(transform, rot);
 
         //self.fr_turn.set(control_mode, amount)
