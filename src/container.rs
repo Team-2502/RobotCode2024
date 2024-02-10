@@ -62,17 +62,17 @@ pub fn container(left_drive: &Joystick, right_drive: &Joystick, operator: &Joyst
 
     // Todo: cleanup
     if left_drive.get(2) {
-        climber.set(-0.5)
+        climber.set(-1.)
     } else if right_drive.get(2) {
-        climber.set(0.5);
+        climber.set(1.);
     } else if operator.get(14) {
-        climber.set_left(-0.5);
+        climber.set_left(-1.);
     } else if operator.get(13) {
-        climber.set_left(0.5);
+        climber.set_left(1.);
     } else if operator.get(15) {
-        climber.set_right(0.5);
+        climber.set_right(1.);
     } else if operator.get(12) {
-        climber.set_right(-0.5);
+        climber.set_right(-1.);
     } else {
         climber.stop()
     }
