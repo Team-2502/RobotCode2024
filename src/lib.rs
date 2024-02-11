@@ -55,7 +55,9 @@ fn entrypoint() {
         };
 
         let elapsed = last_loop.elapsed().as_secs_f64();
-        SmartDashboard::put_number("loop rate (hz)".to_owned(), 1./elapsed);
+        let left = (1./50. - elapsed).max(0.);
+        thread::sleep(Duration::from_secs_f64(left));
+        SmartDashboard::put_number("loop rate (hz)".to_owned(), 1./last_loop.elapsed().as_secs_f64());
         last_loop = Instant::now();
     }
 }
