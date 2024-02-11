@@ -12,7 +12,7 @@ pub struct Ferris {
     intake_state: IntakeState,
 }
 
-enum IntakeState {
+enum IntakeState { // TODO: use async/await instead of a state machine
     Not,
     Accelerating,
     Running,
@@ -47,9 +47,18 @@ impl IntakeState {
         }
     }
 
-    fn stall(&mut self) { // TODO: velocity
+    fn spinning(&mut self) {
         match self {
             IntakeState::Accelerating => {
+                *self = IntakeState::Running
+            }
+            _ => {}
+        }
+    }
+
+    fn stall(&mut self) {
+        match self {
+            IntakeState::Running => {
                 *self = IntakeState::Stalled
             }
             _ => {}
@@ -69,7 +78,7 @@ impl Ferris {
 
 pub fn container(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &mut Ferris) {
     let drivetrain = &mut robot.drivetrain;
-    let intake = &robot.intake;
+    let intake = &mut robot.intake;
     let shooter = &robot.shooter;
     let climber = &robot.climber;
     let joystick_range = 0.04..1.;
@@ -100,6 +109,9 @@ pub fn container(left_drive: &mut Joystick, right_drive: &mut Joystick, operator
         robot.intake_state.reset();
     }
 
+    if intake.running() {
+        robot.intake_state.spinning();
+    }
     if intake.stalled() {
         robot.intake_state.stall();
     }
