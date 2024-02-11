@@ -27,3 +27,10 @@ pub const SHOOTER_BOTTOM: i32 = 8;
 
 pub const CLIMBER_LEFT: i32 = 9;
 pub const CLIMBER_RIGHT: i32 = 10;
+
+pub mod intake {
+    pub const INTAKE_OCCUPIED_CURRENT: f64 = 30.;
+    pub const INTAKE_OCCUPIED_VELOCITY: f64 = 50.;
+    /// velocity that intake acceleration is "over" at
+    pub const INTAKE_FREE_VELOCITY: f64 = 150.; 
+}

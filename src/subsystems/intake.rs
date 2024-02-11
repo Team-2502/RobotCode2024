@@ -46,11 +46,16 @@ impl Intake {
 
     pub fn set_rollers(&self, value: f64) {
         self.left_roller.set(value);
+        println!("current is {}", self.left_roller.get_current());
         //self.right_roller.set(value);
     }
 
     pub fn set_actuate(&self, value: f64) {
         self.left_actuate.set(value);
         //self.right_actuate.set(value);
+    }
+
+    pub fn stalled(&self) -> bool {
+        self.left_roller.get_current() > intake::INTAKE_OCCUPIED_CURRENT
     }
 }

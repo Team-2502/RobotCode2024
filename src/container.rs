@@ -8,7 +8,53 @@ pub struct Ferris {
     drivetrain: Drivetrain, 
     intake: Intake,
     shooter: Shooter, 
-    climber: Climber
+    climber: Climber,
+    intake_state: IntakeState,
+}
+
+enum IntakeState {
+    Not,
+    Accelerating,
+    Running,
+    Stalled,
+}
+
+impl IntakeState {
+    fn running(&self) -> bool {
+        match self {
+            IntakeState::Running | IntakeState::Accelerating => {
+                true
+            }
+            _ => false
+        }
+    }
+
+    fn start(&mut self) {
+        match self {
+            IntakeState::Not => {
+                *self = IntakeState::Accelerating
+            }
+            _ => {}
+        }
+    }
+
+    fn reset(&mut self) {
+        match self {
+            IntakeState::Stalled | IntakeState::Running | IntakeState::Accelerating => {
+                *self = IntakeState::Not
+            }
+            _ => {}
+        }
+    }
+
+    fn stall(&mut self) { // TODO: velocity
+        match self {
+            IntakeState::Accelerating => {
+                *self = IntakeState::Stalled
+            }
+            _ => {}
+        }
+    }
 }
 
 impl Ferris {
@@ -17,7 +63,7 @@ impl Ferris {
         let intake = Intake::new();
         let shooter = Shooter::new();
         let climber = Climber::new();
-        Self { drivetrain, intake, shooter, climber } 
+        Self { drivetrain, intake, shooter, climber, intake_state: IntakeState::Not } 
     }
 }
 
@@ -49,9 +95,21 @@ pub fn container(left_drive: &mut Joystick, right_drive: &mut Joystick, operator
     }
 
     if operator.get(8) {
+        robot.intake_state.start();
+    } else {
+        robot.intake_state.reset();
+    }
+
+    if intake.stalled() {
+        robot.intake_state.stall();
+    }
+
+    if robot.intake_state.running() {
         intake.set_rollers(0.4);
     } else if operator.get(7) {
         intake.set_rollers(-0.4);
+    } else if operator.get(9) {
+        intake.set_rollers(0.4);
     } else {
         intake.stop_rollers();
     }
