@@ -16,7 +16,7 @@ use j4rs::Jvm;
 use j4rs::prelude::*;
 use frcrs::init_hal;
 use frcrs::hal_report;
-use frcrs::input::Joystick;
+use frcrs::input::{Joystick, RobotState};
 use crate::container::{container, stop_all};
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 
@@ -43,19 +43,15 @@ fn entrypoint() {
     loop {
         refresh_data();
 
-        // Todo: use `get_keyword`
-        match is_teleop() {
-            true => {
-                container(
-                    &mut left_drive,
-                    &mut right_drive,
-                    &mut operator,
-                    &mut robot,
-                );
-            }
-            false => {
-                stop_all(&robot);
-            }
+        let state = RobotState::get();
+
+        if state.enabled() && state.teleop() {
+            container(
+                &mut left_drive,
+                &mut right_drive,
+                &mut operator,
+                &mut robot,
+            );
         };
 
         let elapsed = last_loop.elapsed().as_secs_f64();
