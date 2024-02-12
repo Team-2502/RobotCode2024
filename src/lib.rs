@@ -18,6 +18,7 @@ use j4rs::prelude::*;
 use frcrs::init_hal;
 use frcrs::hal_report;
 use frcrs::input::{Joystick, RobotState};
+use smol::{LocalExecutor, future, Timer};
 use crate::container::{container, stop_all};
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 
@@ -40,8 +41,10 @@ fn entrypoint() {
 
     let mut robot = Ferris::new();
 
+    let executor = LocalExecutor::new();
+
     let mut last_loop = Instant::now();
-    loop {
+    let controller = async { loop {
         refresh_data();
 
         let state = RobotState::get();
@@ -52,13 +55,16 @@ fn entrypoint() {
                 &mut right_drive,
                 &mut operator,
                 &mut robot,
+                &executor,
             );
         };
 
         let elapsed = last_loop.elapsed().as_secs_f64();
         let left = (1./50. - elapsed).max(0.);
-        thread::sleep(Duration::from_secs_f64(left));
+        Timer::after(Duration::from_secs_f64(left)).await;
         SmartDashboard::put_number("loop rate (hz)".to_owned(), 1./last_loop.elapsed().as_secs_f64());
         last_loop = Instant::now();
-    }
+    }};
+
+    future::block_on(executor.run(controller));
 }

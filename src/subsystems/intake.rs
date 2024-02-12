@@ -1,4 +1,7 @@
+use std::time::Duration;
+
 use frcrs::rev::{MotorType, Spark, SparkMax};
+use smol::Timer;
 use crate::constants::*;
 
 pub struct Intake {
@@ -64,4 +67,19 @@ impl Intake {
         self.left_roller.get_current() < intake::INTAKE_OCCUPIED_CURRENT &&
             self.left_roller.get_velocity() > intake::INTAKE_FREE_VELOCITY
     }
+
+    pub async fn grab(&mut self) {
+        self.set_rollers(0.4);
+        wait(|| self.running()).await;
+        wait(|| self.stalled()).await;
+        self.stop_rollers();
+    }
+}
+
+async fn wait<F>(mut condition: F) 
+    where F: FnMut() -> bool {
+        loop {
+            if condition() { return };
+            Timer::after(Duration::from_millis(20)).await;
+        }
 }

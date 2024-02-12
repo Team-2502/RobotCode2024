@@ -1,5 +1,6 @@
 use frcrs::input::Joystick;
 use frcrs::networktables::SmartDashboard;
+use smol::{Task, LocalExecutor};
 use uom::si::angle::degree;
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 use frcrs::deadzone;
@@ -10,6 +11,7 @@ pub struct Ferris {
     shooter: Shooter, 
     climber: Climber,
     intake_state: IntakeState,
+    grab: Option<Task<()>>,
 }
 
 enum IntakeState { // TODO: use async/await instead of a state machine
@@ -72,11 +74,11 @@ impl Ferris {
         let intake = Intake::new();
         let shooter = Shooter::new();
         let climber = Climber::new();
-        Self { drivetrain, intake, shooter, climber, intake_state: IntakeState::Not } 
+        Self { drivetrain, intake, shooter, climber, intake_state: IntakeState::Not, grab: None} 
     }
 }
 
-pub fn container(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &mut Ferris) {
+pub fn container(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &mut Ferris, executor: &LocalExecutor) {
     let drivetrain = &mut robot.drivetrain;
     let intake = &mut robot.intake;
     let shooter = &robot.shooter;
@@ -101,6 +103,14 @@ pub fn container(left_drive: &mut Joystick, right_drive: &mut Joystick, operator
 
     if left_drive.get(1) {
         drivetrain.reset_angle();
+    }
+
+    if operator.get(10) && robot.grab.is_none() {
+        robot.grab = Some(executor.spawn(robot.intake.grab()));
+    } else if !operator.get(10) {
+        if let Some(grab) = robot.grab.take() {
+            drop(grab);
+        }
     }
 
     if operator.get(8) {
