@@ -1,4 +1,4 @@
-use std::{cell::RefCell, borrow::BorrowMut, rc::Rc, ops::Deref};
+use std::{cell::RefCell, borrow::BorrowMut, rc::Rc, ops::{Deref, DerefMut}};
 
 use frcrs::input::Joystick;
 use frcrs::networktables::SmartDashboard;
@@ -8,12 +8,12 @@ use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 use frcrs::deadzone;
 
 pub struct Ferris {
-    drivetrain: RefCell<Drivetrain>, 
+    drivetrain: Rc<RefCell<Drivetrain>>, 
     intake: Rc<RefCell<Intake>>,
-    shooter: RefCell<Shooter>, 
-    climber: RefCell<Climber>,
-    intake_state: RefCell<IntakeState>,
-    grab: RefCell<Option<Task<()>>>,
+    shooter: Rc<RefCell<Shooter>>, 
+    climber: Rc<RefCell<Climber>>,
+    intake_state: Rc<RefCell<IntakeState>>,
+    grab: Rc<RefCell<Option<Task<()>>>>,
 }
 
 enum IntakeState { // TODO: use async/await instead of a state machine
@@ -72,19 +72,19 @@ impl IntakeState {
 
 impl Ferris {
     pub fn new() -> Self { 
-        let drivetrain = RefCell::new(Drivetrain::new());
+        let drivetrain = Rc::new(RefCell::new(Drivetrain::new()));
         let intake = Rc::new(RefCell::new(Intake::new()));
-        let shooter = RefCell::new(Shooter::new());
-        let climber = RefCell::new(Climber::new());
-        Self { drivetrain, intake, shooter, climber, intake_state: RefCell::new(IntakeState::Not), grab: RefCell::new(None)} 
+        let shooter = Rc::new(RefCell::new(Shooter::new()));
+        let climber = Rc::new(RefCell::new(Climber::new()));
+        Self { drivetrain, intake, shooter, climber, intake_state: Rc::new(RefCell::new(IntakeState::Not)), grab: Rc::new(RefCell::new(None))} 
     }
 }
 
-pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &'a mut Ferris, executor: &'a LocalExecutor) {
-    let drivetrain = &mut robot.drivetrain.get_mut();
-    let shooter = &robot.shooter.get_mut();
-    let climber = &robot.climber.get_mut();
-    let intake_state = &mut robot.intake_state.get_mut();
+pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &'a Ferris, executor: &'a LocalExecutor) {
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let shooter = robot.shooter.deref().borrow();
+    let climber = robot.climber.deref().borrow();
+    let mut intake_state = robot.intake_state.deref().borrow_mut();
 
 
     let joystick_range = 0.04..1.;
@@ -109,7 +109,7 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
         drivetrain.reset_angle();
     }
 
-    if operator.get(10) && robot.grab.get_mut().is_none() {
+    if operator.get(10) && robot.grab.deref().borrow_mut().is_none() {
         let intake = robot.intake.clone();
         robot.grab.replace(Some(executor.spawn(async move {
             intake.deref().borrow_mut().grab().await;
