@@ -1,3 +1,5 @@
+use std::{cell::RefCell, borrow::BorrowMut, rc::Rc, ops::Deref};
+
 use frcrs::input::Joystick;
 use frcrs::networktables::SmartDashboard;
 use smol::{Task, LocalExecutor};
@@ -6,12 +8,12 @@ use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 use frcrs::deadzone;
 
 pub struct Ferris {
-    drivetrain: Drivetrain, 
-    intake: Intake,
-    shooter: Shooter, 
-    climber: Climber,
-    intake_state: IntakeState,
-    grab: Option<Task<()>>,
+    drivetrain: RefCell<Drivetrain>, 
+    intake: Rc<RefCell<Intake>>,
+    shooter: RefCell<Shooter>, 
+    climber: RefCell<Climber>,
+    intake_state: RefCell<IntakeState>,
+    grab: RefCell<Option<Task<()>>>,
 }
 
 enum IntakeState { // TODO: use async/await instead of a state machine
@@ -70,19 +72,21 @@ impl IntakeState {
 
 impl Ferris {
     pub fn new() -> Self { 
-        let drivetrain = Drivetrain::new();
-        let intake = Intake::new();
-        let shooter = Shooter::new();
-        let climber = Climber::new();
-        Self { drivetrain, intake, shooter, climber, intake_state: IntakeState::Not, grab: None} 
+        let drivetrain = RefCell::new(Drivetrain::new());
+        let intake = Rc::new(RefCell::new(Intake::new()));
+        let shooter = RefCell::new(Shooter::new());
+        let climber = RefCell::new(Climber::new());
+        Self { drivetrain, intake, shooter, climber, intake_state: RefCell::new(IntakeState::Not), grab: RefCell::new(None)} 
     }
 }
 
-pub fn container(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &mut Ferris, executor: &LocalExecutor) {
-    let drivetrain = &mut robot.drivetrain;
-    let intake = &mut robot.intake;
-    let shooter = &robot.shooter;
-    let climber = &robot.climber;
+pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &'a mut Ferris, executor: &'a LocalExecutor) {
+    let drivetrain = &mut robot.drivetrain.get_mut();
+    let shooter = &robot.shooter.get_mut();
+    let climber = &robot.climber.get_mut();
+    let intake_state = &mut robot.intake_state.get_mut();
+
+
     let joystick_range = 0.04..1.;
     let power_translate = if right_drive.get(3) { 0.0..0.3 }
     else { 0.0..1. };
@@ -105,8 +109,11 @@ pub fn container(left_drive: &mut Joystick, right_drive: &mut Joystick, operator
         drivetrain.reset_angle();
     }
 
-    if operator.get(10) && robot.grab.is_none() {
-        robot.grab = Some(executor.spawn(robot.intake.grab()));
+    if operator.get(10) && robot.grab.get_mut().is_none() {
+        let intake = robot.intake.clone();
+        robot.grab.replace(Some(executor.spawn(async move {
+            intake.deref().borrow_mut().grab().await;
+        })));
     } else if !operator.get(10) {
         if let Some(grab) = robot.grab.take() {
             drop(grab);
@@ -114,34 +121,37 @@ pub fn container(left_drive: &mut Joystick, right_drive: &mut Joystick, operator
     }
 
     if operator.get(8) {
-        robot.intake_state.start();
+        intake_state.start();
     } else {
-        robot.intake_state.reset();
+        intake_state.reset();
     }
 
-    if intake.running() {
-        robot.intake_state.spinning();
-    }
-    if intake.stalled() {
-        robot.intake_state.stall();
-    }
+    
+    if let Ok(mut intake) = robot.intake.try_borrow_mut() {
+        if intake.running() {
+            intake_state.spinning();
+        }
+        if intake.stalled() {
+           intake_state.stall();
+        }
 
-    if robot.intake_state.running() {
-        intake.set_rollers(0.4);
-    } else if operator.get(7) {
-        intake.set_rollers(-0.4);
-    } else if operator.get(9) {
-        intake.set_rollers(0.4);
-    } else {
-        intake.stop_rollers();
-    }
+        if intake_state.running() {
+            intake.set_rollers(0.4);
+        } else if operator.get(7) {
+            intake.set_rollers(-0.4);
+        } else if operator.get(9) {
+            intake.set_rollers(0.4);
+        } else {
+            intake.stop_rollers();
+        }
 
-    if operator.get(3) {
-        intake.set_actuate(0.6);
-    } else if operator.get(4) {
-        intake.set_actuate(-0.6);
-    } else {
-        intake.stop_actuate();
+        if operator.get(3) {
+            intake.set_actuate(0.6);
+        } else if operator.get(4) {
+            intake.set_actuate(-0.6);
+        } else {
+            intake.stop_actuate();
+        }
     }
 
     if operator.get(2) { shooting = !shooting; }
@@ -179,8 +189,8 @@ pub fn container(left_drive: &mut Joystick, right_drive: &mut Joystick, operator
 }
 
 pub fn stop_all(robot: &Ferris) {
-    robot.drivetrain.stop();
-    robot.intake.stop();
-    robot.shooter.stop();
-    robot.climber.stop();
+    robot.drivetrain.borrow().stop();
+    robot.intake.borrow().stop();
+    robot.shooter.borrow().stop();
+    robot.climber.borrow().stop();
 }
