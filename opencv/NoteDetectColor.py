@@ -61,7 +61,7 @@ def NoteDetetction():
          mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
          lower_range = (5.1,100,50)
-         upper_range = (30,255,255)
+         upper_range = (17,255,255)
          mask1 = cv2.inRange(hsv_img, lower_range, upper_range)
 
          mask = mask + mask1
