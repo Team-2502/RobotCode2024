@@ -32,7 +32,7 @@ while camera.isOpened():
 
     for pic, contour in enumerate (contours):
         area = cv2.contourArea(contour)
-        if (area > 28):
+        if (area > 500):
             x,y,w,h = cv2.boundingRect(contour)
             frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
 
