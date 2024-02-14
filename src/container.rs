@@ -2,7 +2,7 @@ use std::{cell::RefCell, borrow::BorrowMut, rc::Rc, ops::{Deref, DerefMut}};
 
 use frcrs::input::Joystick;
 use frcrs::networktables::SmartDashboard;
-use smol::{Task, LocalExecutor};
+use tokio::task::{LocalSet, JoinHandle};
 use uom::si::angle::degree;
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 use frcrs::deadzone;
@@ -13,7 +13,7 @@ pub struct Ferris {
     shooter: Rc<RefCell<Shooter>>, 
     climber: Rc<RefCell<Climber>>,
     intake_state: Rc<RefCell<IntakeState>>,
-    grab: Rc<RefCell<Option<Task<()>>>>,
+    grab: Rc<RefCell<Option<JoinHandle<()>>>>,
 }
 
 enum IntakeState { // TODO: use async/await instead of a state machine
@@ -80,7 +80,7 @@ impl Ferris {
     }
 }
 
-pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &'a Ferris, executor: &'a LocalExecutor) {
+pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &'a Ferris, executor: &'a LocalSet) {
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
     let shooter = robot.shooter.deref().borrow();
     let climber = robot.climber.deref().borrow();
@@ -111,7 +111,7 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
 
     if operator.get(10) && robot.grab.deref().borrow_mut().is_none() {
         let intake = robot.intake.clone();
-        robot.grab.replace(Some(executor.spawn(async move {
+        robot.grab.replace(Some(executor.spawn_local(async move {
             intake.deref().borrow_mut().grab().await;
         })));
     } else if !operator.get(10) {

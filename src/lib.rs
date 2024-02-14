@@ -18,9 +18,9 @@ use j4rs::prelude::*;
 use frcrs::init_hal;
 use frcrs::hal_report;
 use frcrs::input::{Joystick, RobotState};
-use smol::{LocalExecutor, future, Timer};
 use crate::container::{container, stop_all};
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
+use tokio::task;
 
 #[call_from_java("frc.robot.Main.rustentry")]
 fn entrypoint() {
@@ -41,10 +41,11 @@ fn entrypoint() {
 
     let mut robot = Ferris::new();
 
-    let executor = LocalExecutor::new();
+    let mut executor = tokio::runtime::Runtime::new().unwrap();
+    let local = task::LocalSet::new();
 
     let mut last_loop = Instant::now();
-    let controller = async { loop {
+    let controller = local.run_until(async { loop {
         refresh_data();
 
         let state = RobotState::get();
@@ -55,16 +56,16 @@ fn entrypoint() {
                 &mut right_drive,
                 &mut operator,
                 &mut robot,
-                &executor,
+                &local,
             );
         };
 
         let elapsed = last_loop.elapsed().as_secs_f64();
         let left = (1./50. - elapsed).max(0.);
-        Timer::after(Duration::from_secs_f64(left)).await;
+        
+        //Timer::after(Duration::from_secs_f64(left)).await;
         SmartDashboard::put_number("loop rate (hz)".to_owned(), 1./last_loop.elapsed().as_secs_f64());
         last_loop = Instant::now();
-    }};
-
-    future::block_on(executor.run(controller));
+    }});
+    executor.block_on(controller);
 }
