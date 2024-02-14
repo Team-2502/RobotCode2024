@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use frcrs::rev::{MotorType, Spark, SparkMax};
+use tokio::time::sleep;
 use crate::constants::*;
 
 pub struct Intake {
@@ -79,6 +80,6 @@ async fn wait<F>(mut condition: F)
     where F: FnMut() -> bool {
         loop {
             if condition() { return };
-            //Timer::after(Duration::from_millis(20)).await;
+            sleep(Duration::from_millis(20)).await;
         }
 }

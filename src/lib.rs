@@ -18,6 +18,7 @@ use j4rs::prelude::*;
 use frcrs::init_hal;
 use frcrs::hal_report;
 use frcrs::input::{Joystick, RobotState};
+use tokio::time::sleep;
 use crate::container::{container, stop_all};
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 use tokio::task;
@@ -63,7 +64,7 @@ fn entrypoint() {
         let elapsed = last_loop.elapsed().as_secs_f64();
         let left = (1./50. - elapsed).max(0.);
         
-        //Timer::after(Duration::from_secs_f64(left)).await;
+        sleep(Duration::from_secs_f64(left)).await;
         SmartDashboard::put_number("loop rate (hz)".to_owned(), 1./last_loop.elapsed().as_secs_f64());
         last_loop = Instant::now();
     }});
