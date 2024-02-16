@@ -1,10 +1,10 @@
 use std::{cell::RefCell, borrow::BorrowMut, rc::Rc, ops::{Deref, DerefMut}};
 
-use frcrs::input::Joystick;
+use frcrs::{input::Joystick, };
 use frcrs::networktables::SmartDashboard;
 use tokio::task::{LocalSet, JoinHandle};
 use uom::si::angle::degree;
-use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
+use crate::{subsystems::{Climber, Drivetrain, Intake, Shooter}, constants::{BEAM_BREAK_SIGNAL, INTAKE_LIMIT}};
 use frcrs::deadzone;
 
 #[derive(Clone)]
@@ -65,6 +65,7 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
     }
     
     if let Ok(intake) = robot.intake.try_borrow_mut() {
+        SmartDashboard::put_bool("intake at limit {}".to_owned(), intake.at_limit());
         if operator.get(9) {
             intake.set_rollers(0.4);
         } else if operator.get(7) {
@@ -114,6 +115,9 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
     } else {
         climber.stop()
     }
+
+    SmartDashboard::put_bool("beam break: {}".to_owned(), shooter.contains_note());
+    //println!("doo dad: {}", get_dio(INTAKE_LIMIT));
 }
 
 pub fn stop_all(robot: &Ferris) {

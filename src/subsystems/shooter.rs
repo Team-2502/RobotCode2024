@@ -1,6 +1,9 @@
+use frcrs::dio::DIO;
 use frcrs::rev::MotorType::Brushless;
 use frcrs::rev::{Spark, SparkFlex, SparkMax};
 use crate::constants::*;
+
+use super::wait;
 
 pub struct Shooter {
     feeder_top: Spark,
@@ -8,6 +11,8 @@ pub struct Shooter {
 
     shooter_top: SparkFlex,
     shooter_bottom: SparkFlex,
+
+    staged: DIO,
 }
 
 impl Shooter {
@@ -17,7 +22,9 @@ impl Shooter {
             feeder_bottom: Spark::new(SHOOTER_FEEDER_BOTTOM, Brushless),
 
             shooter_top: SparkFlex::new(SHOOTER_TOP, Brushless),
-            shooter_bottom: SparkFlex::new(SHOOTER_BOTTOM, Brushless)
+            shooter_bottom: SparkFlex::new(SHOOTER_BOTTOM, Brushless),
+
+            staged: DIO::new(BEAM_BREAK_SIGNAL),
         }
     }
 
@@ -47,5 +54,15 @@ impl Shooter {
     pub fn set_shooter(&self, value: f64) {
         self.shooter_top.set(value);
         self.shooter_bottom.set(-value);
+    }
+
+    pub fn contains_note(&self) -> bool {
+        self.staged.get()
+    }
+
+    pub async fn load(&self) {
+        self.set_feeder(0.4);
+        wait(|| self.contains_note()).await;
+        self.stop_feeder();
     }
 }

@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use frcrs::rev::{MotorType, Spark, SparkMax};
+use frcrs::{rev::{MotorType, Spark, SparkMax}, dio::DIO};
 use tokio::time::sleep;
 use crate::constants::*;
 
@@ -10,6 +10,8 @@ pub struct Intake {
 
     left_actuate: Spark,
     right_actuate: Spark,
+
+    limit: DIO,
 }
 
 impl Intake {
@@ -20,12 +22,16 @@ impl Intake {
         let left_actuate = Spark::new(INTAKE_ACTUATE_LEFT, MotorType::Brushless);
         let right_actuate = Spark::new(INTAKE_ACTUATE_RIGHT, MotorType::Brushless);
 
+        let limit = DIO::new(INTAKE_LIMIT);
+
         Self {
             left_roller,
             right_roller,
 
             left_actuate,
-            right_actuate
+            right_actuate,
+
+            limit,
         }
     }
 
@@ -66,6 +72,10 @@ impl Intake {
     pub fn running(&mut self) -> bool {
         self.left_roller.get_current() < intake::INTAKE_OCCUPIED_CURRENT &&
             self.left_roller.get_velocity() > intake::INTAKE_FREE_VELOCITY
+    }
+
+    pub fn at_limit(&self) -> bool {
+        self.limit.get()
     }
 
     pub async fn grab(&mut self) {

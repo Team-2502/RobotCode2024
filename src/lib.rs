@@ -18,7 +18,8 @@ use j4rs::prelude::*;
 use frcrs::init_hal;
 use frcrs::hal_report;
 use frcrs::input::{Joystick, RobotState};
-use tokio::time::sleep;
+use tokio::join;
+use tokio::time::{sleep, timeout};
 use crate::container::{container, stop_all};
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 use tokio::task::{self, JoinHandle};
@@ -85,7 +86,23 @@ fn entrypoint() {
 
 async fn simple_auto(robot: Ferris) {
     let mut intake = robot.intake.deref().borrow_mut();
-    println!("zoom zoom wow!");
-    intake.grab().await;
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let shooter = robot.shooter.deref().borrow();
+    shooter.set_shooter(0.4);
+    drivetrain.set_speeds(0.3, 0.0, 0.0);
 
+    join!(
+        async {if let Err(_) = timeout(Duration::from_secs_f64(1.4), shooter.load()).await {
+            shooter.stop_feeder();
+        }},
+        sleep(Duration::from_secs_f64(2.0))
+    );
+
+    drivetrain.set_speeds(0.0, 0.0, 0.0);
+    sleep(Duration::from_secs_f64(0.3)).await;
+    shooter.set_feeder(-0.4);
+    sleep(Duration::from_secs_f64(2.0)).await;
+    shooter.set_feeder(-0.0);
+    shooter.set_shooter(0.0);
+    //intake.grab().await;
 }

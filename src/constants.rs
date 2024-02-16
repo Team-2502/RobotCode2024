@@ -28,6 +28,10 @@ pub const SHOOTER_BOTTOM: i32 = 8;
 pub const CLIMBER_LEFT: i32 = 9;
 pub const CLIMBER_RIGHT: i32 = 10;
 
+pub const INTAKE_LIMIT: i32 = 0;
+pub const BEAM_BREAK_EMITTER: i32 = 2;
+pub const BEAM_BREAK_SIGNAL: i32 = 1;
+
 pub mod intake {
     pub const INTAKE_OCCUPIED_CURRENT: f64 = 30.;
     pub const INTAKE_OCCUPIED_VELOCITY: f64 = 1500.;
