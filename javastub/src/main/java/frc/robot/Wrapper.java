@@ -60,6 +60,10 @@ public class Wrapper {
       return ControlMode.PercentOutput;
     }
 
+    public static double ctre6GetVelocity(com.ctre.phoenix6.hardware.TalonFX motor) {
+      return motor.getVelocity().getValue();
+    }
+
     /*public static void setSpeed(TalonFX motor, double speed) {
       motor.set(ControlMode.PercentOutput, speed);
     }*/
