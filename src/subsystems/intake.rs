@@ -76,7 +76,7 @@ impl Intake {
     }
 }
 
-async fn wait<F>(mut condition: F) 
+pub async fn wait<F>(mut condition: F) 
     where F: FnMut() -> bool {
         loop {
             if condition() { return };

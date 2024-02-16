@@ -21,7 +21,7 @@ use frcrs::input::{Joystick, RobotState};
 use tokio::time::sleep;
 use crate::container::{container, stop_all};
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
-use tokio::task;
+use tokio::task::{self, JoinHandle};
 
 #[call_from_java("frc.robot.Main.rustentry")]
 fn entrypoint() {
@@ -45,6 +45,8 @@ fn entrypoint() {
     let mut executor = tokio::runtime::Runtime::new().unwrap();
     let local = task::LocalSet::new();
 
+    let mut auto = None;
+
     let mut last_loop = Instant::now();
     let controller = local.run_until(async { loop {
         refresh_data();
@@ -61,6 +63,15 @@ fn entrypoint() {
             );
         };
 
+        if state.enabled() && state.auto() {
+            if let None = auto {
+                auto = Some(local.spawn_local(simple_auto(robot.clone())).abort_handle());
+            }
+        } else if let Some(auto) = auto.take() {
+            auto.abort();
+            
+        };
+
         let elapsed = last_loop.elapsed().as_secs_f64();
         let left = (1./50. - elapsed).max(0.);
         
@@ -69,4 +80,8 @@ fn entrypoint() {
         last_loop = Instant::now();
     }});
     executor.block_on(controller);
+}
+
+async fn simple_auto(robot: Ferris) {
+    println!("zoom zoom wow!");
 }

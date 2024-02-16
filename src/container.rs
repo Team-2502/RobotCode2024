@@ -7,6 +7,7 @@ use uom::si::angle::degree;
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 use frcrs::deadzone;
 
+#[derive(Clone)]
 pub struct Ferris {
     drivetrain: Rc<RefCell<Drivetrain>>, 
     intake: Rc<RefCell<Intake>>,
@@ -55,7 +56,6 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
     if operator.get(8) && robot.grab.deref().try_borrow().is_ok_and(|n| n.is_none()) {
         let intake = robot.intake.clone();
         robot.grab.replace(Some(executor.spawn_local(async move {
-            println!("started");
             intake.deref().borrow_mut().grab().await;
         })));
     } else if !operator.get(8) {
