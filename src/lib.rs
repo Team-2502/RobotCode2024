@@ -88,6 +88,7 @@ async fn simple_auto(robot: Ferris) {
     let mut intake = robot.intake.deref().borrow_mut();
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
     let shooter = robot.shooter.deref().borrow();
+
     shooter.set_shooter(0.4);
     drivetrain.set_speeds(0.3, 0.0, 0.0);
 
@@ -95,13 +96,15 @@ async fn simple_auto(robot: Ferris) {
         async {if let Err(_) = timeout(Duration::from_secs_f64(1.4), shooter.load()).await {
             shooter.stop_feeder();
         }},
-        sleep(Duration::from_secs_f64(2.0))
+        async {
+            sleep(Duration::from_secs_f64(1.5)).await;
+            drivetrain.set_speeds(0.0, 0.0, 0.0);
+        },
+        sleep(Duration::from_secs_f64(2.0)),
     );
 
-    drivetrain.set_speeds(0.0, 0.0, 0.0);
-    sleep(Duration::from_secs_f64(0.3)).await;
     shooter.set_feeder(-0.4);
-    sleep(Duration::from_secs_f64(2.0)).await;
+    sleep(Duration::from_secs_f64(0.3)).await;
     shooter.set_feeder(-0.0);
     shooter.set_shooter(0.0);
     //intake.grab().await;

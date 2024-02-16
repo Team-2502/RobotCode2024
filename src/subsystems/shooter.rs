@@ -57,11 +57,11 @@ impl Shooter {
     }
 
     pub fn contains_note(&self) -> bool {
-        self.staged.get()
+        !self.staged.get()
     }
 
     pub async fn load(&self) {
-        self.set_feeder(0.4);
+        self.set_feeder(-0.2);
         wait(|| self.contains_note()).await;
         self.stop_feeder();
     }

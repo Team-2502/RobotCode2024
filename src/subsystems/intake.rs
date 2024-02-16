@@ -75,7 +75,7 @@ impl Intake {
     }
 
     pub fn at_limit(&self) -> bool {
-        self.limit.get()
+        !self.limit.get()
     }
 
     pub async fn grab(&mut self) {
