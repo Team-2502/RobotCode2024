@@ -110,7 +110,12 @@ impl Drivetrain {
     }
 
     pub fn get_offset(&self) -> Angle {
-        self.get_angle() - self.offset
+        let mut difference = (self.get_angle() - self.offset).get::<degree>();
+
+        difference = ( difference + 180. ) % 360. - 180.;
+        if difference < -180. { difference += 360. };
+
+        Angle::new::<degree>(difference)
     }
 
     pub fn reset_angle(&self) {
