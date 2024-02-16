@@ -109,6 +109,10 @@ impl Drivetrain {
         Angle::new::<degree>(self.navx.get_angle())
     }
 
+    pub fn get_offset(&self) -> Angle {
+        self.get_angle() - self.offset
+    }
+
     pub fn reset_angle(&self) {
         self.navx.reset_angle()
     }

@@ -38,3 +38,7 @@ pub mod intake {
     /// velocity that intake acceleration is "over" at
     pub const INTAKE_FREE_VELOCITY: f64 = 2000.; 
 }
+
+pub mod drivetrain {
+    pub const SWERVE_TURN_KP: f64 = 0.1;
+}
