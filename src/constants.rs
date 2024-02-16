@@ -41,5 +41,5 @@ pub mod intake {
 }
 
 pub mod drivetrain {
-    pub const SWERVE_TURN_KP: f64 = 0.1;
+    pub const SWERVE_TURN_KP: f64 = 0.3;
 }

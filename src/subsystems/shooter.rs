@@ -73,4 +73,8 @@ impl Shooter {
         wait(|| self.contains_note()).await;
         self.stop_feeder();
     }
+
+    pub fn get_velocity(&mut self) -> f64 {
+        self.shooter_top.get_velocity().abs().min(self.shooter_bottom.get_velocity().abs())
+    }
 }

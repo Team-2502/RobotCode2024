@@ -82,9 +82,9 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
         }
 
         if operator.get(3) {
-            intake.set_actuate(0.6);
+            intake.set_actuate(0.3);
         } else if operator.get(4) {
-            intake.set_actuate(-0.6);
+            intake.set_actuate(-0.3);
         } else {
             intake.stop_actuate();
         }

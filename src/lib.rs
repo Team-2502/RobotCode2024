@@ -21,7 +21,7 @@ use frcrs::input::{Joystick, RobotState};
 use tokio::join;
 use tokio::time::{sleep, timeout};
 use crate::container::{container, stop_all};
-use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
+use crate::subsystems::{wait, Climber, Drivetrain, Intake, Shooter};
 use tokio::task::{self, JoinHandle};
 use std::ops::Deref;
 
@@ -87,21 +87,23 @@ fn entrypoint() {
 async fn simple_auto(robot: Ferris) {
     let mut intake = robot.intake.deref().borrow_mut();
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
-    let shooter = robot.shooter.deref().borrow();
+    let mut shooter = robot.shooter.deref().borrow_mut();
 
-    shooter.set_shooter(0.4);
+    shooter.set_shooter(1.0);
     drivetrain.set_speeds(-0.3, 0.0, 0.0);
     intake.set_rollers(-0.1);
 
     join!(
-        async {if let Err(_) = timeout(Duration::from_secs_f64(1.4), shooter.load()).await {
-            shooter.stop_feeder();
-        }},
         async {
-            sleep(Duration::from_secs_f64(1.5)).await;
+            if let Err(_) = timeout(Duration::from_secs_f64(1.4), shooter.load()).await {
+                shooter.stop_feeder();
+            };
+            wait(|| shooter.get_velocity() > 5000.).await;
+        },
+        async {
+            sleep(Duration::from_secs_f64(0.3)).await;
             drivetrain.set_speeds(0.0, 0.0, 0.0);
         },
-        sleep(Duration::from_secs_f64(2.0)),
     );
     intake.set_rollers(0.0);
 
@@ -109,5 +111,7 @@ async fn simple_auto(robot: Ferris) {
     sleep(Duration::from_secs_f64(0.3)).await;
     shooter.set_feeder(-0.0);
     shooter.set_shooter(0.0);
-    //intake.grab().await;
+    drivetrain.set_speeds(-0.3, 0.0, 0.0);
+    sleep(Duration::from_secs_f64(1.4)).await;
+    drivetrain.set_speeds(0.0, 0.0, 0.0);
 }
