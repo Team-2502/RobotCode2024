@@ -3,8 +3,8 @@ use std::{cell::RefCell, borrow::BorrowMut, rc::Rc, ops::{Deref, DerefMut}};
 use frcrs::{input::Joystick, };
 use frcrs::networktables::SmartDashboard;
 use tokio::task::{LocalSet, JoinHandle};
-use uom::si::angle::degree;
-use crate::{subsystems::{Climber, Drivetrain, Intake, Shooter}, constants::{BEAM_BREAK_SIGNAL, INTAKE_LIMIT}};
+use uom::si::angle::{degree, radian};
+use crate::{subsystems::{Climber, Drivetrain, Intake, Shooter}, constants::{BEAM_BREAK_SIGNAL, INTAKE_LIMIT, drivetrain::SWERVE_TURN_KP}};
 use frcrs::deadzone;
 
 #[derive(Clone)]
@@ -39,7 +39,14 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
     let deadly = deadzone(left_drive.get_y(), &joystick_range, &power_translate);
     let deadlx = deadzone(left_drive.get_x(), &joystick_range, &power_translate);
     let deadrz = deadzone(right_drive.get_z(), &joystick_range, &power_rotate);
-    drivetrain.set_speeds(deadly, deadlx, deadrz);
+
+    let rot = if left_drive.get(4) {
+        -drivetrain.get_offset().get::<radian>() * SWERVE_TURN_KP
+    } else {
+        deadrz
+    };
+
+    drivetrain.set_speeds(deadly, deadlx, rot);
 
     SmartDashboard::put_number("Angle".to_owned(), drivetrain.get_angle().get::<degree>());
 
@@ -89,6 +96,14 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
         shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
     } else {
         shooter.stop_shooter();
+    }
+
+    if operator.get(11) {
+        shooter.set_amp_bar(-0.2);
+    } else if operator.get(16) {
+        shooter.set_amp_bar(0.2);
+    } else {
+        shooter.set_amp_bar(0.);
     }
 
     if operator.get(1) {

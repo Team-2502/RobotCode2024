@@ -24,6 +24,7 @@ pub const SHOOTER_FEEDER_BOTTOM: i32 = 6;
 pub const SHOOTER_TOP: i32 = 7;
 pub const SHOOTER_BOTTOM: i32 = 8;
 
+pub const AMP_BAR: i32 = 11;
 
 pub const CLIMBER_LEFT: i32 = 9;
 pub const CLIMBER_RIGHT: i32 = 10;
@@ -37,4 +38,8 @@ pub mod intake {
     pub const INTAKE_OCCUPIED_VELOCITY: f64 = 1500.;
     /// velocity that intake acceleration is "over" at
     pub const INTAKE_FREE_VELOCITY: f64 = 2000.; 
+}
+
+pub mod drivetrain {
+    pub const SWERVE_TURN_KP: f64 = 0.1;
 }

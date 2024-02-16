@@ -12,6 +12,8 @@ pub struct Shooter {
     shooter_top: SparkFlex,
     shooter_bottom: SparkFlex,
 
+    amp_bar: Spark,
+
     staged: DIO,
 }
 
@@ -23,6 +25,8 @@ impl Shooter {
 
             shooter_top: SparkFlex::new(SHOOTER_TOP, Brushless),
             shooter_bottom: SparkFlex::new(SHOOTER_BOTTOM, Brushless),
+
+            amp_bar: Spark::new(AMP_BAR, Brushless),
 
             staged: DIO::new(BEAM_BREAK_SIGNAL),
         }
@@ -49,6 +53,10 @@ impl Shooter {
     pub fn set_feeder(&self, value: f64) {
         self.feeder_top.set(value);
         self.feeder_bottom.set(-value);
+    }
+
+    pub fn set_amp_bar(&self, value: f64) {
+        self.amp_bar.set(value);
     }
 
     pub fn set_shooter(&self, value: f64) {
