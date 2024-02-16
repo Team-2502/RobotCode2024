@@ -9,10 +9,10 @@ use frcrs::deadzone;
 
 #[derive(Clone)]
 pub struct Ferris {
-    drivetrain: Rc<RefCell<Drivetrain>>, 
-    intake: Rc<RefCell<Intake>>,
-    shooter: Rc<RefCell<Shooter>>, 
-    climber: Rc<RefCell<Climber>>,
+    pub drivetrain: Rc<RefCell<Drivetrain>>, 
+    pub intake: Rc<RefCell<Intake>>,
+    pub shooter: Rc<RefCell<Shooter>>, 
+    pub climber: Rc<RefCell<Climber>>,
     grab: Rc<RefCell<Option<JoinHandle<()>>>>,
 }
 

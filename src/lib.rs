@@ -22,6 +22,7 @@ use tokio::time::sleep;
 use crate::container::{container, stop_all};
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
 use tokio::task::{self, JoinHandle};
+use std::ops::Deref;
 
 #[call_from_java("frc.robot.Main.rustentry")]
 fn entrypoint() {
@@ -83,5 +84,8 @@ fn entrypoint() {
 }
 
 async fn simple_auto(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
     println!("zoom zoom wow!");
+    intake.grab().await;
+
 }
