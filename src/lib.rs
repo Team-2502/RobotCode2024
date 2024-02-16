@@ -18,8 +18,12 @@ use j4rs::prelude::*;
 use frcrs::init_hal;
 use frcrs::hal_report;
 use frcrs::input::{Joystick, RobotState};
+use tokio::join;
+use tokio::time::{sleep, timeout};
 use crate::container::{container, stop_all};
 use crate::subsystems::{Climber, Drivetrain, Intake, Shooter};
+use tokio::task::{self, JoinHandle};
+use std::ops::Deref;
 
 #[call_from_java("frc.robot.Main.rustentry")]
 fn entrypoint() {
@@ -40,8 +44,13 @@ fn entrypoint() {
 
     let mut robot = Ferris::new();
 
+    let mut executor = tokio::runtime::Runtime::new().unwrap();
+    let local = task::LocalSet::new();
+
+    let mut auto = None;
+
     let mut last_loop = Instant::now();
-    loop {
+    let controller = local.run_until(async { loop {
         refresh_data();
 
         let state = RobotState::get();
@@ -52,13 +61,51 @@ fn entrypoint() {
                 &mut right_drive,
                 &mut operator,
                 &mut robot,
+                &local,
             );
+        };
+
+        if state.enabled() && state.auto() {
+            if let None = auto {
+                auto = Some(local.spawn_local(simple_auto(robot.clone())).abort_handle());
+            }
+        } else if let Some(auto) = auto.take() {
+            auto.abort();
+            
         };
 
         let elapsed = last_loop.elapsed().as_secs_f64();
         let left = (1./50. - elapsed).max(0.);
-        thread::sleep(Duration::from_secs_f64(left));
+        
+        sleep(Duration::from_secs_f64(left)).await;
         SmartDashboard::put_number("loop rate (hz)".to_owned(), 1./last_loop.elapsed().as_secs_f64());
         last_loop = Instant::now();
-    }
+    }});
+    executor.block_on(controller);
+}
+
+async fn simple_auto(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let shooter = robot.shooter.deref().borrow();
+
+    shooter.set_shooter(0.4);
+    drivetrain.set_speeds(0.3, 0.0, 0.0);
+
+    join!(
+        async {if let Err(_) = timeout(Duration::from_secs_f64(1.4), shooter.load()).await {
+            shooter.stop_feeder();
+        }},
+        async {
+            sleep(Duration::from_secs_f64(1.5)).await;
+            drivetrain.set_speeds(0.0, 0.0, 0.0);
+        },
+        sleep(Duration::from_secs_f64(2.0)),
+    );
+
+    shooter.set_feeder(-0.4);
+    sleep(Duration::from_secs_f64(0.3)).await;
+    shooter.set_feeder(-0.0);
+    shooter.set_shooter(0.0);
+    //intake.grab().await;
 }
