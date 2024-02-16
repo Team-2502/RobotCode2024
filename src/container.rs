@@ -98,6 +98,14 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
         shooter.stop_shooter();
     }
 
+    if operator.get(11) {
+        shooter.set_amp_bar(-0.2);
+    } else if operator.get(16) {
+        shooter.set_amp_bar(0.2);
+    } else {
+        shooter.set_amp_bar(0.);
+    }
+
     if operator.get(1) {
         shooter.set_feeder(-0.2);
     } else if operator.get(10) {
