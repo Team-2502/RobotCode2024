@@ -173,7 +173,7 @@ checksum = "25cbce373ec4653f1a01a31e8a5e5ec0c622dc27ff9c4e6606eefef5cbbed4a5"
 [[package]]
 name = "frcrs"
 version = "0.1.0"
-source = "git+https://www.github.com/Team-2502/frcrs.git?branch=comp#71f2ffbc32fa02f3ce362b677076b0a11baf0e19"
+source = "git+https://www.github.com/Team-2502/frcrs.git?branch=comp#de821beb6e9dc010d93b2278e71c45d7748673e7"
 dependencies = [
  "bitvec",
  "j4rs",
