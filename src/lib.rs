@@ -2,10 +2,12 @@ mod container;
 mod subsystems;
 mod constants;
 mod swerve;
+mod auto;
 
 use std::thread;
 use std::time::{Instant, Duration};
 
+use auto::{autos, AutoChooser};
 use container::Ferris;
 use frcrs::ctre::{Falcon};
 use frcrs::is_teleop;
@@ -18,12 +20,17 @@ use j4rs::prelude::*;
 use frcrs::init_hal;
 use frcrs::hal_report;
 use frcrs::input::{Joystick, RobotState};
+use lazy_static::lazy_static;
 use tokio::join;
 use tokio::time::{sleep, timeout};
 use crate::container::{container, stop_all};
 use crate::subsystems::{wait, Climber, Drivetrain, Intake, Shooter};
 use tokio::task::{self, JoinHandle};
 use std::ops::Deref;
+use std::rc::Rc;
+use send_wrapper::SendWrapper;
+
+static AUTOS: once_cell::sync::OnceCell<AutoChooser> = once_cell::unsync::OnceCell::new();
 
 #[call_from_java("frc.robot.Main.rustentry")]
 fn entrypoint() {
@@ -44,10 +51,12 @@ fn entrypoint() {
 
     let mut robot = Ferris::new();
 
-    let mut executor = tokio::runtime::Runtime::new().unwrap();
+    let executor = tokio::runtime::Runtime::new().unwrap();
     let local = task::LocalSet::new();
 
     let mut auto = None;
+
+    AUTOS.set(autos()).unwrap_or_else(|_| panic!("could not set"));
 
     let mut last_loop = Instant::now();
     let controller = local.run_until(async { loop {
@@ -67,7 +76,8 @@ fn entrypoint() {
 
         if state.enabled() && state.auto() {
             if let None = auto {
-                auto = Some(local.spawn_local(auto_short(robot.clone())).abort_handle());
+                let run = AUTOS.get().unwrap().run(robot.clone());
+                auto = Some(local.spawn_local(run).abort_handle());
                 //auto = Some(local.spawn_local(auto_long(robot.clone())).abort_handle());
             }
         } else if let Some(auto) = auto.take() {
@@ -87,61 +97,4 @@ fn entrypoint() {
         last_loop = Instant::now();
     }});
     executor.block_on(controller);
-}
-
-async fn auto_long(robot: Ferris) {
-    let mut intake = robot.intake.deref().borrow_mut();
-    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
-    let mut shooter = robot.shooter.deref().borrow_mut();
-
-    drivetrain.reset_heading();
-
-    shooter.set_shooter(1.0);
-    drivetrain.set_speeds(-0.3, 0.0, 0.0);
-    intake.set_rollers(-0.1);
-
-    join!(
-        async {
-            if let Err(_) = timeout(Duration::from_secs_f64(1.4), shooter.load()).await {
-                shooter.stop_feeder();
-            };
-            wait(|| shooter.get_velocity() > 5000.).await;
-        },
-        async {
-            sleep(Duration::from_secs_f64(0.3)).await;
-            drivetrain.set_speeds(0.0, 0.0, 0.0);
-        },
-    );
-    intake.set_rollers(0.0);
-
-    shooter.set_feeder(-0.4);
-    sleep(Duration::from_secs_f64(0.3)).await;
-    shooter.set_feeder(-0.0);
-    shooter.set_shooter(0.0);
-    drivetrain.set_speeds(-0.3, 0.0, 0.0);
-    sleep(Duration::from_secs_f64(1.4)).await;
-    drivetrain.set_speeds(0.0, 0.0, 0.0);
-}
-
-async fn auto_short(robot: Ferris) {
-    let mut intake = robot.intake.deref().borrow_mut();
-    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
-    let mut shooter = robot.shooter.deref().borrow_mut();
-
-    shooter.set_shooter(1.0);
-    intake.set_rollers(-0.1);
-
-    if let Err(_) = timeout(Duration::from_secs_f64(1.4), shooter.load()).await {
-        shooter.stop_feeder();
-    };
-    wait(|| shooter.get_velocity() > 5000.).await;
-    intake.set_rollers(0.0);
-
-    shooter.set_feeder(-0.4);
-    sleep(Duration::from_secs_f64(0.3)).await;
-    shooter.set_feeder(-0.0);
-    shooter.set_shooter(0.0);
-    drivetrain.set_speeds(-0.3, 0.0, 0.0);
-    sleep(Duration::from_secs_f64(0.8)).await;
-    drivetrain.set_speeds(0.0, 0.0, 0.0);
 }
