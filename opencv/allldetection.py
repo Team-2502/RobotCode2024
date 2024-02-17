@@ -42,28 +42,20 @@ def BestieDetection(frame):
                 cv2.putText(frame, "Friend!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
                 print(x, h, y, w)
 
-
     # Display the color of the image
     cv2.imshow('Highlighted', frame)
 def NoteDetetction(frame):
         print("Noted")
-        success, frame = camera.read()
+        success, frame = frame
         if not success:
             print("not success")
         else:
          hsv_img = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
          cv2.imshow('raw', frame)
 
-         # lower range of red color in HSV
-         lower_range = (3.5, 100, 50)
-         upper_range = (4.9, 255, 255)
-         mask = cv2.inRange(hsv_img, lower_range, upper_range)
-
-         lower_range = (5.1,100,50)
+         lower_range = (8,50,20)
          upper_range = (17,255,255)
-         mask1 = cv2.inRange(hsv_img, lower_range, upper_range)
-
-         mask = mask + mask1
+         mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
          mask = cv2.erode(mask, kernal)
          mask = cv2.erode(mask, kernal)
@@ -75,16 +67,13 @@ def NoteDetetction(frame):
 
          for pic, contour in enumerate (contours):
             area = cv2.contourArea(contour)
-            if (area > 500):
+            if (area > 700):
                 x,y,w,h = cv2.boundingRect(contour)
                 frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
 
                 cv2.putText(frame, "Note!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
-                print(x, h, y, w)
+                print(x, x+h, y, y+w)
 
-
-
-         mask = mask + mask1
 
          mask = cv2.erode(mask, kernal)
          mask = cv2.erode(mask, kernal)
@@ -108,12 +97,12 @@ def OppDetection(frame):
         cv2.imshow('raw', frame)
 
         # lower range of red color in HSV
-        lower_range = (5, 100, 50)
-        upper_range = (5, 245, 245)
+        lower_range = (1, 5, 5)
+        upper_range = (5, 255, 255)
         mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
-        lower_range = (160,100,50)
-        upper_range = (170,245,245)
+        lower_range = (160,5,5)
+        upper_range = (255,245,245)
         mask1 = cv2.inRange(hsv_img, lower_range, upper_range)
 
         mask = mask + mask1
@@ -128,7 +117,7 @@ def OppDetection(frame):
 
         for pic, contour in enumerate (contours):
             area = cv2.contourArea(contour)
-            if (area > 500):
+            if (area > 700):
                 x,y,w,h = cv2.boundingRect(contour)
                 frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
                 cv2.putText(frame, "Enemy!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
