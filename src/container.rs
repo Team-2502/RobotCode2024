@@ -87,8 +87,9 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
             wait(|| intake.at_limit()).await;
             intake.set_actuate(0.0);
 
-            intake.set_rollers(-0.09);
-            shooter.load().await;
+            intake.set_rollers(-0.15);
+            shooter.set_feeder(-0.3);
+            wait(|| shooter.contains_note()).await;
 
             shooter.set_feeder(0.4);
             sleep(Duration::from_secs_f64(0.06)).await; // backoff from flywheel
