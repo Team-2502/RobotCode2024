@@ -15,6 +15,8 @@ uom = { version = "0.35.0", features = ["f64"] }
 nalgebra = "0.32.3"
 futures-lite = "2.2.0"
 tokio = { version = "1.36.0", features = ["rt", "full"] }
+serde_json = "1.0.113"
+serde = "1.0.196"
 
 [dependencies.frcrs]
 git = "https://www.github.com/Team-2502/frcrs.git"

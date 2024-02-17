@@ -45,14 +45,15 @@ struct Offsets {
 }
 
 impl Offsets {
+    const PATH: &'static str = "/home/lvuser/absolut_homosezual.json";
     fn load() -> Self {
-        let mut file = File::open("/home/lvuser/absolut_homosezual.json").unwrap();
+        let mut file = File::open(Self::PATH).unwrap();
         let mut buf = String::new();
         file.read_to_string(&mut buf).unwrap();
         serde_json::from_str(&buf).unwrap_or(Self { offsets: [0.;4] })
     }
     fn store(&self) {
-        let mut file = File::create("/home/lvuser/absolut_homosezual.json").unwrap();
+        let mut file = File::create(Self::PATH).unwrap();
         let buf = serde_json::to_string(&self).unwrap();
         file.write_all(buf.as_bytes()).unwrap();
     }
@@ -130,7 +131,7 @@ impl Drivetrain {
         for (module, offset) in [&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn].iter().zip(self.absolute_offsets.offsets.iter()) {
             speeds.push(ModuleState { 
                 speed: 0., 
-                angle: -module.get(),
+                angle: -module.get() - Angle::new::<degree>(*offset),
             });
         }
 
