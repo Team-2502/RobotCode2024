@@ -13,11 +13,11 @@ def BestieDetection():
         cv2.imshow('raw', frame)
 
     # lower range of red color in HSV
-        lower_range = (80, 0, 0)
+        lower_range = (80, 100, 0)
         upper_range = (90, 245, 245)
         mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
-        lower_range = (90,55,0)
+        lower_range = (90,100,0)
         upper_range = (130,245,245)
         mask1 = cv2.inRange(hsv_img, lower_range, upper_range)
 
@@ -37,7 +37,7 @@ def BestieDetection():
             x,y,w,h = cv2.boundingRect(contour)
             frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
 
-            cv2.putText(frame, "Enemy!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
+            cv2.putText(frame, "Friendly!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
 
 
     # Display the color of the image

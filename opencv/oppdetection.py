@@ -13,12 +13,12 @@ def OppDetection():
         cv2.imshow('raw', frame)
 
         # lower range of red color in HSV
-        lower_range = (5, 100, 50)
-        upper_range = (5, 245, 245)
+        lower_range = (0, 1, 10)
+        upper_range = (5, 245, 255)
         mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
-        lower_range = (160,100,50)
-        upper_range = (170,245,245)
+        lower_range = (250,1,10)
+        upper_range = (355,255,255)
         mask1 = cv2.inRange(hsv_img, lower_range, upper_range)
 
         mask = mask + mask1
