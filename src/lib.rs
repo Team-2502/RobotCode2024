@@ -74,6 +74,11 @@ fn entrypoint() {
             auto.abort();
         };
 
+        if state.test() && state.enabled() {
+            robot.drivetrain.deref().borrow_mut().write_absolute();
+        }
+
+
         let elapsed = last_loop.elapsed().as_secs_f64();
         let left = (1./50. - elapsed).max(0.);
         
@@ -84,7 +89,7 @@ fn entrypoint() {
     executor.block_on(controller);
 }
 
-async fn simple_auto(robot: Ferris) {
+async fn auto_long(robot: Ferris) {
     let mut intake = robot.intake.deref().borrow_mut();
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
     let mut shooter = robot.shooter.deref().borrow_mut();
