@@ -67,11 +67,11 @@ fn entrypoint() {
 
         if state.enabled() && state.auto() {
             if let None = auto {
-                auto = Some(local.spawn_local(simple_auto(robot.clone())).abort_handle());
+                auto = Some(local.spawn_local(auto_short(robot.clone())).abort_handle());
+                //auto = Some(local.spawn_local(auto_long(robot.clone())).abort_handle());
             }
         } else if let Some(auto) = auto.take() {
             auto.abort();
-            
         };
 
         let elapsed = last_loop.elapsed().as_secs_f64();
@@ -88,6 +88,8 @@ async fn simple_auto(robot: Ferris) {
     let mut intake = robot.intake.deref().borrow_mut();
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
     let mut shooter = robot.shooter.deref().borrow_mut();
+
+    drivetrain.reset_heading();
 
     shooter.set_shooter(1.0);
     drivetrain.set_speeds(-0.3, 0.0, 0.0);
@@ -113,5 +115,28 @@ async fn simple_auto(robot: Ferris) {
     shooter.set_shooter(0.0);
     drivetrain.set_speeds(-0.3, 0.0, 0.0);
     sleep(Duration::from_secs_f64(1.4)).await;
+    drivetrain.set_speeds(0.0, 0.0, 0.0);
+}
+
+async fn auto_short(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+
+    shooter.set_shooter(1.0);
+    intake.set_rollers(-0.1);
+
+    if let Err(_) = timeout(Duration::from_secs_f64(1.4), shooter.load()).await {
+        shooter.stop_feeder();
+    };
+    wait(|| shooter.get_velocity() > 5000.).await;
+    intake.set_rollers(0.0);
+
+    shooter.set_feeder(-0.4);
+    sleep(Duration::from_secs_f64(0.3)).await;
+    shooter.set_feeder(-0.0);
+    shooter.set_shooter(0.0);
+    drivetrain.set_speeds(-0.3, 0.0, 0.0);
+    sleep(Duration::from_secs_f64(0.8)).await;
     drivetrain.set_speeds(0.0, 0.0, 0.0);
 }
