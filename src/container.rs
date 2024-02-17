@@ -1,10 +1,10 @@
-use std::{cell::RefCell, borrow::BorrowMut, rc::Rc, ops::{Deref, DerefMut}};
+use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref, DerefMut}, rc::Rc, time::Duration};
 
 use frcrs::{input::Joystick, };
 use frcrs::networktables::SmartDashboard;
-use tokio::task::{LocalSet, JoinHandle};
+use tokio::{task::{JoinHandle, LocalSet}, time::sleep};
 use uom::si::angle::{degree, radian};
-use crate::{subsystems::{Climber, Drivetrain, Intake, Shooter}, constants::{BEAM_BREAK_SIGNAL, INTAKE_LIMIT, drivetrain::SWERVE_TURN_KP}};
+use crate::{constants::{drivetrain::SWERVE_TURN_KP, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}};
 use frcrs::deadzone;
 
 #[derive(Clone)]
@@ -14,6 +14,8 @@ pub struct Ferris {
     pub shooter: Rc<RefCell<Shooter>>, 
     pub climber: Rc<RefCell<Climber>>,
     grab: Rc<RefCell<Option<JoinHandle<()>>>>,
+    stage: Rc<RefCell<Option<JoinHandle<()>>>>,
+    shooter_state: Rc<RefCell<(bool,bool)>>,
 }
 
 impl Ferris {
@@ -22,7 +24,8 @@ impl Ferris {
         let intake = Rc::new(RefCell::new(Intake::new()));
         let shooter = Rc::new(RefCell::new(Shooter::new()));
         let climber = Rc::new(RefCell::new(Climber::new()));
-        Self { drivetrain, intake, shooter, climber, grab: Rc::new(RefCell::new(None))} 
+        let shooter_state = Rc::new(RefCell::new((false,false)));
+        Self { drivetrain, intake, shooter, climber, grab: Rc::new(RefCell::new(None)), shooter_state, stage: Rc::new(RefCell::new(None)) } 
     }
 }
 
@@ -30,6 +33,8 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
     let shooter = robot.shooter.deref().borrow();
     let climber = robot.climber.deref().borrow();
+    let mut shooter_state = robot.shooter_state.deref().borrow_mut();
+    let (shooting, last_loop) = &mut *shooter_state;
 
     let joystick_range = 0.04..1.;
     let power_translate = if right_drive.get(3) { 0.0..0.3 }
@@ -50,8 +55,6 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
 
     SmartDashboard::put_number("Angle".to_owned(), drivetrain.get_angle().get::<degree>());
 
-    let mut shooting = false;
-
     if left_drive.get(3) {
         drivetrain.reset_heading();
     }
@@ -70,29 +73,65 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
             grab.abort();
         }
     }
-    
-    if let Ok(intake) = robot.intake.try_borrow_mut() {
-        SmartDashboard::put_bool("intake at limit {}".to_owned(), intake.at_limit());
-        if operator.get(9) {
-            intake.set_rollers(0.4);
-        } else if operator.get(7) {
-            intake.set_rollers(-0.4);
-        } else {
-            intake.stop_rollers();
-        }
 
-        if operator.get(3) {
-            intake.set_actuate(0.3);
-        } else if operator.get(4) {
-            intake.set_actuate(-0.3);
-        } else {
-            intake.stop_actuate();
+    let not = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_none());
+    let staging = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_some());
+    if operator.get(7) && not && !shooter.contains_note() {
+        let intake = robot.intake.clone();
+        let shooter = robot.shooter.clone();
+        robot.grab.replace(Some(executor.spawn_local(async move {
+            let intake = intake.deref().borrow();
+            let shooter = shooter.deref().borrow();
+
+            intake.set_actuate(0.27);
+            wait(|| intake.at_limit()).await;
+            intake.set_actuate(0.0);
+
+            intake.set_rollers(-0.09);
+            shooter.load().await;
+
+            shooter.set_feeder(0.4);
+            sleep(Duration::from_secs_f64(0.06)).await; // backoff from flywheel
+
+            shooter.set_feeder(0.0);
+            intake.set_rollers(0.0);
+            sleep(Duration::from_secs_f64(0.5)).await; // settle
+        })));
+    } else if !operator.get(7) {
+        if let Some(stage) = robot.stage.take() {
+            stage.abort();
+        }
+    }
+    
+    if !staging {
+        if let Ok(intake) = robot.intake.try_borrow_mut() {
+            SmartDashboard::put_bool("intake at limit {}".to_owned(), intake.at_limit());
+            if operator.get(9) {
+                intake.set_rollers(0.4);
+            } else if operator.get(6) {
+                intake.set_rollers(-0.4);
+            } else {
+                intake.stop_rollers();
+            }
+
+            if operator.get(3) {
+                intake.set_actuate(0.3);
+            } else if operator.get(4) {
+                intake.set_actuate(-0.3);
+            } else {
+                intake.stop_actuate();
+            }
         }
     }
 
-    if operator.get(2) { shooting = !shooting; }
+    if operator.get(2) && !*last_loop { 
+        *shooting = !*shooting; 
+    }
+    *last_loop = operator.get(2);
 
-    if shooting {
+    SmartDashboard::put_bool("flywheel state".to_owned(), *shooting);
+
+    if *shooting {
         shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
     } else {
         shooter.stop_shooter();
@@ -106,12 +145,14 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
         shooter.set_amp_bar(0.);
     }
 
-    if operator.get(1) {
-        shooter.set_feeder(-0.2);
-    } else if operator.get(10) {
-        shooter.set_feeder(0.5);
-    } else {
-        shooter.stop_feeder();
+    if !staging {
+        if operator.get(1) {
+            shooter.set_feeder(-0.2);
+        } else if operator.get(10) {
+            shooter.set_feeder(0.5);
+        } else {
+            shooter.stop_feeder();
+        }
     }
 
     // Todo: cleanup
