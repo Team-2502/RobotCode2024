@@ -7,7 +7,7 @@ mod auto;
 use std::thread;
 use std::time::{Instant, Duration};
 
-use auto::{autos, AutoChooser};
+use auto::{autos, run_auto, AutoChooser};
 use container::Ferris;
 use frcrs::ctre::{Falcon};
 use frcrs::is_teleop;
@@ -29,8 +29,6 @@ use tokio::task::{self, JoinHandle};
 use std::ops::Deref;
 use std::rc::Rc;
 use send_wrapper::SendWrapper;
-
-static AUTOS: once_cell::sync::OnceCell<AutoChooser> = once_cell::unsync::OnceCell::new();
 
 #[call_from_java("frc.robot.Main.rustentry")]
 fn entrypoint() {
@@ -56,7 +54,7 @@ fn entrypoint() {
 
     let mut auto = None;
 
-    AUTOS.set(autos()).unwrap_or_else(|_| panic!("could not set"));
+    let chooser = autos();
 
     let mut last_loop = Instant::now();
     let controller = local.run_until(async { loop {
@@ -76,7 +74,9 @@ fn entrypoint() {
 
         if state.enabled() && state.auto() {
             if let None = auto {
-                let run = AUTOS.get().unwrap().run(robot.clone());
+                let robot = robot.clone();
+
+                let run = run_auto(chooser.get(), robot);
                 auto = Some(local.spawn_local(run).abort_handle());
                 //auto = Some(local.spawn_local(auto_long(robot.clone())).abort_handle());
             }

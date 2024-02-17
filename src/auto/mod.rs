@@ -6,30 +6,41 @@ use tokio::{join, time::{sleep, timeout}};
 
 use crate::{container::Ferris, subsystems::wait};
 
-pub struct AutoChooser(Chooser<Box<dyn Fn(Ferris) -> Box<dyn Future<Output = ()>>>>);
+#[derive(Clone)]
+pub enum Auto {
+    Short,
+    Long,
+}
+pub struct AutoChooser(Chooser<Auto>);
 
 impl AutoChooser {
     pub fn new() -> Self {
         Self(Chooser::new())
     }
 
-    pub fn add<A,F>(&mut self, name: &str, auto: A) 
-        where A: Fn(Ferris) -> F + 'static,
-              F: Future<Output = ()> + 'static,
+    pub fn add(&mut self, name: &str, auto: Auto) 
     {
-        self.0.add(name, Box::new(move |robot| Box::new(auto(robot))));
+        self.0.add(name, auto);
     }
 
-    pub async fn run(&self, robot: Ferris) {
-        Box::into_pin(self.0.get()(robot)).await
+    pub fn get(&self) -> Auto {
+        self.0.get().clone()
+    }
+}
+
+pub async fn run_auto(auto: Auto, robot: Ferris) {
+    match auto {
+        Auto::Short => auto_short(robot).await,
+        Auto::Long => auto_long(robot).await,
+
     }
 }
 
 pub fn autos() -> AutoChooser {
     let mut chooser = AutoChooser::new();
 
-    chooser.add("flat out", auto_long);
-    chooser.add("crooked", auto_short);
+    chooser.add("flat out", Auto::Short);
+    chooser.add("crooked", Auto::Long);
 
     chooser
 }
