@@ -6,10 +6,14 @@ use tokio::{join, time::{sleep, timeout}};
 
 use crate::{container::Ferris, subsystems::wait};
 
-#[derive(Clone)]
+use num_derive::FromPrimitive;    
+use num_traits::FromPrimitive;
+
+#[derive(Clone, FromPrimitive)]
 pub enum Auto {
-    Short,
-    Long,
+    Short = 1,
+    Long = 2,
+    Nop = 3,
 }
 pub struct AutoChooser(Chooser<Auto>);
 
@@ -24,7 +28,7 @@ impl AutoChooser {
     }
 
     pub fn get(&self) -> Auto {
-        self.0.get().clone()
+        Auto::from_i32(self.0.get()).unwrap()
     }
 }
 
@@ -32,6 +36,7 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
     match auto {
         Auto::Short => auto_short(robot).await,
         Auto::Long => auto_long(robot).await,
+        Auto::Nop => {},
 
     }
 }
@@ -39,8 +44,9 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
 pub fn autos() -> AutoChooser {
     let mut chooser = AutoChooser::new();
 
-    chooser.add("flat out", Auto::Short);
-    chooser.add("crooked", Auto::Long);
+    //chooser.add("flat out", Auto::Short);
+    //chooser.add("crooked", Auto::Long);
+    //chooser.add("tk", Auto::Long);
 
     chooser
 }

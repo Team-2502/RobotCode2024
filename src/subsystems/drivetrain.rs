@@ -67,27 +67,38 @@ impl Drivetrain {
         let bl_encoder = CanCoder::new(BL_ENCODER, Some("can0".to_owned()));
         let br_encoder = CanCoder::new(BR_ENCODER, Some("can0".to_owned()));
 
+        let fr_turn = Falcon::new(FR_TURN, Some("can0".to_owned()));
+        let fl_turn = Falcon::new(FL_TURN, Some("can0".to_owned()));
+        let bl_turn = Falcon::new(BL_TURN, Some("can0".to_owned()));
+        let br_turn = Falcon::new(BR_TURN, Some("can0".to_owned()));
+
         for (encoder, offset) in [&fr_encoder, &fl_encoder, &bl_encoder, &br_encoder].iter().zip(absolute_offsets.offsets.iter_mut()) {
             *offset -= encoder.get_absolute();
+        }
+
+        for (turn, offset) in [&fr_turn, &fl_turn, &bl_turn, &br_turn].iter().zip(absolute_offsets.offsets.iter_mut()) {
+            *offset -= turn.get().get::<degree>();
+            *offset = 0.;
+            dbg!(offset);
         }
 
         let dt = Self {
             navx: NavX::new(),
 
             fr_drive: Kraken::new(FR_DRIVE, Some("can0".to_owned())),
-            fr_turn: Falcon::new(FR_TURN, Some("can0".to_owned())),
+            fr_turn,
             fr_encoder,
 
             fl_drive: Kraken::new(FL_DRIVE, Some("can0".to_owned())),
-            fl_turn: Falcon::new(FL_TURN, Some("can0".to_owned())),
+            fl_turn,
             fl_encoder,
 
             bl_drive: Kraken::new(BL_DRIVE, Some("can0".to_owned())),
-            bl_turn: Falcon::new(BL_TURN, Some("can0".to_owned())),
+            bl_turn,
             bl_encoder,
 
             br_drive: Kraken::new(BR_DRIVE, Some("can0".to_owned())),
-            br_turn: Falcon::new(BR_TURN, Some("can0".to_owned())),
+            br_turn,
             br_encoder,
 
             kinematics: Swerve::rectangle(Length::new::<inch>(22.5), Length::new::<inch>(23.5)),
@@ -96,8 +107,6 @@ impl Drivetrain {
 
             absolute_offsets,
         };
-
-        dbg!(dt.fr_encoder.get_absolute());
 
         dt
     }
@@ -131,7 +140,7 @@ impl Drivetrain {
         for (module, offset) in [&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn].iter().zip(self.absolute_offsets.offsets.iter()) {
             speeds.push(ModuleState { 
                 speed: 0., 
-                angle: -module.get() - Angle::new::<degree>(*offset),
+                angle: -module.get() + Angle::new::<degree>(*offset),
             });
         }
 
@@ -152,7 +161,13 @@ impl Drivetrain {
         //println!("angle fr {}", measured[0].angle.get::<revolution>());
 
         let wheel_speeds: Vec<ModuleState> = wheel_speeds.into_iter().zip(measured.iter())
-            .map(|(calculated,measured)| calculated.optimize(measured)).collect();
+            .map(|(calculated,measured)| calculated.optimize(measured))
+            .zip(self.absolute_offsets.offsets.iter())
+            .map(|(mut state, offset)| {
+                state.angle -= Angle::new::<degree>(*offset);
+                state
+            })
+            .collect();
 
         self.fr_drive.set(wheel_speeds[0].speed);
         self.fl_drive.set(wheel_speeds[1].speed);

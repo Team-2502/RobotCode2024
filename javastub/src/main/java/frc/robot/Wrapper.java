@@ -9,6 +9,9 @@ import static com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkFlex;
 import static com.revrobotics.CANSparkMax.ControlType;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import static edu.wpi.first.wpilibj.RobotBase.isReal;
@@ -69,4 +72,14 @@ public class Wrapper {
     }*/
 
     //public static TalonFXInvertType TalonFXCounterClockwise() { return TalonFXInvertType.CounterClockwise; }
+
+    public static SendableChooser<Integer> autoChooser() {
+        SendableChooser<Integer> chooser = new SendableChooser<>();
+        chooser.addOption("crooked", 1);
+        chooser.addOption("straing", 2);
+        chooser.setDefaultOption("tk", 3);
+
+        SmartDashboard.putData(chooser);
+        return chooser;
+    }
 }

@@ -62,7 +62,7 @@ fn entrypoint() {
 
         let state = RobotState::get();
 
-        if state.enabled() && state.teleop() {
+        if state.enabled() && state.teleop() && !state.test() {
             container(
                 &mut left_drive,
                 &mut right_drive,
