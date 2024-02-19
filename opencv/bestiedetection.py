@@ -4,8 +4,8 @@ import cv2
 kernal = np.ones((7,7), "uint8")
 camera = cv2.VideoCapture(0) # First webcam (video0)
  
-def BestieDetection():
-    success, frame = camera.read()
+def BestieDetection(frame):
+    success, frame = frame
     if not success:
         print("not success frame")
     else:
@@ -47,6 +47,7 @@ def BestieDetection():
    #     cv2.destroyAllWindows()
     #    break
 while camera.isOpened:
-    BestieDetection()
+    frame = camera.read()
+    BestieDetection(frame)
     if cv2.waitKey(10) & 0xFF == ord('q'):
         break

@@ -3,10 +3,8 @@ import cv2
 
 kernal = np.ones((7,7), "uint8")
 camera = cv2.VideoCapture(0) # First webcam (video0)
-frame = camera.read()
 
 def BestieDetection(frame):
-    print("friendlies")
     success, frame = frame
     if not success:
         print("not success frame")
@@ -15,11 +13,11 @@ def BestieDetection(frame):
         cv2.imshow('raw', frame)
 
     # lower range of red color in HSV
-        lower_range = (80, 0, 0)
+        lower_range = (80, 100, 0)
         upper_range = (90, 245, 245)
         mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
-        lower_range = (90,55,0)
+        lower_range = (90,100,0)
         upper_range = (130,245,245)
         mask1 = cv2.inRange(hsv_img, lower_range, upper_range)
 
@@ -28,24 +26,37 @@ def BestieDetection(frame):
         mask = cv2.erode(mask, kernal)
         mask = cv2.erode(mask, kernal)
         mask = cv2.dilate(mask, kernal)
+    friendetex = ''
+    friendetey = ''
+    friendeteh = ''
+    friendetew = ''
 
     #frame = cv2.bitwise_and(frame, frame, mask=mask)
 
-        contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-        for pic, contour in enumerate (contours):
-            area = cv2.contourArea(contour)
-            if (area > 500):
-                x,y,w,h = cv2.boundingRect(contour)
-                frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
+    for pic, contour in enumerate (contours):
+        area = cv2.contourArea(contour)
+        if (area > 500):
+            x,y,w,h = cv2.boundingRect(contour)
+            frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
 
-                cv2.putText(frame, "Friend!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
-                print(x, h, y, w)
+            cv2.putText(frame, "Friendly!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
+            friendeteh = friendeteh + ' ' + str(h)
+            friendetex = friendetex + ' ' + str(x)
+            friendetey = friendetey + ' ' + str(y)
+            friendetew = friendetew + ' ' + str(w)
+    print("h", friendeteh)
+    print("w", friendetew)
+    print("y", friendetey)
+    print("x", friendetex)
+
 
     # Display the color of the image
     cv2.imshow('Highlighted', frame)
+        
 def NoteDetetction(frame):
-        print("Noted")
+        #print("Noted")
         success, frame = frame
         if not success:
             print("not success")
@@ -72,7 +83,7 @@ def NoteDetetction(frame):
                 frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
 
                 cv2.putText(frame, "Note!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
-                print(x, x+h, y, y+w)
+                #print(x, x+h, y, y+w)
 
 
          mask = cv2.erode(mask, kernal)
@@ -88,7 +99,7 @@ def NoteDetetction(frame):
 
         cv2.imshow('Highlighted', frame)
 def OppDetection(frame):
-    print("oppd")
+    #print("oppd")
     success, frame = frame
     if not success:
         print("not success frame")
@@ -121,7 +132,8 @@ def OppDetection(frame):
                 x,y,w,h = cv2.boundingRect(contour)
                 frame = cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,0),2)
                 cv2.putText(frame, "Enemy!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
-                print(x, h, y, w)
+                #print(x, h, y, w)
+                return (x,y,h,w)
 
 
     # Display the color of the image
@@ -129,11 +141,12 @@ def OppDetection(frame):
 
 while camera.isOpened:
     framd = camera.read()
-    frameopp = framd
-    framenot = framd
-    framefrien= framd
-    OppDetection(frameopp)
-    NoteDetetction(framenot)
-    BestieDetection(framefrien)
+    framfrien = framd
+    framopp = framd
+    framnot = framd
+    Bestiecoord =  BestieDetection(framfrien)
+    oppcoord =  OppDetection(framopp)
+    notecoord =  NoteDetetction(framnot)
+    #print(oppcoord,"||", notecoord, "||", Bestiecoord)
     if cv2.waitKey(10) & 0xFF == ord('q'):
         break
