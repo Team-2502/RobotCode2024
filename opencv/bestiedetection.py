@@ -2,8 +2,8 @@ import numpy as np
 import cv2
 
 kernal = np.ones((7,7), "uint8")
-camera = cv2.VideoCapture(0) # First webcam (video0)
- 
+camera= cv2.VideoCapture(0) # First webcam (video0)
+  
 def BestieDetection(frame):
     success, frame = frame
     if not success:
@@ -39,7 +39,7 @@ def BestieDetection(frame):
 
             cv2.putText(frame, "Friendly!", (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,0))
 
-
+    n 6 5                           
     # Display the color of the image
     cv2.imshow('Highlighted', frame)
  #   if cv2.waitKey(10) & 0xFF == ord('q'):
