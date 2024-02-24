@@ -8,7 +8,10 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkFlex;
 import static com.revrobotics.CANSparkMax.ControlType;
+
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -81,5 +84,13 @@ public class Wrapper {
 
         SmartDashboard.putData(chooser);
         return chooser;
+    }
+
+    private static final Field2d m_field = new Field2d();
+
+    public static void setPosition(double x, double y, double theta) {
+        m_field.setRobotPose(x, y, Rotation2d.fromRadians(theta));
+
+        SmartDashboard.putData("field", m_field);
     }
 }
