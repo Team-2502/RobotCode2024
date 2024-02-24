@@ -2,6 +2,7 @@ use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref, DerefMut}, rc::Rc, time
 
 use frcrs::{input::Joystick, };
 use frcrs::networktables::SmartDashboard;
+use frcrs::networktables::set_position;
 use tokio::{task::{JoinHandle, LocalSet}, time::sleep};
 use uom::si::angle::{degree, radian};
 use crate::{constants::{drivetrain::SWERVE_TURN_KP, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}};
@@ -52,11 +53,14 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
     };
 
     drivetrain.set_speeds(deadly, deadlx, rot);
+    let angle = drivetrain.get_angle();
+
+    set_position(drivetrain.odometry.position, -angle);
 
     SmartDashboard::put_number("Odo X".to_owned(), drivetrain.odometry.position.x);
     SmartDashboard::put_number("Odo Y".to_owned(), drivetrain.odometry.position.y);
 
-    SmartDashboard::put_number("Angle".to_owned(), drivetrain.get_angle().get::<degree>());
+    SmartDashboard::put_number("Angle".to_owned(), angle.get::<degree>());
 
     if left_drive.get(3) {
         drivetrain.reset_heading();
