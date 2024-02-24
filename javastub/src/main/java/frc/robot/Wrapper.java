@@ -79,8 +79,9 @@ public class Wrapper {
     public static SendableChooser<Integer> autoChooser() {
         SendableChooser<Integer> chooser = new SendableChooser<>();
         chooser.addOption("pass on right", 1);
-        chooser.setDefaultOption("straing", 2);
+        chooser.setDefaultOption("top", 4);
         chooser.addOption("eco", 3);
+        chooser.addOption("test", 2);
 
         SmartDashboard.putData(chooser);
         return chooser;

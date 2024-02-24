@@ -124,12 +124,12 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
                 intake.stop_rollers();
             }
 
-            if intake.constrained() {
-                intake.stop_actuate();
-            } else if operator.get(3) {
+            if operator.get(3) && !intake.at_limit() {
                 intake.set_actuate(0.3);
-            } else if operator.get(4) {
+            } else if operator.get(4) && !intake.at_reverse_limit() {
                 intake.set_actuate(-0.3);
+            } else {
+                intake.stop_actuate();
             }
         }
     }

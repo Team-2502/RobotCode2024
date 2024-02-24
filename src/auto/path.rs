@@ -11,7 +11,12 @@ use crate::{subsystems::Drivetrain, constants::drivetrain::SWERVE_TURN_KP};
 pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
     let start = Instant::now();
     loop {
-        let setpoint = path.get(Time::new::<second>(start.elapsed().as_secs_f64()));
+        let elapsed = Time::new::<second>(start.elapsed().as_secs_f64());
+        if elapsed > path.length() {
+            break;
+        }
+
+        let setpoint = path.get(elapsed);
         let position = Vector2::new(setpoint.x.get::<meter>(), setpoint.y.get::<meter>());
         let angle = setpoint.heading;
 
@@ -19,7 +24,7 @@ pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
         let mut error_angle = (angle - drivetrain.get_angle()).get::<radian>();
 
         error_angle *= SWERVE_TURN_KP;
-        error_position *= -0.07;
+        error_position *= -0.23;
 
         drivetrain.set_speeds(error_position.x, error_position.y, error_angle);
 
