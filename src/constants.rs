@@ -45,5 +45,9 @@ pub mod intake {
 }
 
 pub mod drivetrain {
+    use std::f64::consts::PI;
+
     pub const SWERVE_TURN_KP: f64 = 0.3;
+
+    pub const SWERVE_ROTATIONS_TO_INCHES: f64 = (1./6.75) * (4. * PI);
 }

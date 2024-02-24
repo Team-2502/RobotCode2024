@@ -9,7 +9,9 @@ use uom::si::angle::{degree, revolution, radian};
 use uom::si::f64::{Angle, Length};
 use uom::si::length::inch;
 use crate::constants::*;
+use crate::constants::drivetrain::SWERVE_ROTATIONS_TO_INCHES;
 use crate::swerve::kinematics::{Swerve, ModuleState};
+use crate::swerve::odometry::{ModuleReturn, Odometry};
 use serde::Serialize;
 use serde::Deserialize;
 
@@ -33,6 +35,7 @@ pub struct Drivetrain {
     br_encoder: CanCoder,
 
     kinematics: Swerve,
+    pub odometry: Odometry,
 
     offset: Angle,
 
@@ -102,6 +105,7 @@ impl Drivetrain {
             br_encoder,
 
             kinematics: Swerve::rectangle(Length::new::<inch>(22.5), Length::new::<inch>(23.5)),
+            odometry: Odometry::new(),
 
             offset: Angle::new::<degree>(0.),
 
@@ -134,6 +138,20 @@ impl Drivetrain {
         self.br_turn.stop();
     }
 
+    fn get_positions(&self, angles: &Vec<ModuleState>) -> Vec<ModuleReturn> {
+        let mut speeds = Vec::new();
+
+        for (module, offset) in [&self.fr_drive, &self.fl_drive, &self.bl_drive, &self.br_drive].iter().zip(angles.iter()) {
+            let distance = module.get_position() * SWERVE_ROTATIONS_TO_INCHES;
+            speeds.push(ModuleReturn { 
+                angle: offset.angle.clone(),
+                distance:  Length::new::<inch>(distance),
+            });
+        }
+
+        speeds
+    }
+
     fn get_speeds(&self) -> Vec<ModuleState> {
         let mut speeds = Vec::new();
 
@@ -146,8 +164,7 @@ impl Drivetrain {
 
         speeds
     }
-
-    pub fn set_speeds(&self, fwd: f64, str: f64, rot: f64) {
+    pub fn set_speeds(&mut self, fwd: f64, str: f64, rot: f64) {
         let mut transform = Vector2::new(str, -fwd);
         transform = Rotation2::new((self.get_angle() - self.offset).get::<radian>()) * transform;
         let wheel_speeds = self.kinematics.calculate(transform, rot);
@@ -157,6 +174,12 @@ impl Drivetrain {
         //self.fr_turn.set(ControlMode::Position, (0.).talon_encoder_ticks());
 
         let measured = self.get_speeds();
+
+        let positions = self.get_positions(&measured);
+
+        let angle = self.get_angle();
+
+        self.odometry.calculate(positions, angle);
 
         //println!("angle fr {}", measured[0].angle.get::<revolution>());
 

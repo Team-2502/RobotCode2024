@@ -53,6 +53,9 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
 
     drivetrain.set_speeds(deadly, deadlx, rot);
 
+    SmartDashboard::put_number("Odo X".to_owned(), drivetrain.odometry.position.x);
+    SmartDashboard::put_number("Odo Y".to_owned(), drivetrain.odometry.position.y);
+
     SmartDashboard::put_number("Angle".to_owned(), drivetrain.get_angle().get::<degree>());
 
     if left_drive.get(3) {
