@@ -1,4 +1,4 @@
 [toolchain]
-channel = "stable"
+channel = "nightly"
 profile = "complete"
 targets = ["arm-unknown-linux-gnueabi"]

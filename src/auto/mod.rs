@@ -1,21 +1,25 @@
-use std::{ops::Deref, pin::Pin, time::Duration};
+use std::{ops::{Deref, DerefMut}, pin::Pin, time::Duration};
 
 use frcrs::networktables::Chooser;
 use futures_lite::Future;
-use tokio::{join, time::{sleep, timeout}};
+use tokio::{join, time::{sleep, timeout}, fs::File, io::AsyncReadExt};
+use wpi_trajectory::Path;
 
 use crate::{container::Ferris, subsystems::wait};
 
 use num_derive::FromPrimitive;    
 use num_traits::FromPrimitive;
 
+use self::path::follow_path;
+
 pub mod path;
 
 #[derive(Clone, FromPrimitive)]
 pub enum Auto {
     Short = 1,
-    Long = 2,
+    PathTest = 2,
     Nop = 3,
+    Long = 4,
 }
 pub struct AutoChooser(Chooser<Auto>);
 
@@ -39,6 +43,13 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         Auto::Short => auto_short(robot).await,
         Auto::Long => auto_long(robot).await,
         Auto::Nop => {},
+        Auto::PathTest => {
+            let mut path = String::new();
+            File::open("/home/lvuser/deploy/traj1.json").await.unwrap().read_to_string(&mut path).await.unwrap();
+            let path = Path::from_trajectory(&path).unwrap();
+
+            follow_path(robot.drivetrain.borrow_mut().deref_mut(), path).await;
+        },
 
     }
 }

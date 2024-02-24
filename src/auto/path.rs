@@ -7,7 +7,7 @@ use wpi_trajectory::{Path, Pose};
 
 use crate::{subsystems::Drivetrain, constants::drivetrain::SWERVE_TURN_KP};
 
-async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
+pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
     let start = Instant::now();
     loop {
         let setpoint = path.get(Time::new::<second>(start.elapsed().as_secs_f64()));
