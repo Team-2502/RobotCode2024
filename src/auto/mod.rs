@@ -41,9 +41,8 @@ impl AutoChooser {
 pub async fn run_auto(auto: Auto, robot: Ferris) {
     match auto {
         Auto::Short => auto_short(robot).await,
-        Auto::Long => auto_long(robot).await,
         Auto::Nop => {},
-        Auto::PathTest => {
+        Auto::PathTest | Auto::Long => {
             let mut path = String::new();
             File::open("/home/lvuser/deploy/choreo/Example.traj").await.unwrap().read_to_string(&mut path).await.unwrap();
             let path = Path::from_trajectory(&path).unwrap();
