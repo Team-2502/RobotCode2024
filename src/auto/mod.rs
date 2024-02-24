@@ -9,6 +9,8 @@ use crate::{container::Ferris, subsystems::wait};
 use num_derive::FromPrimitive;    
 use num_traits::FromPrimitive;
 
+pub mod path;
+
 #[derive(Clone, FromPrimitive)]
 pub enum Auto {
     Short = 1,

@@ -22,7 +22,9 @@ send_wrapper = "0.6.0"
 once_cell = "1.19.0"
 num-traits = "0.2.18"
 num-derive = "0.4.2"
+wpi-trajectory = { git = "https://github.com/Speedy6451/trajectory-rs" }
 
 [dependencies.frcrs]
-git = "https://www.github.com/Team-2502/frcrs.git"
-branch = "comp"
+#git = "https://www.github.com/Team-2502/frcrs.git"
+#branch = "comp"
+path = "../frcrs"

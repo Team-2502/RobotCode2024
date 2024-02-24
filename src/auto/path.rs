@@ -1,0 +1,27 @@
+use std::time::Duration;
+
+use nalgebra::Vector2;
+use tokio::time::{Instant, sleep};
+use uom::si::{f64::Time, time::second, length::meter, angle::radian};
+use wpi_trajectory::{Path, Pose};
+
+use crate::{subsystems::Drivetrain, constants::drivetrain::SWERVE_TURN_KP};
+
+async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
+    let start = Instant::now();
+    loop {
+        let setpoint = path.get(Time::new::<second>(start.elapsed().as_secs_f64()));
+        let position = Vector2::new(setpoint.x.get::<meter>(), setpoint.y.get::<meter>());
+        let angle = setpoint.heading;
+
+        let mut error_position = position - drivetrain.odometry.position;
+        let mut error_angle = (angle - drivetrain.get_angle()).get::<radian>();
+
+        error_angle *= SWERVE_TURN_KP;
+        error_position *= 0.07;
+
+        drivetrain.set_speeds(error_position.y, error_position.x, error_angle);
+
+        sleep(Duration::from_millis(20)).await;
+    }
+}
