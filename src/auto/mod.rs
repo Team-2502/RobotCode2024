@@ -45,7 +45,7 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         Auto::Nop => {},
         Auto::PathTest => {
             let mut path = String::new();
-            File::open("/home/lvuser/deploy/traj1.json").await.unwrap().read_to_string(&mut path).await.unwrap();
+            File::open("/home/lvuser/deploy/choreo/Example.traj").await.unwrap().read_to_string(&mut path).await.unwrap();
             let path = Path::from_trajectory(&path).unwrap();
 
             follow_path(robot.drivetrain.borrow_mut().deref_mut(), path).await;
