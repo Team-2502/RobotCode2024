@@ -14,7 +14,7 @@ impl Into<Vector2<f64>> for ModuleReturn {
         let angle = self.angle.get::<radian>();
         let distance = self.distance.get::<meter>();
 
-        Rotation2::new(angle) * Vector2::y() * distance
+        Rotation2::new(-angle) * Vector2::x() * distance
     }
 }
 
@@ -48,17 +48,19 @@ impl Odometry {
             return;
         }
 
-        let mut deltas: Vec<ModuleReturn> = positions.into_iter().zip(self.last_modules.iter()).map(|(n,o)| {
-            n - o.to_owned()
+        let mut deltas: Vec<ModuleReturn> = positions.iter().zip(self.last_modules.iter()).map(|(n,o)| {
+            n.to_owned() - o.to_owned()
         }).collect();
 
         for module in &mut deltas {
             module.angle += angle;
         }
 
-        let delta: Vector2<f64> = deltas.into_iter().map(|d| Into::<Vector2<f64>>::into(d)).sum();
+        let mut delta: Vector2<f64> = deltas.into_iter().map(|d| Into::<Vector2<f64>>::into(d)).sum();
 
+        delta /= positions.len() as f64;
 
         self.position += delta;
+        self.last_modules = positions;
     }
 }
