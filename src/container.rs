@@ -114,6 +114,8 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
     if !staging {
         if let Ok(intake) = robot.intake.try_borrow_mut() {
             SmartDashboard::put_bool("intake at limit {}".to_owned(), intake.at_limit());
+            SmartDashboard::put_bool("intake at reverse limit {}".to_owned(), intake.at_reverse_limit());
+
             if operator.get(9) {
                 intake.set_rollers(0.4);
             } else if operator.get(6) {
@@ -122,12 +124,12 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
                 intake.stop_rollers();
             }
 
-            if operator.get(3) {
+            if intake.constrained() {
+                intake.stop_actuate();
+            } else if operator.get(3) {
                 intake.set_actuate(0.3);
             } else if operator.get(4) {
                 intake.set_actuate(-0.3);
-            } else {
-                intake.stop_actuate();
             }
         }
     }
