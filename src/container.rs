@@ -87,23 +87,12 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
         let intake = robot.intake.clone();
         let shooter = robot.shooter.clone();
         robot.grab.replace(Some(executor.spawn_local(async move {
-            let intake = intake.deref().borrow();
-            let shooter = shooter.deref().borrow();
+            let intake = intake.deref().try_borrow();
+            let shooter = shooter.deref().try_borrow();
 
-            intake.set_actuate(0.27);
-            wait(|| intake.at_limit()).await;
-            intake.set_actuate(0.0);
-
-            intake.set_rollers(-0.15);
-            shooter.set_feeder(-0.3);
-            wait(|| shooter.contains_note()).await;
-
-            shooter.set_feeder(0.4);
-            sleep(Duration::from_secs_f64(0.06)).await; // backoff from flywheel
-
-            shooter.set_feeder(0.0);
-            intake.set_rollers(0.0);
-            sleep(Duration::from_secs_f64(0.5)).await; // settle
+            if let (Ok(intake), Ok(shooter)) = (intake, shooter) {
+                stage(&intake, &shooter).await;
+            }
         })));
     } else if !operator.get(7) {
         if let Some(stage) = robot.stage.take() {
@@ -184,6 +173,22 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
 
     SmartDashboard::put_bool("beam break: {}".to_owned(), shooter.contains_note());
     //println!("doo dad: {}", get_dio(INTAKE_LIMIT));
+}
+
+/// Transfer note from intake to shooter
+pub async fn stage(intake: &Intake, shooter: &Shooter) {
+    intake.set_actuate(0.27);
+    wait(|| intake.at_limit()).await;
+    intake.set_actuate(0.0);
+
+    intake.set_rollers(-0.1);
+    shooter.set_feeder(-0.14);
+    wait(|| shooter.contains_note()).await;
+    intake.set_rollers(0.0);
+
+    shooter.set_feeder(-0.10);
+    wait(|| !shooter.contains_note()).await;
+    shooter.set_feeder(0.0);
 }
 
 pub fn stop_all(robot: &Ferris) {
