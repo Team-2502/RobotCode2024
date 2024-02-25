@@ -79,7 +79,7 @@ async fn top(robot: Ferris) {
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
     let mut shooter = robot.shooter.deref().borrow_mut();
 
-    drivetrain.odometry.position = Vector2::new(0.4550510048866272,7.067881107330322);
+    drivetrain.odometry.position = Vector2::new(0.4550510048866272,(8.2296/2.)-7.067881107330322);
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
