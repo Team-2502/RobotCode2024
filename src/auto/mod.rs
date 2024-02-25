@@ -92,16 +92,19 @@ async fn top(robot: Ferris) {
             shooter.set_feeder(0.);
         },
         async { // lower intake
-            intake.set_actuate(-0.4);
-            timeout(Duration::from_millis(250), wait(|| intake.at_reverse_limit())).await.unwrap();
+            intake.set_actuate(-0.3);
+            let _ = timeout(Duration::from_millis(1720), wait(|| intake.at_reverse_limit())).await;
             intake.set_actuate(0.);
             intake.set_rollers(0.4);
         },
     );
 
     drive("Top.2", &mut drivetrain).await; // goto note
-    intake.grab().await;
-    intake.set_actuate(0.4);
+    let failure = timeout(Duration::from_millis(1000), intake.grab()).await.is_err();
+
+    if failure {
+        println!("womp womp :(");
+    }
 
     join!(
         stage(&intake, &shooter),
@@ -111,21 +114,25 @@ async fn top(robot: Ferris) {
     join!(
         shoot(&intake, &mut shooter),
         async { // lower intake
-            intake.set_actuate(-0.4);
-            timeout(Duration::from_millis(250), wait(|| intake.at_reverse_limit())).await.unwrap();
+            intake.set_actuate(-0.3);
+            let _ = timeout(Duration::from_millis(1720), wait(|| intake.at_reverse_limit())).await;
             intake.set_actuate(0.);
             intake.set_rollers(0.4);
         },
     );
 
     drive("Top.4", &mut drivetrain).await; // next note
-    intake.grab().await;
-    intake.set_actuate(0.4);
+    let failure = timeout(Duration::from_millis(1000), intake.grab()).await.is_err();
+
+    if failure {
+        println!("womp womp :(");
+    }
 
     join!(
         stage(&intake, &shooter),
         drive("Top.5", &mut drivetrain) // scoring position
     );
+
     shoot(&intake, &mut shooter).await;
 }
 
@@ -136,7 +143,6 @@ async fn shoot(intake: &Intake, shooter: &mut Shooter) {
     sleep(Duration::from_secs_f64(0.4)).await;
     shooter.set_feeder(0.);
     intake.set_rollers(0.);
-    shooter.set_shooter(0.);
 }
 
 async fn auto_short(robot: Ferris) {

@@ -12,19 +12,21 @@ pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
     let start = Instant::now();
     loop {
         let elapsed = Time::new::<second>(start.elapsed().as_secs_f64());
-        if elapsed > path.length() {
-            break;
-        }
 
         let setpoint = path.get(elapsed);
         let position = Vector2::new(setpoint.x.get::<meter>(), setpoint.y.get::<meter>());
-        let angle = setpoint.heading;
+        let angle = -setpoint.heading;
 
         let mut error_position = position - drivetrain.odometry.position;
         let mut error_angle = (angle - drivetrain.get_angle()).get::<radian>();
 
+        if elapsed > path.length() && error_position.abs().max() < 0.3 && error_angle.abs() < 0.2  {
+            break;
+        }
+
         error_angle *= SWERVE_TURN_KP;
         error_position *= -0.23;
+
 
         drivetrain.set_speeds(error_position.x, error_position.y, error_angle);
 

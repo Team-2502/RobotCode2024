@@ -177,7 +177,7 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
 
 /// Transfer note from intake to shooter
 pub async fn stage(intake: &Intake, shooter: &Shooter) {
-    intake.set_actuate(0.27);
+    intake.set_actuate(0.3);
     wait(|| intake.at_limit()).await;
     intake.set_actuate(0.0);
 
