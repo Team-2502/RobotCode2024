@@ -6,7 +6,7 @@ use nalgebra::Vector2;
 use tokio::{join, time::{sleep, timeout}, fs::File, io::AsyncReadExt};
 use wpi_trajectory::Path;
 
-use crate::{container::Ferris, subsystems::wait};
+use crate::{container::Ferris, subsystems::{wait, Intake, Shooter}};
 
 use num_derive::FromPrimitive;    
 use num_traits::FromPrimitive;
@@ -83,29 +83,66 @@ async fn top(robot: Ferris) {
 
     shooter.set_shooter(1.0);
     drive("Top.1", &mut drivetrain).await; // scoring position
-    wait(|| shooter.get_velocity() > 5000.).await;
-    shooter.set_feeder(-0.4);
-    sleep(Duration::from_secs_f64(0.3)).await;
-    shooter.set_feeder(0.);
 
-    intake.set_actuate(-0.4);
-    wait(|| intake.at_reverse_limit()).await;
-    intake.set_actuate(0.);
-    intake.set_rollers(0.4);
+    join!(
+        async { // shoot
+            wait(|| shooter.get_velocity() > 5000.).await;
+            shooter.set_feeder(-0.4);
+            sleep(Duration::from_secs_f64(0.3)).await;
+            shooter.set_feeder(0.);
+        },
+        async { // lower intake
+            intake.set_actuate(-0.4);
+            timeout(Duration::from_millis(250), wait(|| intake.at_reverse_limit())).await.unwrap();
+            intake.set_actuate(0.);
+            intake.set_rollers(0.4);
+        },
+    );
 
     drive("Top.2", &mut drivetrain).await; // goto note
     intake.grab().await;
     intake.set_actuate(0.4);
-    wait(|| intake.at_limit()).await;
-    intake.set_actuate(0.); 
-    drive("Top.3", &mut drivetrain).await; // scoring position
+
+    join!(
+        async {
+            wait(|| intake.at_limit()).await;
+            intake.set_actuate(0.); 
+        },
+        drive("Top.3", &mut drivetrain) // scoring position
+    );
+
+    join!(
+        shoot(&intake, &mut shooter),
+        async { // lower intake
+            intake.set_actuate(-0.4);
+            timeout(Duration::from_millis(250), wait(|| intake.at_reverse_limit())).await.unwrap();
+            intake.set_actuate(0.);
+            intake.set_rollers(0.4);
+        },
+    );
+
+    drive("Top.4", &mut drivetrain).await; // next note
+    intake.grab().await;
+    intake.set_actuate(0.4);
+
+    join!(
+        async {
+            wait(|| intake.at_limit()).await;
+            intake.set_actuate(0.); 
+        },
+        drive("Top.5", &mut drivetrain) // scoring position
+    );
+    shoot(&intake, &mut shooter).await;
+}
+
+async fn shoot(intake: &Intake, shooter: &mut Shooter) {
+    wait(|| shooter.get_velocity() > 5000.).await;
     intake.set_rollers(-0.15);
     shooter.set_feeder(-0.3);
     sleep(Duration::from_secs_f64(1.5)).await;
     shooter.set_feeder(0.);
     intake.set_rollers(0.);
     shooter.set_shooter(0.);
-
 }
 
 async fn auto_short(robot: Ferris) {
