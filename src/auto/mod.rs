@@ -99,8 +99,13 @@ async fn top(robot: Ferris) {
         },
     );
 
-    drive("Top.2", &mut drivetrain).await; // goto note
-    let failure = timeout(Duration::from_millis(1000), intake.grab()).await.is_err();
+    let mut failure = false;
+    join!(
+        drive("Top.2", &mut drivetrain), // goto note
+        async {
+            failure = timeout(Duration::from_millis(1000), intake.grab()).await.is_err();
+        }
+    );
 
     if failure {
         println!("womp womp :(");
@@ -121,8 +126,13 @@ async fn top(robot: Ferris) {
         },
     );
 
-    drive("Top.4", &mut drivetrain).await; // next note
-    let failure = timeout(Duration::from_millis(1000), intake.grab()).await.is_err();
+    let mut failure = false;
+    join!(
+        drive("Top.4", &mut drivetrain), // next note
+        async {
+            failure = timeout(Duration::from_millis(1000), intake.grab()).await.is_err();
+        }
+    );
 
     if failure {
         println!("womp womp :(");
