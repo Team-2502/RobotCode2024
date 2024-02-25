@@ -6,7 +6,7 @@ use nalgebra::Vector2;
 use tokio::{join, time::{sleep, timeout}, fs::File, io::AsyncReadExt};
 use wpi_trajectory::Path;
 
-use crate::{container::Ferris, subsystems::{wait, Intake, Shooter}};
+use crate::{container::{Ferris, stage}, subsystems::{wait, Intake, Shooter}};
 
 use num_derive::FromPrimitive;    
 use num_traits::FromPrimitive;
@@ -104,10 +104,7 @@ async fn top(robot: Ferris) {
     intake.set_actuate(0.4);
 
     join!(
-        async {
-            wait(|| intake.at_limit()).await;
-            intake.set_actuate(0.); 
-        },
+        stage(&intake, &shooter),
         drive("Top.3", &mut drivetrain) // scoring position
     );
 
@@ -126,10 +123,7 @@ async fn top(robot: Ferris) {
     intake.set_actuate(0.4);
 
     join!(
-        async {
-            wait(|| intake.at_limit()).await;
-            intake.set_actuate(0.); 
-        },
+        stage(&intake, &shooter),
         drive("Top.5", &mut drivetrain) // scoring position
     );
     shoot(&intake, &mut shooter).await;
@@ -139,7 +133,7 @@ async fn shoot(intake: &Intake, shooter: &mut Shooter) {
     wait(|| shooter.get_velocity() > 5000.).await;
     intake.set_rollers(-0.15);
     shooter.set_feeder(-0.3);
-    sleep(Duration::from_secs_f64(1.5)).await;
+    sleep(Duration::from_secs_f64(0.4)).await;
     shooter.set_feeder(0.);
     intake.set_rollers(0.);
     shooter.set_shooter(0.);
