@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from networktables import networktables
+from networktables import NetworkTables
 
 kernal = np.ones((7,7), "uint8")
 camera = cv2.VideoCapture(0) # First webcam (video0)
@@ -68,8 +68,8 @@ def NoteDetetction(frame):
          cv2.imshow('raw', frame)
 
          # lower range of red color in HSV
-         lower_range = (4.5, 50, 50)
-         upper_range = (25, 255, 255)
+         lower_range = (3, 0, 0)
+         upper_range = (20, 255, 255)
          mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
          mask = cv2.erode(mask, kernal)
