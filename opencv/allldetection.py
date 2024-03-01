@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from networktables import networktables
+from networktables import NetworkTables
 
 kernal = np.ones((7,7), "uint8")
 camera = cv2.VideoCapture(0) # First webcam (video0)
