@@ -97,7 +97,7 @@ impl Intake {
     }
 
     pub fn actuate_position(&mut self) -> Angle {
-        (self.left_actuate.get_position() / COUNTS_PER_REVOLUTION) - self.actuate_zero
+        (self.left_actuate.get_position() - self.actuate_zero) / COUNTS_PER_REVOLUTION
     }
 
     pub fn constrained(&self) -> bool {
@@ -114,16 +114,19 @@ impl Intake {
     pub async fn zero(&mut self) {
         self.set_actuate(0.3);
         wait(|| self.at_limit()).await;
-        self.set_actuate(-0.3);
+        self.set_actuate(0.);
+        sleep(Duration::from_millis(750)).await;
+        wait(|| self.at_limit()).await;
+        self.set_actuate(-0.15);
         wait(|| !self.at_limit()).await;
         self.set_actuate(0.);
-        self.actuate_zero += self.left_actuate.get_position();
+        self.actuate_zero = self.left_actuate.get_position();
     }
 
     /// 0deg is stowed
     /// 180deg is out
     pub fn actuate_to(&self, angle: Angle) {
-        self.left_actuate.set_position((angle - self.actuate_zero) * COUNTS_PER_REVOLUTION)
+        self.left_actuate.set_position(angle * COUNTS_PER_REVOLUTION + self.actuate_zero)
     }
 }
 

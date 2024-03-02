@@ -20,9 +20,6 @@ pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
             setpoint.y = Length::new::<foot>(54./4.) - setpoint.y;
             //setpoint.heading = Angle::new::<degree>(180.)- setpoint.heading;
             setpoint.heading = -setpoint.heading;
-
-            println!("goal h {}", setpoint.heading.get::<degree>());
-
         }
 
 

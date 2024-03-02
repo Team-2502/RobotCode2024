@@ -4,9 +4,10 @@ use frcrs::networktables::Chooser;
 use futures_lite::Future;
 use nalgebra::Vector2;
 use tokio::{join, time::{sleep, timeout}, fs::File, io::AsyncReadExt};
+use uom::si::{angle::degree, f64::Angle};
 use wpi_trajectory::Path;
 
-use crate::{container::{Ferris, stage}, subsystems::{wait, Intake, Shooter}};
+use crate::{container::{Ferris, stage}, subsystems::{wait, Intake, Shooter}, constants::intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD}};
 
 use num_derive::FromPrimitive;    
 use num_traits::FromPrimitive;
@@ -49,7 +50,13 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         Auto::PathTest => {
             let name = "Example.1";
             let mut drivetrain = robot.drivetrain.borrow_mut();
-            drive(name, &mut drivetrain).await;
+            //drive(name, &mut drivetrain).await;
+            let mut shooter = robot.shooter.borrow_mut();
+            let mut intake = robot.intake.borrow_mut();
+            intake.zero().await;
+            stage(&mut intake, &mut shooter).await;
+            //raise_intake(&mut intake).await;
+            //lower_intake(&mut intake).await;
         },
 
     }
@@ -84,7 +91,10 @@ async fn top(robot: Ferris) {
     drivetrain.reset_heading();
 
     shooter.set_shooter(1.0);
-    drive("Top.1", &mut drivetrain).await; // scoring position
+    join!(
+        drive("Top.1", &mut drivetrain), // scoring position
+        intake.zero(),
+    );
 
     join!(
         async { // shoot
@@ -93,13 +103,10 @@ async fn top(robot: Ferris) {
             sleep(Duration::from_secs_f64(0.3)).await;
             shooter.set_feeder(0.);
         },
-        async { // lower intake
-            intake.set_actuate(-0.3);
-            let _ = timeout(Duration::from_millis(1720), wait(|| intake.at_reverse_limit())).await;
-            intake.set_actuate(0.);
-            intake.set_rollers(0.4);
-        },
+        lower_intake(&mut intake)
     );
+
+    intake.set_rollers(0.4);
 
     let mut failure = false;
     join!(
@@ -113,52 +120,38 @@ async fn top(robot: Ferris) {
         println!("womp womp :(");
     }
 
-    join!(
-        stage(&intake, &shooter),
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
         drive("Top.3", &mut drivetrain) // scoring position
     );
 
-    join!(
-        shoot(&intake, &mut shooter),
-        async { // lower intake
-            intake.set_actuate(-0.3);
-            let _ = timeout(Duration::from_millis(1720), wait(|| intake.at_reverse_limit())).await;
-            intake.set_actuate(0.);
-            intake.set_rollers(0.4);
-        },
-    );
+    shoot(&intake, &mut shooter).await;
 
     let mut failure = false;
     join!(
         drive("Top.4", &mut drivetrain), // next note
         async {
+            lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
-        }
+        },
     );
 
     if failure {
         println!("womp womp :(");
     }
 
-    join!(
-        stage(&intake, &shooter),
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
         drive("Top.5", &mut drivetrain) // scoring position
     );
 
-    join!(
-        shoot(&intake, &mut shooter),
-        async { // lower intake
-            intake.set_actuate(-0.3);
-            let _ = timeout(Duration::from_millis(1720), wait(|| intake.at_reverse_limit())).await;
-            intake.set_actuate(0.);
-            intake.set_rollers(0.4);
-        },
-    );
+    shoot(&intake, &mut shooter).await;
 
     let mut failure = false;
     join!(
         drive("Top.6", &mut drivetrain), // goto note
         async {
+            lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
         }
     );
@@ -167,8 +160,8 @@ async fn top(robot: Ferris) {
         println!("womp womp :(");
     }
 
-    join!(
-        stage(&intake, &shooter),
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
         drive("Top.7", &mut drivetrain) // scoring position
     );
 
@@ -248,8 +241,8 @@ async fn center(robot: Ferris) {
         println!("womp womp :(");
     }
 
-    join!(
-        stage(&intake, &shooter),
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
         drive("Top.3", &mut drivetrain) // scoring position
     );
 
@@ -275,11 +268,21 @@ async fn center(robot: Ferris) {
         println!("womp womp :(");
     }
 
-    join!(
-        stage(&intake, &shooter),
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
         drive("Top.5", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
     shooter.set_shooter(0.);
+}
+
+pub async fn lower_intake(intake: &mut Intake) {
+    intake.actuate_to(Angle::new::<degree>(INTAKE_DOWN_GOAL));
+    wait(|| intake.actuate_position().get::<degree>() < INTAKE_DOWN_THRESHOLD).await;
+}
+
+pub async fn raise_intake(intake: &mut Intake) {
+    intake.actuate_to(Angle::new::<degree>(INTAKE_UP_GOAL));
+    wait(|| intake.actuate_position().get::<degree>() > INTAKE_UP_THRESHOLD).await;
 }

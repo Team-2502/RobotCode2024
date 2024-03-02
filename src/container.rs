@@ -3,9 +3,9 @@ use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref, DerefMut}, rc::Rc, time
 use frcrs::{input::Joystick, };
 use frcrs::networktables::SmartDashboard;
 use frcrs::networktables::set_position;
-use tokio::{task::{JoinHandle, LocalSet}, time::sleep};
+use tokio::{task::{JoinHandle, LocalSet}, time::sleep, join};
 use uom::si::{angle::{degree, radian}, f64::Angle};
-use crate::{constants::{drivetrain::SWERVE_TURN_KP, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}};
+use crate::{constants::{drivetrain::SWERVE_TURN_KP, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake};
 use frcrs::deadzone;
 
 #[derive(Clone)]
@@ -87,11 +87,11 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
         let intake = robot.intake.clone();
         let shooter = robot.shooter.clone();
         robot.grab.replace(Some(executor.spawn_local(async move {
-            let intake = intake.deref().try_borrow();
+            let intake = intake.deref().try_borrow_mut();
             let shooter = shooter.deref().try_borrow();
 
-            if let (Ok(intake), Ok(shooter)) = (intake, shooter) {
-                stage(&intake, &shooter).await;
+            if let (Ok(mut intake), Ok(shooter)) = (intake, shooter) {
+                stage(&mut intake, &shooter).await;
             }
         })));
     } else if !operator.get(7) {
@@ -125,7 +125,6 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
             } else {
                 if operator.get(3) {
                     intake.actuate_to(Angle::new::<degree>(INTAKE_UP_GOAL));
-                    println!("stow");
                 } else if operator.get(4) {
                     intake.actuate_to(Angle::new::<degree>(INTAKE_DOWN_GOAL));
                 }
@@ -186,16 +185,12 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
 }
 
 /// Transfer note from intake to shooter
-pub async fn stage(intake: &Intake, shooter: &Shooter) {
+pub async fn stage(intake: &mut Intake, shooter: &Shooter) {
     intake.set_rollers(0.6);
-    intake.set_actuate(0.3);
-    wait(|| intake.at_limit()).await;
-    intake.set_actuate(0.0);
-
-    sleep(Duration::from_millis(75)).await;
+    raise_intake(intake).await;
 
     intake.set_rollers(-0.1);
-    shooter.set_feeder(-0.14);
+    shooter.set_feeder(-0.24);
     wait(|| shooter.contains_note()).await;
     intake.set_rollers(0.0);
 
