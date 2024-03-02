@@ -4,8 +4,8 @@ use frcrs::{input::Joystick, };
 use frcrs::networktables::SmartDashboard;
 use frcrs::networktables::set_position;
 use tokio::{task::{JoinHandle, LocalSet}, time::sleep};
-use uom::si::angle::{degree, radian};
-use crate::{constants::{drivetrain::SWERVE_TURN_KP, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}};
+use uom::si::{angle::{degree, radian}, f64::Angle};
+use crate::{constants::{drivetrain::SWERVE_TURN_KP, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}};
 use frcrs::deadzone;
 
 #[derive(Clone)]
@@ -101,9 +101,10 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
     }
     
     if !staging {
-        if let Ok(intake) = robot.intake.try_borrow_mut() {
+        if let Ok(mut intake) = robot.intake.try_borrow_mut() {
             SmartDashboard::put_bool("intake at limit {}".to_owned(), intake.at_limit());
             SmartDashboard::put_bool("intake at reverse limit {}".to_owned(), intake.at_reverse_limit());
+            SmartDashboard::put_number("intake position {}".to_owned(), intake.actuate_position().get::<degree>());
 
             if operator.get(9) {
                 intake.set_rollers(0.4);
@@ -113,12 +114,21 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
                 intake.stop_rollers();
             }
 
-            if operator.get(3) && !intake.at_limit() {
-                intake.set_actuate(0.3);
-            } else if operator.get(4) && !intake.at_reverse_limit() {
-                intake.set_actuate(-0.3);
+            if operator.get(5) {
+                if operator.get(3) && !intake.at_limit() {
+                    intake.set_actuate(0.3);
+                } else if operator.get(4) && !intake.at_reverse_limit() {
+                    intake.set_actuate(-0.3);
+                } else {
+                    intake.stop_actuate();
+                }
             } else {
-                intake.stop_actuate();
+                if operator.get(3) {
+                    intake.actuate_to(Angle::new::<degree>(INTAKE_UP_GOAL));
+                    println!("stow");
+                } else if operator.get(4) {
+                    intake.actuate_to(Angle::new::<degree>(INTAKE_DOWN_GOAL));
+                }
             }
         }
     }

@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use frcrs::{rev::{MotorType, Spark, SparkMax}, dio::DIO};
 use tokio::time::sleep;
+use uom::si::{angle::degree, f64::Angle};
 use crate::constants::*;
 
 pub struct Intake {
@@ -13,7 +14,11 @@ pub struct Intake {
 
     limit: DIO,
     reverse_limit: DIO,
+
+    actuate_zero: Angle,
 }
+
+const COUNTS_PER_REVOLUTION: f64 = 41.6;
 
 impl Intake {
     pub fn new() -> Self {
@@ -21,6 +26,10 @@ impl Intake {
         let right_roller = Spark::new(INTAKE_ROLLER_RIGHT, MotorType::Brushless);
 
         let left_actuate = Spark::new(INTAKE_ACTUATE_LEFT, MotorType::Brushless);
+        let pid = left_actuate.get_pid();
+        pid.set_p(0.08);
+        pid.set_d(0.45);
+
         let right_actuate = Spark::new(INTAKE_ACTUATE_RIGHT, MotorType::Brushless);
 
         let limit = DIO::new(INTAKE_LIMIT);
@@ -35,6 +44,8 @@ impl Intake {
 
             limit,
             reverse_limit,
+
+            actuate_zero: Angle::new::<degree>(0.),
         }
     }
 
@@ -85,6 +96,10 @@ impl Intake {
         !self.limit.get()
     }
 
+    pub fn actuate_position(&mut self) -> Angle {
+        (self.left_actuate.get_position() / COUNTS_PER_REVOLUTION) - self.actuate_zero
+    }
+
     pub fn constrained(&self) -> bool {
         self.at_limit() || self.at_reverse_limit()
     }
@@ -94,6 +109,21 @@ impl Intake {
         wait(|| self.running()).await;
         wait(|| self.stalled()).await;
         self.stop_rollers();
+    }
+
+    pub async fn zero(&mut self) {
+        self.set_actuate(0.3);
+        wait(|| self.at_limit()).await;
+        self.set_actuate(-0.3);
+        wait(|| !self.at_limit()).await;
+        self.set_actuate(0.);
+        self.actuate_zero += self.left_actuate.get_position();
+    }
+
+    /// 0deg is stowed
+    /// 180deg is out
+    pub fn actuate_to(&self, angle: Angle) {
+        self.left_actuate.set_position((angle - self.actuate_zero) * COUNTS_PER_REVOLUTION)
     }
 }
 

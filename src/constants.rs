@@ -43,6 +43,12 @@ pub mod intake {
     pub const INTAKE_OCCUPIED_VELOCITY: f64 = 1500.;
     /// velocity that intake acceleration is "over" at
     pub const INTAKE_FREE_VELOCITY: f64 = 2000.; 
+
+    pub const INTAKE_DOWN_THRESHOLD: f64 = -170.; 
+    pub const INTAKE_UP_THRESHOLD: f64 = -170.; 
+    pub const INTAKE_DOWN_GOAL: f64 = -192.; 
+    pub const INTAKE_UP_GOAL: f64 = 0.; 
+
 }
 
 pub mod drivetrain {
