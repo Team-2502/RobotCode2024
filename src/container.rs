@@ -5,7 +5,7 @@ use frcrs::networktables::SmartDashboard;
 use frcrs::networktables::set_position;
 use tokio::{task::{JoinHandle, LocalSet}, time::sleep, join, sync::RwLock};
 use uom::si::{angle::{degree, radian}, f64::Angle};
-use crate::{constants::{drivetrain::SWERVE_TURN_KP, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self}};
+use crate::{constants::{drivetrain::{SWERVE_TURN_KP, self}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self}};
 use frcrs::deadzone;
 
 #[derive(Clone)]
@@ -63,7 +63,8 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
     SmartDashboard::put_number("Odo Y".to_owned(), drivetrain.odometry.position.y);
 
     SmartDashboard::put_number("Angle".to_owned(), angle.get::<degree>());
-    SmartDashboard::put_bool("red".to_owned(), alliance_station().red());
+    let red = alliance_station().red();
+    SmartDashboard::put_bool("red".to_owned(), red);
 
     if left_drive.get(3) {
         drivetrain.reset_heading();
@@ -185,17 +186,28 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
 
     SmartDashboard::put_bool("beam break: {}".to_owned(), shooter.contains_note());
     //println!("doo dad: {}", get_dio(INTAKE_LIMIT));
+
+    let drivetrain = robot.drivetrain.clone();
+    let telemetry = robot.telemetry.clone();
+    executor.spawn_local(async move {
+        if let Ok(mut dt) = drivetrain.deref().try_borrow_mut() {
+            dt.odometry.update_from_vision(telemetry, red).await;
+        }
+    });
 }
 
 /// Transfer note from intake to shooter
 pub async fn stage(intake: &mut Intake, shooter: &Shooter) {
-    intake.set_rollers(0.6);
+    intake.set_rollers(1.);
     raise_intake(intake).await;
+    intake.set_actuate(0.15);
+    wait(|| intake.at_limit()).await;
 
     intake.set_rollers(-0.1);
     shooter.set_feeder(-0.24);
     wait(|| shooter.contains_note()).await;
     intake.set_rollers(0.0);
+    intake.set_actuate(0.0);
 
     shooter.set_feeder(-0.10);
     wait(|| !shooter.contains_note()).await;

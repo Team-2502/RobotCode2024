@@ -28,7 +28,7 @@ pub async fn follow_path(drivetrain: &mut Drivetrain, telemetry: TelemetryStore,
         let position = Vector2::new(setpoint.x.get::<meter>(), setpoint.y.get::<meter>());
         let angle = -setpoint.heading;
 
-        drivetrain.odometry.update_from_vision(telemetry.clone(), red).await;
+        //drivetrain.odometry.update_from_vision(telemetry.clone(), red).await;
 
         let mut error_position = position - drivetrain.odometry.position;
         let mut error_angle = (angle - drivetrain.get_angle()).get::<radian>();

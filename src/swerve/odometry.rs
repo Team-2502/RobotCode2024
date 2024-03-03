@@ -3,7 +3,7 @@ use std::{ops::Sub, time::Instant};
 use nalgebra::{Vector2, Rotation2};
 use uom::si::{f64::{Length, Angle}, angle::radian, length::meter};
 
-use crate::{telemetry::{self, TelemetryStore}, constants::HALF_FIELD_WIDTH_METERS};
+use crate::{telemetry::{self, TelemetryStore}, constants::{HALF_FIELD_WIDTH_METERS, HALF_FIELD_LENGTH_METERS}};
 
 #[derive(Default, Clone)]
 pub struct ModuleReturn {
@@ -51,9 +51,9 @@ impl Odometry {
             if self.last_apriltag >= *time {
                 return;
             }
-            self.position.x = pose.x;
-            self.position.y = if mirror {
-                HALF_FIELD_WIDTH_METERS - pose.y
+            self.position.y = pose.y;
+            self.position.x = if mirror {
+                (HALF_FIELD_LENGTH_METERS - pose.x) + HALF_FIELD_LENGTH_METERS
             } else {
                 pose.y
             };
