@@ -104,13 +104,10 @@ fn entrypoint() {
         last_loop = Instant::now();
     }});
 
-    let server = executor.spawn(async {
-        let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", TELEMETRY_PORT)).await.unwrap();
+    executor.spawn(async {
+        let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", TELEMETRY_PORT)).await.unwrap();
         axum::serve(listener, router).await.unwrap();
     }).abort_handle();
 
     executor.block_on(controller);
-
-    server.abort();
-
 }
