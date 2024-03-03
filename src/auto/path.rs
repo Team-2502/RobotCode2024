@@ -6,9 +6,9 @@ use tokio::time::{Instant, sleep};
 use uom::si::{f64::{Time, Angle, Length}, time::second, length::{meter, foot}, angle::{radian, degree}};
 use wpi_trajectory::{Path, Pose};
 
-use crate::{subsystems::Drivetrain, constants::drivetrain::SWERVE_TURN_KP};
+use crate::{subsystems::Drivetrain, constants::drivetrain::SWERVE_TURN_KP, telemetry::{self, TelemetryStore}};
 
-pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
+pub async fn follow_path(drivetrain: &mut Drivetrain, telemetry: TelemetryStore, path: Path) {
     let start = Instant::now();
     loop {
         let elapsed = Time::new::<second>(start.elapsed().as_secs_f64());
@@ -26,8 +26,11 @@ pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
         let position = Vector2::new(setpoint.x.get::<meter>(), setpoint.y.get::<meter>());
         let angle = -setpoint.heading;
 
+        drivetrain.odometry.update_from_vision(telemetry.clone()).await;
+
         let mut error_position = position - drivetrain.odometry.position;
         let mut error_angle = (angle - drivetrain.get_angle()).get::<radian>();
+
 
         if elapsed > path.length() && error_position.abs().max() < 0.3 && error_angle.abs() < 0.2  {
             break;

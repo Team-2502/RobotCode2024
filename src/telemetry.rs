@@ -1,7 +1,7 @@
-use std::{sync::Arc, collections::HashMap};
-use axum::{Router, extract::{State, Path}, routing::get, response::Html};
+use std::{sync::Arc, collections::HashMap, time::Instant};
+use axum::{Router, extract::{State, Path}, routing::{get, post}, response::Html, Json};
 use num_traits::{ToPrimitive, FromPrimitive};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use tokio::sync::RwLock;
 
 use crate::auto::Auto;
@@ -18,7 +18,15 @@ pub enum Data {
 #[derive(Default)]
 pub struct Telemetry {
     pub auto: Auto,
-    pub data: HashMap<String, Data>
+    pub data: HashMap<String, Data>,
+    pub apriltag_pose: Option<(Instant, Pose)>,
+}
+
+#[derive(Deserialize, Default)]
+pub struct Pose {
+    pub x: f64,
+    pub y: f64,
+    pub theta: f64, // degrees
 }
 
 pub fn server() -> Router<TelemetryStore> {
@@ -27,9 +35,20 @@ pub fn server() -> Router<TelemetryStore> {
         .route("/get_auto", get(get_auto))
         .route("/get_auto_name", get(get_auto_name))
         .route("/get_auto/:id", get(get_auto_name_by_id))
-        .route("/set_auto/:id", get(set_auto)); // words have no meaning :)
+        .route("/set_auto/:id", get(set_auto)) // words have no meaning :)
+        .route("/set_position", post(set_position));
 
     router
+}
+
+async fn set_position(
+    State(state): State<TelemetryStore>,
+    Json(pose): Json<Pose>,
+    ) -> &'static str {
+    let pose = (Instant::now(), pose);
+    state.write().await.apriltag_pose = Some(pose);
+
+    "written"
 }
 
 async fn frontend() -> Html<&'static str> {

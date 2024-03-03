@@ -1,7 +1,9 @@
-use std::ops::Sub;
+use std::{ops::Sub, time::Instant};
 
 use nalgebra::{Vector2, Rotation2};
 use uom::si::{f64::{Length, Angle}, angle::radian, length::meter};
+
+use crate::telemetry::{self, TelemetryStore};
 
 #[derive(Default, Clone)]
 pub struct ModuleReturn {
@@ -33,13 +35,27 @@ impl Sub for ModuleReturn {
 pub struct Odometry {
     last_modules: Vec<ModuleReturn>,
     pub position: Vector2<f64>,
+    last_apriltag: Instant,
 }
 
 impl Odometry {
     pub fn new() -> Self { 
         let last_modules = Vec::new();
         let position = Vector2::new(0., 0.);
-        Self { last_modules, position } 
+        let last_apriltag = Instant::now();
+        Self { last_modules, position, last_apriltag } 
+    }
+
+    pub async fn update_from_vision(&mut self, telemetry: TelemetryStore) {
+        if let Some((time, pose)) = &telemetry.read().await.apriltag_pose {
+            if self.last_apriltag >= *time {
+                return;
+            }
+            self.position.x = pose.x;
+            self.position.y = pose.y;
+            self.last_apriltag = time.clone();
+        }
+
     }
 
     pub fn calculate(&mut self, positions: Vec<ModuleReturn>, angle: Angle) {
