@@ -24,6 +24,7 @@ pub enum Auto {
     Top = 4,
     Center = 5,
     Bottom = 6,
+    ZeroIntake = 7,
 }
 
 impl Auto {
@@ -35,6 +36,7 @@ impl Auto {
             Auto::Top => "near amp 4 note",
             Auto::Center => "untested riley brain vomit",
             Auto::Bottom => "internal then far (2 note)",
+            Auto::ZeroIntake => "zero intake rotation",
         }
     }
     
@@ -80,7 +82,10 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
             //raise_intake(&mut intake).await;
             //lower_intake(&mut intake).await;
         },
-
+        Auto::ZeroIntake => {
+            let mut intake = robot.intake.borrow_mut();
+            intake.zero().await;
+        },
     }
 }
 

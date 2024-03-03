@@ -1,6 +1,6 @@
 use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref, DerefMut}, rc::Rc, time::Duration, sync::Arc};
 
-use frcrs::{input::Joystick, };
+use frcrs::{input::Joystick, alliance_station, };
 use frcrs::networktables::SmartDashboard;
 use frcrs::networktables::set_position;
 use tokio::{task::{JoinHandle, LocalSet}, time::sleep, join, sync::RwLock};
@@ -63,6 +63,7 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
     SmartDashboard::put_number("Odo Y".to_owned(), drivetrain.odometry.position.y);
 
     SmartDashboard::put_number("Angle".to_owned(), angle.get::<degree>());
+    SmartDashboard::put_bool("red".to_owned(), alliance_station().red());
 
     if left_drive.get(3) {
         drivetrain.reset_heading();

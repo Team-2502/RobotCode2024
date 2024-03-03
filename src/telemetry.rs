@@ -46,6 +46,7 @@ async fn set_position(
     Json(pose): Json<Pose>,
     ) -> &'static str {
     let pose = (Instant::now(), pose);
+    println!("apriltag pose at x{} y{}", pose.1.x, pose.1.y);
     state.write().await.apriltag_pose = Some(pose);
 
     "written"
@@ -73,7 +74,6 @@ async fn get_auto_name_by_id(
     } else {
         "Not real"
     }
-
 }
 
 async fn set_auto(

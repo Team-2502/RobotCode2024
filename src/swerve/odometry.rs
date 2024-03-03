@@ -3,7 +3,7 @@ use std::{ops::Sub, time::Instant};
 use nalgebra::{Vector2, Rotation2};
 use uom::si::{f64::{Length, Angle}, angle::radian, length::meter};
 
-use crate::telemetry::{self, TelemetryStore};
+use crate::{telemetry::{self, TelemetryStore}, constants::HALF_FIELD_WIDTH_METERS};
 
 #[derive(Default, Clone)]
 pub struct ModuleReturn {
@@ -46,13 +46,17 @@ impl Odometry {
         Self { last_modules, position, last_apriltag } 
     }
 
-    pub async fn update_from_vision(&mut self, telemetry: TelemetryStore) {
+    pub async fn update_from_vision(&mut self, telemetry: TelemetryStore, mirror: bool) {
         if let Some((time, pose)) = &telemetry.read().await.apriltag_pose {
             if self.last_apriltag >= *time {
                 return;
             }
             self.position.x = pose.x;
-            self.position.y = pose.y;
+            self.position.y = if mirror {
+                HALF_FIELD_WIDTH_METERS - pose.y
+            } else {
+                pose.y
+            };
             self.last_apriltag = time.clone();
         }
 

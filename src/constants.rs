@@ -39,6 +39,7 @@ pub const BEAM_BREAK_SIGNAL: i32 = 1;
 pub const INTAKE_DOWN_LIMIT: i32 = 3;
 
 pub const TELEMETRY_PORT: i32 = 8089;
+pub const HALF_FIELD_WIDTH_METERS: f64 = 4.1148; // 54/4 feet
 
 pub mod intake {
     pub const INTAKE_OCCUPIED_CURRENT: f64 = 30.;

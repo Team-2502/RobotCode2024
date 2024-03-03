@@ -1,6 +1,6 @@
 use std::{time::Duration, f64::consts::FRAC_2_PI};
 
-use frcrs::networktables::set_position;
+use frcrs::{networktables::set_position, alliance_station};
 use nalgebra::{Vector2, Rotation2};
 use tokio::time::{Instant, sleep};
 use uom::si::{f64::{Time, Angle, Length}, time::second, length::{meter, foot}, angle::{radian, degree}};
@@ -10,13 +10,15 @@ use crate::{subsystems::Drivetrain, constants::drivetrain::SWERVE_TURN_KP, telem
 
 pub async fn follow_path(drivetrain: &mut Drivetrain, telemetry: TelemetryStore, path: Path) {
     let start = Instant::now();
+    let red = alliance_station().red();
+
     loop {
         let elapsed = Time::new::<second>(start.elapsed().as_secs_f64());
 
         let mut setpoint = path.get(elapsed);
 
         // TODO: red-blu detection
-        if true {
+        if red {
             setpoint.y = Length::new::<foot>(54./4.) - setpoint.y;
             //setpoint.heading = Angle::new::<degree>(180.)- setpoint.heading;
             setpoint.heading = -setpoint.heading;
@@ -26,7 +28,7 @@ pub async fn follow_path(drivetrain: &mut Drivetrain, telemetry: TelemetryStore,
         let position = Vector2::new(setpoint.x.get::<meter>(), setpoint.y.get::<meter>());
         let angle = -setpoint.heading;
 
-        drivetrain.odometry.update_from_vision(telemetry.clone()).await;
+        drivetrain.odometry.update_from_vision(telemetry.clone(), red).await;
 
         let mut error_position = position - drivetrain.odometry.position;
         let mut error_angle = (angle - drivetrain.get_angle()).get::<radian>();
