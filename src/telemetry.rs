@@ -17,8 +17,8 @@ pub enum Data {
 
 #[derive(Default)]
 pub struct Telemetry {
-    auto: Auto,
-    data: HashMap<String, Data>
+    pub auto: Auto,
+    pub data: HashMap<String, Data>
 }
 
 pub fn server() -> Router<TelemetryStore> {

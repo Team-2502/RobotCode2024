@@ -81,7 +81,9 @@ fn entrypoint() {
             if let None = auto {
                 let robot = robot.clone();
 
-                let run = run_auto(chooser.get(), robot);
+                let chosen = robot.telemetry.read().await.auto.clone();
+
+                let run = run_auto(chosen, robot);
                 auto = Some(local.spawn_local(run).abort_handle());
                 //auto = Some(local.spawn_local(auto_long(robot.clone())).abort_handle());
             }
