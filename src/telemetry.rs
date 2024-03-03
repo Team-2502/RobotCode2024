@@ -1,5 +1,5 @@
 use std::{sync::Arc, collections::HashMap};
-use axum::{Router, extract::{State, Path}, routing::get};
+use axum::{Router, extract::{State, Path}, routing::get, response::Html};
 use num_traits::{ToPrimitive, FromPrimitive};
 use serde::Serialize;
 use tokio::sync::RwLock;
@@ -23,12 +23,17 @@ pub struct Telemetry {
 
 pub fn server() -> Router<TelemetryStore> {
     let router = Router::new()
+        .route("/", get(frontend))
         .route("/get_auto", get(get_auto))
         .route("/get_auto_name", get(get_auto_name))
         .route("/get_auto/:id", get(get_auto_name_by_id))
         .route("/set_auto/:id", get(set_auto)); // words have no meaning :)
 
     router
+}
+
+async fn frontend() -> Html<&'static str> {
+    Html(include_str!("../client/selector.html"))
 }
 
 async fn get_auto_name(
