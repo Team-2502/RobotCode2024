@@ -38,6 +38,8 @@ pub const BEAM_BREAK_EMITTER: i32 = 2;
 pub const BEAM_BREAK_SIGNAL: i32 = 1;
 pub const INTAKE_DOWN_LIMIT: i32 = 3;
 
+pub const TELEMETRY_PORT: i32 = 8089;
+
 pub mod intake {
     pub const INTAKE_OCCUPIED_CURRENT: f64 = 30.;
     pub const INTAKE_OCCUPIED_VELOCITY: f64 = 1500.;

@@ -3,11 +3,13 @@ mod subsystems;
 mod constants;
 mod swerve;
 mod auto;
+mod telemetry;
 
 use std::thread;
 use std::time::{Instant, Duration};
 
 use auto::{autos, run_auto, AutoChooser};
+use constants::TELEMETRY_PORT;
 use container::Ferris;
 use frcrs::ctre::{Falcon};
 use frcrs::is_teleop;
@@ -48,6 +50,9 @@ fn entrypoint() {
     let mut operator = Joystick::new(2);
 
     let mut robot = Ferris::new();
+
+    let router = telemetry::server()
+        .with_state(robot.telemetry.clone());
 
     let executor = tokio::runtime::Runtime::new().unwrap();
     let local = task::LocalSet::new();
@@ -96,5 +101,14 @@ fn entrypoint() {
         SmartDashboard::put_number("loop rate (hz)".to_owned(), 1./last_loop.elapsed().as_secs_f64());
         last_loop = Instant::now();
     }});
+
+    let server = executor.spawn(async {
+        let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", TELEMETRY_PORT)).await.unwrap();
+        axum::serve(listener, router).await.unwrap();
+    }).abort_handle();
+
     executor.block_on(controller);
+
+    server.abort();
+
 }

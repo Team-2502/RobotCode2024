@@ -1,11 +1,11 @@
-use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref, DerefMut}, rc::Rc, time::Duration};
+use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref, DerefMut}, rc::Rc, time::Duration, sync::Arc};
 
 use frcrs::{input::Joystick, };
 use frcrs::networktables::SmartDashboard;
 use frcrs::networktables::set_position;
-use tokio::{task::{JoinHandle, LocalSet}, time::sleep, join};
+use tokio::{task::{JoinHandle, LocalSet}, time::sleep, join, sync::RwLock};
 use uom::si::{angle::{degree, radian}, f64::Angle};
-use crate::{constants::{drivetrain::SWERVE_TURN_KP, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake};
+use crate::{constants::{drivetrain::SWERVE_TURN_KP, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self}};
 use frcrs::deadzone;
 
 #[derive(Clone)]
@@ -17,6 +17,7 @@ pub struct Ferris {
     grab: Rc<RefCell<Option<JoinHandle<()>>>>,
     stage: Rc<RefCell<Option<JoinHandle<()>>>>,
     shooter_state: Rc<RefCell<(bool,bool)>>,
+    pub telemetry: TelemetryStore,
 }
 
 impl Ferris {
@@ -26,7 +27,8 @@ impl Ferris {
         let shooter = Rc::new(RefCell::new(Shooter::new()));
         let climber = Rc::new(RefCell::new(Climber::new()));
         let shooter_state = Rc::new(RefCell::new((false,false)));
-        Self { drivetrain, intake, shooter, climber, grab: Rc::new(RefCell::new(None)), shooter_state, stage: Rc::new(RefCell::new(None)) } 
+        let telemetry = Arc::new(RwLock::new(Default::default()));
+        Self { drivetrain, intake, shooter, climber, grab: Rc::new(RefCell::new(None)), shooter_state, stage: Rc::new(RefCell::new(None)), telemetry } 
     }
 }
 

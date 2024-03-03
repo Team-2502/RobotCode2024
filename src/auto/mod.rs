@@ -9,14 +9,14 @@ use wpi_trajectory::Path;
 
 use crate::{container::{Ferris, stage}, subsystems::{wait, Intake, Shooter}, constants::intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD}};
 
-use num_derive::FromPrimitive;    
+use num_derive::{FromPrimitive, ToPrimitive};    
 use num_traits::FromPrimitive;
 
 use self::path::follow_path;
 
 pub mod path;
 
-#[derive(Clone, FromPrimitive)]
+#[derive(Clone, FromPrimitive, ToPrimitive)]
 pub enum Auto {
     Short = 1,
     PathTest = 2,
@@ -24,6 +24,12 @@ pub enum Auto {
     Top = 4,
     Center = 5,
     Bottom = 6,
+}
+
+impl Default for Auto {
+    fn default() -> Self {
+        Auto::Nop
+    }
 }
 pub struct AutoChooser(Chooser<Auto>);
 
