@@ -192,6 +192,95 @@ async fn top(robot: Ferris) {
     shooter.set_shooter(0.);
 }
 
+async fn 3Note(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+
+    drivetrain.odometry.position = Vector2::new(0.4550510048866272,(8.2296/2.)-7.067881107330322);
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    shooter.set_shooter(1.0);
+    join!(
+        drive("3Note.1", &mut drivetrain), // scoring position
+        intake.zero(),
+    );
+
+    join!(
+        async { // shoot
+            wait(|| shooter.get_velocity() > 5000.).await;
+            shooter.set_feeder(-0.4);
+            sleep(Duration::from_secs_f64(0.3)).await;
+            shooter.set_feeder(0.);
+        },
+        lower_intake(&mut intake)
+    );
+
+    intake.set_rollers(0.4);
+
+    let mut failure = false;
+    join!(
+        drive("3Note.2", &mut drivetrain), // goto note
+        async {
+            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        drive("3Note.3", &mut drivetrain) // scoring position
+    );
+
+    shoot(&intake, &mut shooter).await;
+
+    let mut failure = false;
+    join!(
+        drive("3Note.4", &mut drivetrain), // next note
+        async {
+            lower_intake(&mut intake).await;
+            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+        },
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        drive("3Note.5", &mut drivetrain) // scoring position
+    );
+
+    shoot(&intake, &mut shooter).await;
+
+    let mut failure = false;
+    join!(
+        drive("3Note.6", &mut drivetrain), // goto note
+        async {
+            lower_intake(&mut intake).await;
+            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        drive("3Note.7", &mut drivetrain) // scoring position
+    );
+
+    shoot(&intake, &mut shooter).await;
+
+    shooter.set_shooter(0.);
+}
+
 async fn shoot(intake: &Intake, shooter: &mut Shooter) {
     wait(|| shooter.get_velocity() > 5000.).await;
     intake.set_rollers(-0.15);
