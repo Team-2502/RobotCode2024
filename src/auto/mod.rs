@@ -23,6 +23,7 @@ pub enum Auto {
     Nop = 3,
     Top = 4,
     Center = 5,
+    Bottom = 6,
 }
 pub struct AutoChooser(Chooser<Auto>);
 
@@ -46,6 +47,7 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         Auto::Short => auto_short(robot).await,
         Auto::Top => top(robot).await,
         Auto::Center => center(robot).await,
+        Auto::Bottom => bottom(robot).await,
         Auto::Nop => {},
         Auto::PathTest => {
             let name = "Example.1";
@@ -271,6 +273,50 @@ async fn center(robot: Ferris) {
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
         drive("Top.5", &mut drivetrain) // scoring position
+    );
+
+    shoot(&intake, &mut shooter).await;
+    shooter.set_shooter(0.);
+}
+
+async fn bottom(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+
+    drivetrain.odometry.position = Vector2::new(0.399,(8.2296/2.)-4.098);
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    shooter.set_shooter(1.0);
+    join!(
+        drive("Bottom.1", &mut drivetrain), // scoring position
+        intake.zero(),
+    );
+
+    // shoot
+    wait(|| shooter.get_velocity() > 5000.).await;
+    shooter.set_feeder(-0.4);
+    sleep(Duration::from_secs_f64(0.3)).await;
+    shooter.set_feeder(0.);
+
+    let mut failure = false;
+    join!(
+        drive("Bottom.2", &mut drivetrain), // goto note
+        async {
+            sleep(Duration::from_millis(1750)).await;
+            lower_intake(&mut intake).await;
+            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        drive("Bottom.3", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
