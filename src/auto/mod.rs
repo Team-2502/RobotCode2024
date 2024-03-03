@@ -26,6 +26,20 @@ pub enum Auto {
     Bottom = 6,
 }
 
+impl Auto {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Auto::Short => "close",
+            Auto::PathTest => "test",
+            Auto::Nop => "hit the bell with the glock a couple times",
+            Auto::Top => "near amp 4 note",
+            Auto::Center => "untested riley brain vomit",
+            Auto::Bottom => "internal then far (2 note)",
+        }
+    }
+    
+}
+
 impl Default for Auto {
     fn default() -> Self {
         Auto::Nop
