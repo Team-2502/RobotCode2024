@@ -192,7 +192,7 @@ async fn top(robot: Ferris) {
     shooter.set_shooter(0.);
 }
 
-async fn 3Note(robot: Ferris) {
+async fn Triple_Note(robot: Ferris) {
     let mut intake = robot.intake.deref().borrow_mut();
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
     let mut shooter = robot.shooter.deref().borrow_mut();
