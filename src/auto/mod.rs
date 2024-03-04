@@ -27,6 +27,7 @@ pub enum Auto {
     ZeroIntake = 7,
     TopCenter = 8,
     BottomOut = 9,
+    TopStop = 10,
 }
 
 impl Auto {
@@ -35,7 +36,8 @@ impl Auto {
             Auto::Short => "close",
             Auto::PathTest => "test",
             Auto::Nop => "hit the bell with the glock a couple times",
-            Auto::Top => "near amp 4 note",
+            Auto::Top => "near amp 4 note, swing b4 last",
+            Auto::TopStop => "near amp 4 note, stop b4 last",
             Auto::Center => "untested riley brain vomit",
             Auto::Bottom => "internal then far (2 note)",
             Auto::ZeroIntake => "zero intake rotation",
@@ -112,6 +114,100 @@ pub fn autos() -> AutoChooser {
     //chooser.add("tk", Auto::Long);
 
     chooser
+}
+
+
+async fn top_stop(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+    let telemetry = robot.telemetry.clone();
+
+    drivetrain.odometry.position = Vector2::new(0.469,(8.2296/2.)-7.034497);
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    shooter.set_shooter(1.0);
+    join!(
+        drive("Top.1", &mut drivetrain, telemetry.clone()), // scoring position
+        intake.zero(),
+    );
+
+    join!(
+        async { // shoot
+            wait(|| shooter.get_velocity() > 5000.).await;
+            shooter.set_feeder(-0.4);
+            sleep(Duration::from_secs_f64(0.3)).await;
+            shooter.set_feeder(0.);
+        },
+        lower_intake(&mut intake)
+    );
+
+    intake.set_rollers(0.4);
+
+    let mut failure = false;
+    join!(
+        drive("Top.2", &mut drivetrain, telemetry.clone()), // goto note
+        async {
+            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        drive("Top.3", &mut drivetrain, telemetry.clone()) // scoring position
+    );
+
+    shoot(&intake, &mut shooter).await;
+
+    let mut failure = false;
+    join!(
+        drive("Top.4", &mut drivetrain, telemetry.clone()), // next note
+        async {
+            lower_intake(&mut intake).await;
+            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+        },
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        drive("Top.5", &mut drivetrain, telemetry.clone()) // scoring position
+    );
+
+    shoot(&intake, &mut shooter).await;
+
+    let mut failure = false;
+
+    drive("Top.6", &mut drivetrain, telemetry.clone()).await;
+
+    join!(
+        drive("Top.7", &mut drivetrain, telemetry.clone()), // goto note
+        async {
+            lower_intake(&mut intake).await;
+            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        drive("Top.8", &mut drivetrain, telemetry.clone()) // scoring position
+    );
+
+    shoot(&intake, &mut shooter).await;
+
+    shooter.set_shooter(0.);
 }
 
 async fn top(robot: Ferris) {
