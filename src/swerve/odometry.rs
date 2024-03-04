@@ -1,5 +1,6 @@
 use std::{ops::Sub, time::Instant};
 
+use frcrs::alliance_station;
 use nalgebra::{Vector2, Rotation2};
 use uom::si::{f64::{Length, Angle}, angle::radian, length::meter};
 
@@ -44,6 +45,16 @@ impl Odometry {
         let position = Vector2::new(0., 0.);
         let last_apriltag = Instant::now();
         Self { last_modules, position, last_apriltag } 
+    }
+
+    pub fn set(&mut self, position: Vector2<f64>) {
+        if alliance_station().red() {
+            self.position.x = position.x;
+            self.position.y = HALF_FIELD_WIDTH_METERS - position.y;
+        } else {
+            self.position = position;
+            
+        }
     }
 
     pub async fn update_from_vision(&mut self, telemetry: TelemetryStore, mirror: bool) {

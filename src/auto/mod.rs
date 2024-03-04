@@ -74,6 +74,7 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
     match auto {
         Auto::Short => auto_short(robot).await,
         Auto::Top => top(robot).await,
+        Auto::TopStop => top_stop(robot).await,
         Auto::Center => center(robot).await,
         Auto::Bottom => bottom(robot).await,
         Auto::BottomOut => bottom_out(robot).await,
@@ -123,7 +124,7 @@ async fn top_stop(robot: Ferris) {
     let mut shooter = robot.shooter.deref().borrow_mut();
     let telemetry = robot.telemetry.clone();
 
-    drivetrain.odometry.position = Vector2::new(0.469,(8.2296/2.)-7.034497);
+    drivetrain.odometry.set(Vector2::new(0.469,7.034497));
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
@@ -216,7 +217,7 @@ async fn top(robot: Ferris) {
     let mut shooter = robot.shooter.deref().borrow_mut();
     let telemetry = robot.telemetry.clone();
 
-    drivetrain.odometry.position = Vector2::new(0.469,(8.2296/2.)-7.034497);
+    drivetrain.odometry.set(Vector2::new(0.469,7.034497));
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
@@ -307,7 +308,7 @@ async fn Triple_Note(robot: Ferris) {
     let mut shooter = robot.shooter.deref().borrow_mut();
     let telemetry = robot.telemetry.clone();
 
-    drivetrain.odometry.position = Vector2::new(0.4550510048866272,(8.2296/2.)-7.067881107330322);
+    drivetrain.odometry.set(Vector2::new(0.4550510048866272,7.067881107330322));
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
@@ -430,7 +431,7 @@ async fn center(robot: Ferris) {
     let mut shooter = robot.shooter.deref().borrow_mut();
     let telemetry = robot.telemetry.clone();
 
-    drivetrain.odometry.position = Vector2::new(0.4550510048866272,7.067881107330322);
+    drivetrain.odometry.set(Vector2::new(0.4550510048866272,7.067881107330322));
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
@@ -506,7 +507,7 @@ async fn bottom(robot: Ferris) {
     let mut shooter = robot.shooter.deref().borrow_mut();
     let telemetry = robot.telemetry.clone();
 
-    drivetrain.odometry.position = Vector2::new(0.399,(8.2296/2.)-4.098);
+    drivetrain.odometry.set(Vector2::new(0.399,4.098));
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
@@ -561,7 +562,7 @@ async fn bottom_out(robot: Ferris) {
     let mut shooter = robot.shooter.deref().borrow_mut();
     let telemetry = robot.telemetry.clone();
 
-    drivetrain.odometry.position = Vector2::new(0.467,(8.2296/2.)-4.044);
+    drivetrain.odometry.set(Vector2::new(0.467,4.044));
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
