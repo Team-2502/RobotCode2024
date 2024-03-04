@@ -34,7 +34,7 @@ impl Ferris {
 
 pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &'a Ferris, executor: &'a LocalSet) {
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
-    let shooter = robot.shooter.deref().borrow();
+    let mut shooter = robot.shooter.deref().borrow_mut();
     let climber = robot.climber.deref().borrow();
     let mut shooter_state = robot.shooter_state.deref().borrow_mut();
     let (shooting, last_loop) = &mut *shooter_state;
@@ -59,6 +59,7 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
 
     set_position(drivetrain.odometry.position, -angle);
 
+    SmartDashboard::put_number("flywheel speed".to_owned(), shooter.get_velocity());
     SmartDashboard::put_number("Odo X".to_owned(), drivetrain.odometry.position.x);
     SmartDashboard::put_number("Odo Y".to_owned(), drivetrain.odometry.position.y);
 
@@ -202,6 +203,8 @@ pub async fn stage(intake: &mut Intake, shooter: &Shooter) {
     raise_intake(intake).await;
     intake.set_actuate(0.15);
     wait(|| intake.at_limit()).await;
+
+    sleep(Duration::from_millis(200)).await;
 
     intake.set_rollers(-0.1);
     shooter.set_feeder(-0.24);

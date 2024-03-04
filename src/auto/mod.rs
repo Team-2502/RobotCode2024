@@ -25,6 +25,8 @@ pub enum Auto {
     Center = 5,
     Bottom = 6,
     ZeroIntake = 7,
+    TopCenter = 8,
+    BottomOut = 9,
 }
 
 impl Auto {
@@ -37,6 +39,8 @@ impl Auto {
             Auto::Center => "untested riley brain vomit",
             Auto::Bottom => "internal then far (2 note)",
             Auto::ZeroIntake => "zero intake rotation",
+            Auto::TopCenter => "anish triple (internal then far)",
+            Auto::BottomOut => "internal then far not through stage (2 note)",
         }
     }
     
@@ -70,6 +74,8 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         Auto::Top => top(robot).await,
         Auto::Center => center(robot).await,
         Auto::Bottom => bottom(robot).await,
+        Auto::BottomOut => bottom_out(robot).await,
+        Auto::TopCenter => Triple_Note(robot).await,
         Auto::Nop => {},
         Auto::PathTest => {
             let name = "Example.1";
@@ -176,6 +182,7 @@ async fn top(robot: Ferris) {
     shoot(&intake, &mut shooter).await;
 
     let mut failure = false;
+
     join!(
         drive("Top.6", &mut drivetrain, telemetry.clone()), // goto note
         async {
@@ -450,4 +457,49 @@ pub async fn lower_intake(intake: &mut Intake) {
 pub async fn raise_intake(intake: &mut Intake) {
     intake.actuate_to(Angle::new::<degree>(INTAKE_UP_GOAL));
     wait(|| intake.actuate_position().get::<degree>() > INTAKE_UP_THRESHOLD).await;
+}
+
+async fn bottom_out(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+    let telemetry = robot.telemetry.clone();
+
+    drivetrain.odometry.position = Vector2::new(0.467,(8.2296/2.)-4.044);
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    shooter.set_shooter(1.0);
+    join!(
+        drive("BottomOut.1", &mut drivetrain, telemetry.clone()), // scoring position
+        intake.zero(),
+    );
+
+    // shoot
+    wait(|| shooter.get_velocity() > 5000.).await;
+    shooter.set_feeder(-0.4);
+    sleep(Duration::from_secs_f64(0.3)).await;
+    shooter.set_feeder(0.);
+
+    let mut failure = false;
+    join!(
+        drive("BottomOut.2", &mut drivetrain, telemetry.clone()), // goto note
+        async {
+            sleep(Duration::from_millis(1750)).await;
+            lower_intake(&mut intake).await;
+            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        drive("BottomOut.3", &mut drivetrain, telemetry.clone()) // scoring position
+    );
+
+    shoot(&intake, &mut shooter).await;
+    shooter.set_shooter(0.);
 }
