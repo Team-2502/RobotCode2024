@@ -4,6 +4,8 @@ from networktables import NetworkTables
 
 kernal = np.ones((7,7), "uint8")
 camera = cv2.VideoCapture(0) # First webcam (video0)
+sd = NetworkTables.getTable("SmartDashboard")
+NetworkTables.initialize(server="10.25.2.2")
 
 def BestieDetection(frame):
     success, frame = frame
@@ -164,6 +166,9 @@ while camera.isOpened:
     print("b", Bestiecoord)
     print("o", oppcoord)
     print("n", notecoord)
+    sd.putNumberArray("friendly coordinates:", Bestiecoord)
+    sd.putNumberArray("opponent coordinates:", oppcoord)
+    sd.putNumberArray("note coordinates:", notecoord)
     #print(oppcoord,"||", notecoord, "||", Bestiecoord)
     if cv2.waitKey(10) & 0xFF == ord('q'):
         break
