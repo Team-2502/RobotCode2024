@@ -50,7 +50,7 @@ def BestieDetection(frame):
              friendetey.append(y)
              friendetew.append(w)
     #print("h", friendeteh)
-    #print("w", friendetew)
+    #print("w", friendetew) 
     #print("y", friendetey)
     #print("x", friendetex)
         cv2.imshow('Highlighted', frame)
@@ -69,8 +69,8 @@ def NoteDetetction(frame):
          hsv_img = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
          # lower range of red color in HSV
-         lower_range = (2.5, 0, 0)
-         upper_range = (35, 255, 255)
+         lower_range = (2.5, 125, 50)
+         upper_range = (30, 255, 255)
          mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
          mask = cv2.erode(mask, kernal)
@@ -116,15 +116,19 @@ def OppDetection(frame):
         hsv_img = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         # lower range of red color in HSV
-        lower_range = (0, 5, 5)
+        lower_range = (0, 0, 0)
         upper_range = (5, 255, 255)
         mask = cv2.inRange(hsv_img, lower_range, upper_range)
 
-        lower_range = (130,1,1)
+        lower_range = (130,0,100)
         upper_range = (300,255,255)
         mask1 = cv2.inRange(hsv_img, lower_range, upper_range)
 
-        mask = mask + mask1
+        lower_range = (0,245,100)
+        upper_range = (300,255,255 )
+        mask2 = cv2.inRange(hsv_img, lower_range, upper_range)
+       
+        mask = mask + mask1 + mask2
 
         mask = cv2.erode(mask, kernal)
         mask = cv2.erode(mask, kernal)
