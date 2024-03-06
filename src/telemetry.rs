@@ -44,6 +44,7 @@ pub fn server() -> Router<TelemetryStore> {
         .route("/:path/:path/:path", get(frontend))
         .route("/:path/:path", get(frontend))
         .route("/:path", get(frontend)) // I want to kill myself :)
+        .route("/", get(frontend)) // I want to kill myself :)
         .route("/get_auto", get(get_auto))
         .route("/get_auto_name", get(get_auto_name))
         .route("/get_auto/:id", get(get_auto_name_by_id))
@@ -91,7 +92,10 @@ static STATIC_DIR: Dir<'_> = include_dir::include_dir!("$CARGO_MANIFEST_DIR/talo
 // thanks https://bloerg.net/posts/serve-static-content-with-axum/
 async fn frontend(Path(path): Path<Vec<String>>) -> impl IntoResponse {
     let path = path.join("/");
-    let path = path.trim_start_matches('/');
+    let mut path = path.trim_start_matches('/');
+    if path.is_empty() {
+        path = "index.html";
+    }
     let mime_type = mime_guess::from_path(path).first_or_text_plain();
 
     match STATIC_DIR.get_file(path) {
