@@ -5,7 +5,7 @@ use frcrs::networktables::SmartDashboard;
 use frcrs::networktables::set_position;
 use tokio::{task::{JoinHandle, LocalSet}, time::sleep, join, sync::RwLock};
 use uom::si::{angle::{degree, radian}, f64::Angle};
-use crate::{constants::{drivetrain::{SWERVE_TURN_KP, self}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self}};
+use crate::{constants::{drivetrain::{SWERVE_TURN_KP, self}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self, TELEMETRY}};
 use frcrs::deadzone;
 
 #[derive(Clone)]
@@ -27,7 +27,7 @@ impl Ferris {
         let shooter = Rc::new(RefCell::new(Shooter::new()));
         let climber = Rc::new(RefCell::new(Climber::new()));
         let shooter_state = Rc::new(RefCell::new((false,false)));
-        let telemetry = Arc::new(RwLock::new(Default::default()));
+        let telemetry = TELEMETRY.clone();
         Self { drivetrain, intake, shooter, climber, grab: Rc::new(RefCell::new(None)), shooter_state, stage: Rc::new(RefCell::new(None)), telemetry } 
     }
 }

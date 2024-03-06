@@ -1,5 +1,6 @@
 use std::{sync::Arc, collections::HashMap, time::Instant};
 use axum::{Router, extract::{State, Path}, routing::{get, post}, response::Html, Json};
+use lazy_static::lazy_static;
 use num_traits::{ToPrimitive, FromPrimitive};
 use serde::{Serialize, Deserialize};
 use tokio::sync::RwLock;
@@ -7,6 +8,12 @@ use tokio::sync::RwLock;
 use crate::auto::Auto;
 
 pub type TelemetryStore = Arc<RwLock<Telemetry>>;
+
+lazy_static!{
+        pub static ref TELEMETRY: TelemetryStore = {
+        Arc::new(RwLock::new(Default::default()))
+    };
+}
 
 #[derive(Deserialize, Serialize, Clone)]
 pub enum Data {
