@@ -273,6 +273,7 @@ dependencies = [
  "bitvec",
  "j4rs",
  "j4rs_derive",
+ "nalgebra",
  "serde",
  "uom",
 ]
@@ -655,9 +656,9 @@ dependencies = [
 
 [[package]]
 name = "nalgebra"
-version = "0.32.3"
+version = "0.32.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "307ed9b18cc2423f29e83f84fd23a8e73628727990181f18641a8b5dc2ab1caa"
+checksum = "4541eb06dce09c0241ebbaab7102f0a01a0c8994afed2e5d0d66775016e25ac2"
 dependencies = [
  "approx",
  "matrixmultiply",
@@ -1077,6 +1078,15 @@ name = "tap"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
+
+[[package]]
+name = "testing-server"
+version = "0.1.0"
+dependencies = [
+ "RobotCode2024",
+ "axum",
+ "tokio",
+]
 
 [[package]]
 name = "thiserror"

@@ -1,9 +1,9 @@
 mod container;
 mod subsystems;
-mod constants;
+pub mod constants;
 mod swerve;
 mod auto;
-mod telemetry;
+pub mod telemetry;
 
 use std::thread;
 use std::time::{Instant, Duration};
