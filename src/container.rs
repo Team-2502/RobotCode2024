@@ -1,7 +1,6 @@
 use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref, DerefMut}, rc::Rc, time::Duration, sync::Arc};
 
 use frcrs::{input::Joystick, alliance_station, };
-use frcrs::networktables::SmartDashboard;
 use frcrs::networktables::set_position;
 use tokio::{task::{JoinHandle, LocalSet}, time::sleep, join, sync::RwLock};
 use uom::si::{angle::{degree, radian}, f64::Angle};
@@ -32,7 +31,7 @@ impl Ferris {
     }
 }
 
-pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &'a Ferris, executor: &'a LocalSet) {
+pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &'a Ferris, executor: &'a LocalSet) {
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
     let mut shooter = robot.shooter.deref().borrow_mut();
     let climber = robot.climber.deref().borrow();
@@ -59,13 +58,13 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
 
     set_position(drivetrain.odometry.position, -angle);
 
-    SmartDashboard::put_number("flywheel speed".to_owned(), shooter.get_velocity());
-    SmartDashboard::put_number("Odo X".to_owned(), drivetrain.odometry.position.x);
-    SmartDashboard::put_number("Odo Y".to_owned(), drivetrain.odometry.position.y);
+    telemetry::put_number("flywheel speed", shooter.get_velocity()).await;
+    telemetry::put_number("Odo X", drivetrain.odometry.position.x).await;
+    telemetry::put_number("Odo Y", drivetrain.odometry.position.y).await;
 
-    SmartDashboard::put_number("Angle".to_owned(), angle.get::<degree>());
+    telemetry::put_number("Angle", angle.get::<degree>()).await;
     let red = alliance_station().red();
-    SmartDashboard::put_bool("red".to_owned(), red);
+    telemetry::put_bool("red", red).await;
 
     if left_drive.get(3) {
         drivetrain.reset_heading();
@@ -107,9 +106,9 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
     
     if !staging {
         if let Ok(mut intake) = robot.intake.try_borrow_mut() {
-            SmartDashboard::put_bool("intake at limit {}".to_owned(), intake.at_limit());
-            SmartDashboard::put_bool("intake at reverse limit {}".to_owned(), intake.at_reverse_limit());
-            SmartDashboard::put_number("intake position {}".to_owned(), intake.actuate_position().get::<degree>());
+            telemetry::put_bool("intake at limit {}", intake.at_limit()).await;
+            telemetry::put_bool("intake at reverse limit {}", intake.at_reverse_limit()).await;
+            telemetry::put_number("intake position {}", intake.actuate_position().get::<degree>()).await;
 
             if operator.get(9) {
                 intake.set_rollers(0.4);
@@ -142,7 +141,7 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
     }
     *last_loop = operator.get(2);
 
-    SmartDashboard::put_bool("flywheel state".to_owned(), *shooting);
+    telemetry::put_bool("flywheel state", *shooting).await;
 
     if *shooting {
         shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
@@ -185,7 +184,7 @@ pub fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, oper
         climber.stop()
     }
 
-    SmartDashboard::put_bool("beam break: {}".to_owned(), shooter.contains_note());
+    telemetry::put_bool("beam break: {}", shooter.contains_note()).await;
     //println!("doo dad: {}", get_dio(INTAKE_LIMIT));
 
     let drivetrain = robot.drivetrain.clone();

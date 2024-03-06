@@ -74,7 +74,7 @@ fn entrypoint() {
                 &mut operator,
                 &mut robot,
                 &local,
-            );
+            ).await;
         };
 
         if state.enabled() && state.auto() {
@@ -100,7 +100,7 @@ fn entrypoint() {
         let left = (1./50. - elapsed).max(0.);
         
         sleep(Duration::from_secs_f64(left)).await;
-        SmartDashboard::put_number("loop rate (hz)".to_owned(), 1./last_loop.elapsed().as_secs_f64());
+        telemetry::put_number("loop rate (hz)", 1./last_loop.elapsed().as_secs_f64()).await;
         last_loop = Instant::now();
     }});
 

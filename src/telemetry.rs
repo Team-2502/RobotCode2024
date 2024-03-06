@@ -147,3 +147,11 @@ async fn set_auto(
     }
 
 }
+
+pub async fn put_number(key: &str, value: f64) {
+    TELEMETRY.write().await.data.insert(key.to_owned(), Data::Number(value));
+}
+
+pub async fn put_bool(key: &str, value: bool) {
+    TELEMETRY.write().await.data.insert(key.to_owned(), Data::Bool(value));
+}
