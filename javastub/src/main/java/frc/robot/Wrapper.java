@@ -9,6 +9,8 @@ import static com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkFlex;
 import static com.revrobotics.CANSparkMax.ControlType;
 
+import edu.wpi.first.hal.AllianceStationID;
+import edu.wpi.first.hal.DriverStationJNI;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -36,6 +38,26 @@ public class Wrapper {
     public static CANSparkFlex createSparkFlex(int id) { return new CANSparkFlex(id, MotorType.kBrushless); }
 
     public static void sparkFollow(CANSparkMax leader, CANSparkMax follower, boolean invert) { follower.follow(leader, invert); }
+
+    public static int getAllianceStation() {
+        AllianceStationID allianceID = DriverStationJNI.getAllianceStation();
+        switch (allianceID) {
+        case Blue1:
+            return 4;
+        case Blue2:
+            return 5;
+        case Blue3:
+            return 6;
+        case Red1:
+            return 1;
+        case Red2:
+            return 2;
+        case Red3:
+            return 3;
+        default:
+            return 0;
+        }
+    }
 
     public static void startNetworkTables() {
         NetworkTableInstance inst = NetworkTableInstance.getDefault();
