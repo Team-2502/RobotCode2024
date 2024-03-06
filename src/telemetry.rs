@@ -1,5 +1,6 @@
-use std::{sync::Arc, collections::HashMap, time::Instant};
-use axum::{Router, extract::{State, Path}, routing::{get, post}, response::Html, Json};
+use std::{sync::Arc, collections::HashMap, time::Instant, };
+use axum::{Router, extract::{State, Path}, routing::{get, post}, response::{Html, IntoResponse}, Json, http::{StatusCode, Response, HeaderValue, header}, body::Body,  };
+use include_dir::Dir;
 use lazy_static::lazy_static;
 use num_traits::{ToPrimitive, FromPrimitive};
 use serde::{Serialize, Deserialize};
@@ -39,7 +40,7 @@ pub struct Pose {
 
 pub fn server() -> Router<TelemetryStore> {
     let router = Router::new()
-        .route("/", get(frontend))
+        .route("/:path", get(frontend))
         .route("/get_auto", get(get_auto))
         .route("/get_auto_name", get(get_auto_name))
         .route("/get_auto/:id", get(get_auto_name_by_id))
@@ -82,8 +83,27 @@ async fn set_position(
     "written"
 }
 
-async fn frontend() -> Html<&'static str> {
-    Html(include_str!("../client/selector.html"))
+static STATIC_DIR: Dir<'_> = include_dir::include_dir!("$CARGO_MANIFEST_DIR/talon-board/out");
+
+// thanks https://bloerg.net/posts/serve-static-content-with-axum/
+async fn frontend(Path(path): Path<String>) -> impl IntoResponse {
+    let path = path.trim_start_matches('/');
+    let mime_type = mime_guess::from_path(path).first_or_text_plain();
+
+    match STATIC_DIR.get_file(path) {
+        None => {  Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(Body::empty())
+            .unwrap() },
+        Some(file) => Response::builder()
+            .status(StatusCode::OK)
+            .header(
+                header::CONTENT_TYPE,
+                HeaderValue::from_str(mime_type.as_ref()).unwrap(),
+            )
+            .body(Body::from(file.contents()))
+            .unwrap(),
+    }
 }
 
 async fn get_auto_name(
