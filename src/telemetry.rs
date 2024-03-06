@@ -8,11 +8,12 @@ use crate::auto::Auto;
 
 pub type TelemetryStore = Arc<RwLock<Telemetry>>;
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub enum Data {
     Number(f64),
     Bool(bool),
     Text(String),
+    Pose(Pose),
 }
 
 #[derive(Default)]
@@ -22,7 +23,7 @@ pub struct Telemetry {
     pub apriltag_pose: Option<(Instant, Pose)>,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Clone)]
 pub struct Pose {
     pub x: f64,
     pub y: f64,
@@ -36,9 +37,31 @@ pub fn server() -> Router<TelemetryStore> {
         .route("/get_auto_name", get(get_auto_name))
         .route("/get_auto/:id", get(get_auto_name_by_id))
         .route("/set_auto/:id", get(set_auto)) // words have no meaning :)
-        .route("/set_position", post(set_position));
+        .route("/set_position", post(set_position))
+        .route("/get/:key", get(get_key))
+        .route("/set/:key", post(set_key))
+        .route("/get_keys", get(get_keys));
 
     router
+}
+
+async fn set_key(
+    Path(key): Path<String>,
+    State(state): State<TelemetryStore>,
+    Json(data): Json<Data>,
+) -> &'static str {
+    state.write().await.data.insert(key, data);
+    "Success"
+}
+
+async fn get_key(State(state): State<TelemetryStore>,
+    Path(key): Path<String>,
+) -> Json<Option<Data>> {
+    Json(state.read().await.data.get(&key).cloned())
+}
+
+async fn get_keys(State(state): State<TelemetryStore>) -> Json<Vec<String>> {
+    Json(state.read().await.data.keys().cloned().collect())
 }
 
 async fn set_position(
