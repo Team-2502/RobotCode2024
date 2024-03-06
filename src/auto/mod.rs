@@ -98,12 +98,12 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
     }
 }
 
-async fn drive(name: &str, drivetrain: &mut crate::subsystems::Drivetrain, telemetry: TelemetryStore) {
+async fn drive(name: &str, drivetrain: &mut crate::subsystems::Drivetrain) {
     let mut path = String::new();
     File::open(format!("/home/lvuser/deploy/choreo/{}.traj", name)).await.unwrap().read_to_string(&mut path).await.unwrap();
     let path = Path::from_trajectory(&path).unwrap();
 
-    follow_path(drivetrain, telemetry, path).await;
+    follow_path(drivetrain, path).await;
     drivetrain.set_speeds(0., 0., 0.)
 }
 
@@ -130,7 +130,7 @@ async fn top_stop(robot: Ferris) {
 
     shooter.set_shooter(1.0);
     join!(
-        drive("Top.1", &mut drivetrain, telemetry.clone()), // scoring position
+        drive("Top.1", &mut drivetrain), // scoring position
         intake.zero(),
     );
 
@@ -148,7 +148,7 @@ async fn top_stop(robot: Ferris) {
 
     let mut failure = false;
     join!(
-        drive("Top.2", &mut drivetrain, telemetry.clone()), // goto note
+        drive("Top.2", &mut drivetrain), // goto note
         async {
             failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
         }
@@ -160,14 +160,14 @@ async fn top_stop(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("Top.3", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("Top.3", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
 
     let mut failure = false;
     join!(
-        drive("Top.4", &mut drivetrain, telemetry.clone()), // next note
+        drive("Top.4", &mut drivetrain), // next note
         async {
             lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
@@ -180,17 +180,17 @@ async fn top_stop(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("Top.5", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("Top.5", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
 
     let mut failure = false;
 
-    drive("Top.6", &mut drivetrain, telemetry.clone()).await;
+    drive("Top.6", &mut drivetrain).await;
 
     join!(
-        drive("Top.7", &mut drivetrain, telemetry.clone()), // goto note
+        drive("Top.7", &mut drivetrain), // goto note
         async {
             lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
@@ -203,7 +203,7 @@ async fn top_stop(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("Top.8", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("Top.8", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
@@ -223,7 +223,7 @@ async fn top(robot: Ferris) {
 
     shooter.set_shooter(1.0);
     join!(
-        drive("Top.1", &mut drivetrain, telemetry.clone()), // scoring position
+        drive("Top.1", &mut drivetrain), // scoring position
         intake.zero(),
     );
 
@@ -241,7 +241,7 @@ async fn top(robot: Ferris) {
 
     let mut failure = false;
     join!(
-        drive("Top.2", &mut drivetrain, telemetry.clone()), // goto note
+        drive("Top.2", &mut drivetrain), // goto note
         async {
             failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
         }
@@ -253,14 +253,14 @@ async fn top(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("Top.3", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("Top.3", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
 
     let mut failure = false;
     join!(
-        drive("Top.4", &mut drivetrain, telemetry.clone()), // next note
+        drive("Top.4", &mut drivetrain), // next note
         async {
             lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
@@ -273,7 +273,7 @@ async fn top(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("Top.5", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("Top.5", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
@@ -281,7 +281,7 @@ async fn top(robot: Ferris) {
     let mut failure = false;
 
     join!(
-        drive("Top.6", &mut drivetrain, telemetry.clone()), // goto note
+        drive("Top.6", &mut drivetrain), // goto note
         async {
             lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
@@ -294,7 +294,7 @@ async fn top(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("Top.7", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("Top.7", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
@@ -314,7 +314,7 @@ async fn Triple_Note(robot: Ferris) {
 
     shooter.set_shooter(1.0);
     join!(
-        drive("3Note.1", &mut drivetrain, telemetry.clone()), // scoring position
+        drive("3Note.1", &mut drivetrain), // scoring position
         intake.zero(),
     );
 
@@ -332,7 +332,7 @@ async fn Triple_Note(robot: Ferris) {
 
     let mut failure = false;
     join!(
-        drive("3Note.2", &mut drivetrain, telemetry.clone()), // goto note
+        drive("3Note.2", &mut drivetrain), // goto note
         async {
             failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
         }
@@ -344,14 +344,14 @@ async fn Triple_Note(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("3Note.3", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("3Note.3", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
 
     let mut failure = false;
     join!(
-        drive("3Note.4", &mut drivetrain, telemetry.clone()), // next note
+        drive("3Note.4", &mut drivetrain), // next note
         async {
             lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
@@ -364,14 +364,14 @@ async fn Triple_Note(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("3Note.5", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("3Note.5", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
 
     let mut failure = false;
     join!(
-        drive("3Note.6", &mut drivetrain, telemetry.clone()), // goto note
+        drive("3Note.6", &mut drivetrain), // goto note
         async {
             lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
@@ -384,7 +384,7 @@ async fn Triple_Note(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("3Note.7", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("3Note.7", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
@@ -436,7 +436,7 @@ async fn center(robot: Ferris) {
     drivetrain.reset_heading();
 
     shooter.set_shooter(1.0);
-    drive("4_Note_Center.1", &mut drivetrain, telemetry.clone()).await; // scoring position
+    drive("4_Note_Center.1", &mut drivetrain).await; // scoring position
 
     join!(
         async { // shoot
@@ -455,7 +455,7 @@ async fn center(robot: Ferris) {
 
     let mut failure = false;
     join!(
-        drive("Top.2", &mut drivetrain, telemetry.clone()), // goto note
+        drive("Top.2", &mut drivetrain), // goto note
         async {
             failure = timeout(Duration::from_millis(1000), intake.grab()).await.is_err();
         }
@@ -467,7 +467,7 @@ async fn center(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("Top.3", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("Top.3", &mut drivetrain) // scoring position
     );
 
     join!(
@@ -482,7 +482,7 @@ async fn center(robot: Ferris) {
 
     let mut failure = false;
     join!(
-        drive("Top.4", &mut drivetrain, telemetry.clone()), // next note
+        drive("Top.4", &mut drivetrain), // next note
         async {
             failure = timeout(Duration::from_millis(1000), intake.grab()).await.is_err();
         }
@@ -494,7 +494,7 @@ async fn center(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("Top.5", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("Top.5", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
@@ -513,7 +513,7 @@ async fn bottom(robot: Ferris) {
 
     shooter.set_shooter(1.0);
     join!(
-        drive("Bottom.1", &mut drivetrain, telemetry.clone()), // scoring position
+        drive("Bottom.1", &mut drivetrain), // scoring position
         intake.zero(),
     );
 
@@ -525,7 +525,7 @@ async fn bottom(robot: Ferris) {
 
     let mut failure = false;
     join!(
-        drive("Bottom.2", &mut drivetrain, telemetry.clone()), // goto note
+        drive("Bottom.2", &mut drivetrain), // goto note
         async {
             sleep(Duration::from_millis(1750)).await;
             lower_intake(&mut intake).await;
@@ -539,7 +539,7 @@ async fn bottom(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("Bottom.3", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("Bottom.3", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
@@ -568,7 +568,7 @@ async fn bottom_out(robot: Ferris) {
 
     shooter.set_shooter(1.0);
     join!(
-        drive("BottomOut.1", &mut drivetrain, telemetry.clone()), // scoring position
+        drive("BottomOut.1", &mut drivetrain), // scoring position
         intake.zero(),
     );
 
@@ -580,7 +580,7 @@ async fn bottom_out(robot: Ferris) {
 
     let mut failure = false;
     join!(
-        drive("BottomOut.2", &mut drivetrain, telemetry.clone()), // goto note
+        drive("BottomOut.2", &mut drivetrain), // goto note
         async {
             sleep(Duration::from_millis(1750)).await;
             lower_intake(&mut intake).await;
@@ -594,7 +594,7 @@ async fn bottom_out(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("BottomOut.3", &mut drivetrain, telemetry.clone()) // scoring position
+        drive("BottomOut.3", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;

@@ -6,11 +6,12 @@ use tokio::time::{Instant, sleep};
 use uom::si::{f64::{Time, Angle, Length}, time::second, length::{meter, foot}, angle::{radian, degree}};
 use wpi_trajectory::{Path, Pose};
 
-use crate::{subsystems::Drivetrain, constants::drivetrain::SWERVE_TURN_KP, telemetry::{self, TelemetryStore}};
+use crate::{subsystems::Drivetrain, constants::drivetrain::SWERVE_TURN_KP, telemetry::{self, TelemetryStore, TELEMETRY}};
 
-pub async fn follow_path(drivetrain: &mut Drivetrain, telemetry: TelemetryStore, path: Path) {
+pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
     let start = Instant::now();
     let red = alliance_station().red();
+    let telemetry = TELEMETRY.clone();
 
     loop {
         let elapsed = Time::new::<second>(start.elapsed().as_secs_f64());
