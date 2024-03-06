@@ -38,7 +38,7 @@ pub const BEAM_BREAK_EMITTER: i32 = 2;
 pub const BEAM_BREAK_SIGNAL: i32 = 1;
 pub const INTAKE_DOWN_LIMIT: i32 = 3;
 
-pub const TELEMETRY_PORT: i32 = 8089;
+pub const TELEMETRY_PORT: i32 = 5807;
 pub const HALF_FIELD_WIDTH_METERS: f64 = 4.1148; // 54/4 feet
 pub const HALF_FIELD_LENGTH_METERS: f64 = 8.2296; // 54/2 feet
 
