@@ -28,6 +28,7 @@ pub enum Auto {
     TopCenter = 8,
     BottomOut = 9,
     TopStop = 10,
+    BottomClose = 11,
 }
 
 impl Auto {
@@ -43,6 +44,7 @@ impl Auto {
             Auto::ZeroIntake => "zero intake rotation",
             Auto::TopCenter => "anish triple (internal then far)",
             Auto::BottomOut => "internal then far not through stage (2 note)",
+            Auto::BottomClose => "near stage start 4 note",
         }
     }
     
@@ -78,6 +80,7 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         Auto::Center => center(robot).await,
         Auto::Bottom => bottom(robot).await,
         Auto::BottomOut => bottom_out(robot).await,
+        Auto::BottomClose => bottom_close(robot).await,
         Auto::TopCenter => Triple_Note(robot).await,
         Auto::Nop => {},
         Auto::PathTest => {
@@ -598,5 +601,96 @@ async fn bottom_out(robot: Ferris) {
     );
 
     shoot(&intake, &mut shooter).await;
+    shooter.set_shooter(0.);
+}
+
+async fn bottom_close(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+    let telemetry = robot.telemetry.clone();
+
+    drivetrain.odometry.set(Vector2::new(0.469,7.034497));
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    shooter.set_shooter(1.0);
+    join!(
+        drive("BottomClose.1", &mut drivetrain), // scoring position
+        intake.zero(),
+    );
+
+    join!(
+        async { // shoot
+            wait(|| shooter.get_velocity() > 5000.).await;
+            shooter.set_feeder(-0.4);
+            sleep(Duration::from_secs_f64(0.3)).await;
+            shooter.set_feeder(0.);
+        },
+        lower_intake(&mut intake)
+    );
+
+    intake.set_rollers(0.4);
+
+    let mut failure = false;
+    join!(
+        drive("BottomClose.2", &mut drivetrain), // goto note
+        async {
+            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        drive("BottomClose.3", &mut drivetrain) // scoring position
+    );
+
+    shoot(&intake, &mut shooter).await;
+
+    let mut failure = false;
+    join!(
+        drive("BottomClose.4", &mut drivetrain), // next note
+        async {
+            lower_intake(&mut intake).await;
+            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+        },
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        drive("BottomClose.5", &mut drivetrain) // scoring position
+    );
+
+    shoot(&intake, &mut shooter).await;
+
+    let mut failure = false;
+
+    join!(
+        drive("BottomClose.6", &mut drivetrain), // goto note
+        async {
+            lower_intake(&mut intake).await;
+            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        drive("BottomClose.7", &mut drivetrain) // scoring position
+    );
+
+    shoot(&intake, &mut shooter).await;
+
     shooter.set_shooter(0.);
 }
