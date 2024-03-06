@@ -1,4 +1,4 @@
-use std::{ops::{Deref, DerefMut}, pin::Pin, time::Duration};
+use std::{ops::{Deref, DerefMut}, pin::Pin, time::Duration, mem};
 
 use frcrs::networktables::Chooser;
 use futures_lite::Future;
@@ -47,7 +47,10 @@ impl Auto {
             Auto::BottomClose => "near stage start 4 note",
         }
     }
-    
+
+    pub fn len() -> usize {
+        mem::variant_count::<Self>()
+    }
 }
 
 impl Default for Auto {

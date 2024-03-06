@@ -46,6 +46,7 @@ pub fn server() -> Router<TelemetryStore> {
         .route("/:path", get(frontend)) // I want to kill myself :)
         .route("/", get(frontend)) // I want to kill myself :)
         .route("/get_auto", get(get_auto))
+        .route("/auto_count", get(get_auto_count))
         .route("/get_auto_name", get(get_auto_name))
         .route("/get_auto/:id", get(get_auto_name_by_id))
         .route("/set_auto/:id", get(set_auto)) // words have no meaning :)
@@ -117,6 +118,11 @@ async fn frontend(Path(path): Path<Vec<String>>) -> impl IntoResponse {
 async fn get_auto_name(
     State(state): State<TelemetryStore>) -> &'static str {
     state.read().await.auto.to_owned().name()
+}
+
+async fn get_auto_count(
+    State(state): State<TelemetryStore>) -> String {
+    Auto::len().to_string()
 }
 
 async fn get_auto(

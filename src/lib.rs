@@ -1,3 +1,5 @@
+#![feature(variant_count)]
+
 mod container;
 mod subsystems;
 pub mod constants;
@@ -31,6 +33,7 @@ use tokio::task::{self, JoinHandle};
 use std::ops::Deref;
 use std::rc::Rc;
 use send_wrapper::SendWrapper;
+
 
 #[call_from_java("frc.robot.Main.rustentry")]
 fn entrypoint() {
