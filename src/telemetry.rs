@@ -40,7 +40,10 @@ pub struct Pose {
 
 pub fn server() -> Router<TelemetryStore> {
     let router = Router::new()
-        .route("/:path", get(frontend))
+        .route("/:path/:path/:path/:path", get(frontend))
+        .route("/:path/:path/:path", get(frontend))
+        .route("/:path/:path", get(frontend))
+        .route("/:path", get(frontend)) // I want to kill myself :)
         .route("/get_auto", get(get_auto))
         .route("/get_auto_name", get(get_auto_name))
         .route("/get_auto/:id", get(get_auto_name_by_id))
@@ -86,7 +89,8 @@ async fn set_position(
 static STATIC_DIR: Dir<'_> = include_dir::include_dir!("$CARGO_MANIFEST_DIR/talon-board/out");
 
 // thanks https://bloerg.net/posts/serve-static-content-with-axum/
-async fn frontend(Path(path): Path<String>) -> impl IntoResponse {
+async fn frontend(Path(path): Path<Vec<String>>) -> impl IntoResponse {
+    let path = path.join("/");
     let path = path.trim_start_matches('/');
     let mime_type = mime_guess::from_path(path).first_or_text_plain();
 
