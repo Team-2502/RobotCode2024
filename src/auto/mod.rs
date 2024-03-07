@@ -18,17 +18,17 @@ pub mod path;
 
 #[derive(Clone, FromPrimitive, ToPrimitive)]
 pub enum Auto {
-    Short = 1,
-    PathTest = 2,
-    Nop = 3,
-    Top = 4,
-    Center = 5,
-    Bottom = 6,
-    ZeroIntake = 7,
-    TopCenter = 8,
-    BottomOut = 9,
-    TopStop = 10,
-    BottomClose = 11,
+    Short,
+    PathTest,
+    Nop,
+    Top,
+    Center,
+    Bottom,
+    ZeroIntake,
+    TopCenter,
+    BottomOut,
+    TopStop,
+    BottomClose,
 }
 
 impl Auto {
@@ -50,6 +50,10 @@ impl Auto {
 
     pub fn len() -> usize {
         mem::variant_count::<Self>()
+    }
+
+    pub fn names() -> Vec<String> {
+        (0..Self::len()-1).map(|n| Self::from_usize(n).unwrap().name().to_owned()).collect()
     }
 }
 
@@ -613,7 +617,7 @@ async fn bottom_close(robot: Ferris) {
     let mut shooter = robot.shooter.deref().borrow_mut();
     let telemetry = robot.telemetry.clone();
 
-    drivetrain.odometry.set(Vector2::new(0.469,7.034497));
+    drivetrain.odometry.set(Vector2::new(0.4808354377746582,4.043473720550537));
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
