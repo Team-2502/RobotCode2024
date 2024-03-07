@@ -10,7 +10,7 @@ pub mod telemetry;
 use std::thread;
 use std::time::{Instant, Duration};
 
-use auto::{autos, run_auto, AutoChooser};
+use auto::{autos, run_auto, Auto, AutoChooser};
 use constants::TELEMETRY_PORT;
 use container::Ferris;
 use frcrs::ctre::{Falcon};
@@ -25,6 +25,8 @@ use frcrs::init_hal;
 use frcrs::hal_report;
 use frcrs::input::{Joystick, RobotState};
 use lazy_static::lazy_static;
+use num_traits::{FromPrimitive, ToPrimitive};
+use telemetry::Data;
 use tokio::join;
 use tokio::time::{sleep, timeout};
 use crate::container::{container, stop_all};
@@ -84,7 +86,15 @@ fn entrypoint() {
             if let None = auto {
                 let robot = robot.clone();
 
-                let chosen = robot.telemetry.read().await.auto.clone();
+                let chosen = if let Data::Picker(picker) = robot.telemetry.read().await.data.get("auto chooser").unwrap() {
+                    picker.selected
+                } else {
+                    println!("auto chooser not found");
+                    Auto::default().to_usize().unwrap()
+                    
+                };
+
+                let chosen = Auto::from_usize(chosen).unwrap();
 
                 let run = run_auto(chosen, robot);
                 auto = Some(local.spawn_local(run).abort_handle());

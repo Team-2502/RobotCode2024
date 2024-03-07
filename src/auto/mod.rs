@@ -7,10 +7,10 @@ use tokio::{join, time::{sleep, timeout}, fs::File, io::AsyncReadExt};
 use uom::si::{angle::degree, f64::Angle};
 use wpi_trajectory::Path;
 
-use crate::{container::{Ferris, stage}, subsystems::{wait, Intake, Shooter}, constants::intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD}, telemetry::{self, TelemetryStore}};
+use crate::{constants::intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD}, container::{stage, Ferris}, subsystems::{wait, Intake, Shooter}, telemetry::{self, Picker, TelemetryStore}};
 
 use num_derive::{FromPrimitive, ToPrimitive};    
-use num_traits::FromPrimitive;
+use num_traits::{FromPrimitive, ToPrimitive};
 
 use self::path::follow_path;
 
@@ -54,6 +54,13 @@ impl Auto {
 
     pub fn names() -> Vec<String> {
         (0..Self::len()-1).map(|n| Self::from_usize(n).unwrap().name().to_owned()).collect()
+    }
+
+    pub fn picker() -> Picker {
+        Picker {
+            options: Auto::names(),
+            selected: Auto::default().to_usize().unwrap(),
+        }
     }
 }
 

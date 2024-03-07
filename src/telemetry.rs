@@ -12,7 +12,10 @@ pub type TelemetryStore = Arc<RwLock<Telemetry>>;
 
 lazy_static!{
         pub static ref TELEMETRY: TelemetryStore = {
-        Arc::new(RwLock::new(Default::default()))
+
+        let mut telemetry: Telemetry = Default::default();
+        telemetry.data.insert("auto chooser".to_owned(), Data::Picker(Auto::picker()));
+        Arc::new(RwLock::new(telemetry))
     };
 }
 
@@ -22,6 +25,7 @@ pub enum Data {
     Bool(bool),
     Text(String),
     Pose(Pose),
+    Picker(Picker),
 }
 
 #[derive(Default)]
@@ -36,6 +40,12 @@ pub struct Pose {
     pub x: f64,
     pub y: f64,
     pub theta: f64, // degrees
+}
+
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct Picker {
+    pub options: Vec<String>,
+    pub selected: usize, 
 }
 
 pub fn server() -> Router<TelemetryStore> {
