@@ -87,7 +87,7 @@ fn entrypoint() {
                 let robot = robot.clone();
 
                 let chosen = if let Data::Picker(picker) = robot.telemetry.read().await.data.get("auto chooser").unwrap() {
-                    picker.selected
+                    picker.selected.parse().unwrap()
                 } else {
                     println!("auto chooser not found");
                     Auto::default().to_usize().unwrap()

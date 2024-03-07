@@ -45,7 +45,7 @@ pub struct Pose {
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct Picker {
     pub options: Vec<String>,
-    pub selected: usize, 
+    pub selected: String, // this is a number
 }
 
 pub fn server() -> Router<TelemetryStore> {

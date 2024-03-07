@@ -59,7 +59,7 @@ impl Auto {
     pub fn picker() -> Picker {
         Picker {
             options: Auto::names(),
-            selected: Auto::default().to_usize().unwrap(),
+            selected: Auto::default().to_usize().unwrap().to_string(),
         }
     }
 }
