@@ -2,7 +2,7 @@ use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref, DerefMut}, rc::Rc, time
 
 use frcrs::{input::Joystick, alliance_station, };
 use frcrs::networktables::set_position;
-use tokio::{task::{JoinHandle, LocalSet}, time::sleep, join, sync::RwLock};
+use tokio::{join, sync::RwLock, task::{JoinHandle, LocalSet}, time::{sleep, timeout}};
 use uom::si::{angle::{degree, radian}, f64::Angle};
 use crate::{constants::{drivetrain::{SWERVE_TURN_KP, self}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self, TELEMETRY}};
 use frcrs::deadzone;
@@ -146,15 +146,19 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
         telemetry::put_bool("beam break: {}", shooter.contains_note()).await;
 
         if *shooting {
-            shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
+            if operator.get(5) {
+                shooter.set_shooter(0.225)
+            } else {
+                shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
+            }
         } else {
             shooter.stop_shooter();
         }
 
         if operator.get(11) {
-            shooter.set_amp_bar(-0.2);
+            shooter.set_amp_bar(-0.6);
         } else if operator.get(16) {
-            shooter.set_amp_bar(0.2);
+            shooter.set_amp_bar(0.6);
         } else {
             shooter.set_amp_bar(0.);
         }
@@ -203,7 +207,7 @@ pub async fn stage(intake: &mut Intake, shooter: &Shooter) {
     intake.set_rollers(1.);
     raise_intake(intake).await;
     intake.set_actuate(0.15);
-    wait(|| intake.at_limit()).await;
+    let _ = timeout(Duration::from_millis(200), wait(|| intake.at_limit())).await;
 
     sleep(Duration::from_millis(200)).await;
 
