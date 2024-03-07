@@ -50,6 +50,7 @@ pub struct Picker {
 
 pub fn server() -> Router<TelemetryStore> {
     let router = Router::new()
+        .route("/:path/:path/:path/:path/:path", get(frontend)) // I'm wanting to kill myself ;)
         .route("/:path/:path/:path/:path", get(frontend))
         .route("/:path/:path/:path", get(frontend))
         .route("/:path/:path", get(frontend))
