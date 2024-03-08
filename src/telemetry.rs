@@ -56,11 +56,6 @@ pub fn server() -> Router<TelemetryStore> {
         .route("/:path/:path", get(frontend))
         .route("/:path", get(frontend)) // I want to kill myself :)
         .route("/", get(frontend)) // I want to kill myself :)
-        .route("/get_auto", get(get_auto))
-        .route("/auto_count", get(get_auto_count))
-        .route("/get_auto_name", get(get_auto_name))
-        .route("/get_auto/:id", get(get_auto_name_by_id))
-        .route("/set_auto/:id", get(set_auto)) // words have no meaning :)
         .route("/set_position", post(set_position))
         .route("/get/:key", get(get_key))
         .route("/set/:key", post(set_key))
@@ -124,45 +119,6 @@ async fn frontend(Path(path): Path<Vec<String>>) -> impl IntoResponse {
             .body(Body::from(file.contents()))
             .unwrap(),
     }
-}
-
-async fn get_auto_name(
-    State(state): State<TelemetryStore>) -> &'static str {
-    state.read().await.auto.to_owned().name()
-}
-
-async fn get_auto_count(
-    State(state): State<TelemetryStore>) -> String {
-    Auto::len().to_string()
-}
-
-async fn get_auto(
-    State(state): State<TelemetryStore>) -> String {
-    state.read().await.auto.to_owned().to_usize().unwrap().to_string()
-}
-
-async fn get_auto_name_by_id(
-    Path(auto): Path<usize>,
-    ) -> &'static str {
-    if let Some(auto) = Auto::from_usize(auto) {
-        auto.name()
-    } else {
-        "Not real"
-    }
-}
-
-async fn set_auto(
-    State(state): State<TelemetryStore>,
-    Path(auto): Path<usize>,
-    ) -> &'static str {
-    if let Some(auto) = Auto::from_usize(auto) {
-        state.write().await.auto = auto;
-
-        "Success"
-    } else {
-        "Failure"
-    }
-
 }
 
 pub async fn put_number(key: &str, value: f64) {

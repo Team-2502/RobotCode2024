@@ -96,8 +96,6 @@ fn entrypoint() {
 
                 let chosen = Auto::from_usize(chosen).unwrap();
 
-                let chosen = robot.telemetry.read().await.auto.clone();
-
                 let run = run_auto(chosen, robot);
                 auto = Some(local.spawn_local(run).abort_handle());
                 //auto = Some(local.spawn_local(auto_long(robot.clone())).abort_handle());
