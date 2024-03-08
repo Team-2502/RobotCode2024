@@ -18,18 +18,23 @@ pub mod path;
 
 #[derive(Clone, FromPrimitive, ToPrimitive)]
 pub enum Auto {
-    Short,
-    PathTest,
-    Nop,
-    Top,
-    Center,
-    Bottom,
-    ZeroIntake,
-    TopCenter,
-    BottomOut,
     TopStop,
     BottomClose,
+    TopWait,
     SourceTwo,
+    ZeroIntake,
+    Short,
+    PathTest,
+    Bottom,
+    Center,
+    Top,
+    TopCenter,
+    BottomOut,
+    BottomWait,
+    Nop,
+    Nop2,
+    Nop3,
+    Nop4,
 }
 
 impl Auto {
@@ -47,6 +52,9 @@ impl Auto {
             Auto::BottomOut => "internal then far not through stage (2 note)",
             Auto::BottomClose => "near stage start 4 note",
             Auto::SourceTwo => "near source start 2 note, second from bottom",
+            Auto::BottomWait => "near stage wait 7s one note",
+            Auto::TopWait => "near amp wait 7s one note",
+            _ => "shoot a chicken",
         }
     }
 
@@ -55,7 +63,7 @@ impl Auto {
     }
 
     pub fn names() -> Vec<String> {
-        (0..Self::len()-1).map(|n| Self::from_usize(n).unwrap().name().to_owned()).collect()
+        (0..Self::len()).map(|n| Self::from_usize(n).unwrap().name().to_owned()).collect()
     }
 
     pub fn picker() -> Picker {
@@ -97,9 +105,10 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         Auto::Bottom => bottom(robot).await,
         Auto::BottomOut => bottom_out(robot).await,
         Auto::BottomClose => bottom_close(robot).await,
+        Auto::BottomWait => bottom_one(robot).await,
+        Auto::TopWait => top_one(robot).await,
         Auto::TopCenter => Triple_Note(robot).await,
         Auto::SourceTwo => source_out(robot).await,
-        Auto::Nop => {},
         Auto::PathTest => {
             let name = "Example.1";
             let mut drivetrain = robot.drivetrain.borrow_mut();
@@ -115,6 +124,7 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
             let mut intake = robot.intake.borrow_mut();
             intake.zero().await;
         },
+        _ => {},
     }
 }
 
@@ -757,4 +767,66 @@ async fn bottom_close(robot: Ferris) {
     shoot(&intake, &mut shooter).await;
 
     shooter.set_shooter(0.);
+}
+async fn bottom_one(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+    let telemetry = robot.telemetry.clone();
+
+    drivetrain.odometry.set(Vector2::new(0.4808354377746582,4.043473720550537));
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    sleep(Duration::from_millis(7000)).await;
+
+    shooter.set_shooter(1.0);
+    join!(
+        drive("BottomOne.1", &mut drivetrain), // scoring position
+        intake.zero(),
+    );
+
+    join!(
+        async { // shoot
+            wait(|| shooter.get_velocity() > 5000.).await;
+            shooter.set_feeder(-0.4);
+            sleep(Duration::from_secs_f64(0.3)).await;
+            shooter.set_feeder(0.);
+        },
+        lower_intake(&mut intake)
+    );
+
+    shooter.set_shooter(0.);
+    drive("BottomOne.2", &mut drivetrain).await;
+}
+async fn top_one(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+    let telemetry = robot.telemetry.clone();
+
+    drivetrain.odometry.set(Vector2::new(0.46920153498649597,7.0344977378845215));
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    sleep(Duration::from_millis(7000)).await;
+
+    shooter.set_shooter(1.0);
+    join!(
+        drive("TopOne.1", &mut drivetrain), // scoring position
+        intake.zero(),
+    );
+
+    join!(
+        async { // shoot
+            wait(|| shooter.get_velocity() > 5000.).await;
+            shooter.set_feeder(-0.4);
+            sleep(Duration::from_secs_f64(0.3)).await;
+            shooter.set_feeder(0.);
+        },
+        lower_intake(&mut intake)
+    );
+
+    shooter.set_shooter(0.);
+    drive("TopOne.2", &mut drivetrain).await;
 }

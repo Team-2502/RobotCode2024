@@ -26,6 +26,7 @@ use frcrs::hal_report;
 use frcrs::input::{Joystick, RobotState};
 use lazy_static::lazy_static;
 use num_traits::{FromPrimitive, ToPrimitive};
+use once_cell::sync::OnceCell;
 use telemetry::Data;
 use tokio::join;
 use tokio::time::{sleep, timeout};
@@ -36,6 +37,8 @@ use std::ops::Deref;
 use std::rc::Rc;
 use send_wrapper::SendWrapper;
 
+
+//pub extern "system" fn entrypoint <'local>(mut env: JNIEnv<'local>, class: JClass<'local>) {
 
 #[call_from_java("frc.robot.Main.rustentry")]
 fn entrypoint() {
