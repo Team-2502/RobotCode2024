@@ -212,7 +212,7 @@ pub async fn stage(intake: &mut Intake, shooter: &Shooter) {
     sleep(Duration::from_millis(200)).await;
 
     intake.set_rollers(-0.13);
-    shooter.set_feeder(-0.24);
+    shooter.set_feeder(-0.14);
     wait(|| shooter.contains_note()).await;
     intake.set_rollers(0.0);
     intake.set_actuate(0.0);
