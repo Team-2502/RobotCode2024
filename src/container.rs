@@ -88,7 +88,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     if operator.get(7) && not && robot.shooter.try_borrow().is_ok_and(|s| !s.contains_note()) {
         let intake = robot.intake.clone();
         let shooter = robot.shooter.clone();
-        robot.grab.replace(Some(executor.spawn_local(async move {
+        robot.stage.replace(Some(executor.spawn_local(async move {
             let intake = intake.deref().try_borrow_mut();
             let shooter = shooter.deref().try_borrow();
 
@@ -206,12 +206,12 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
 pub async fn stage(intake: &mut Intake, shooter: &Shooter) {
     intake.set_rollers(1.);
     raise_intake(intake).await;
-    intake.set_actuate(0.15);
-    let _ = timeout(Duration::from_millis(200), wait(|| intake.at_limit())).await;
+    //intake.set_actuate(0.15);
+    //let _ = timeout(Duration::from_millis(200), wait(|| intake.at_limit())).await;
 
     sleep(Duration::from_millis(200)).await;
 
-    intake.set_rollers(-0.1);
+    intake.set_rollers(-0.13);
     shooter.set_feeder(-0.24);
     wait(|| shooter.contains_note()).await;
     intake.set_rollers(0.0);
