@@ -29,6 +29,7 @@ pub enum Auto {
     BottomOut,
     TopStop,
     BottomClose,
+    SourceTwo,
 }
 
 impl Auto {
@@ -45,6 +46,7 @@ impl Auto {
             Auto::TopCenter => "anish triple (internal then far)",
             Auto::BottomOut => "internal then far not through stage (2 note)",
             Auto::BottomClose => "near stage start 4 note",
+            Auto::SourceTwo => "near source start 2 note, second from bottom",
         }
     }
 
@@ -96,6 +98,7 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         Auto::BottomOut => bottom_out(robot).await,
         Auto::BottomClose => bottom_close(robot).await,
         Auto::TopCenter => Triple_Note(robot).await,
+        Auto::SourceTwo => source_out(robot).await,
         Auto::Nop => {},
         Auto::PathTest => {
             let name = "Example.1";
@@ -312,6 +315,53 @@ async fn top(robot: Ferris) {
     let _ = join!(
         timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
         drive("Top.7", &mut drivetrain) // scoring position
+    );
+
+    shoot(&intake, &mut shooter).await;
+
+    shooter.set_shooter(0.);
+}
+
+async fn source_out(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+    let telemetry = robot.telemetry.clone();
+
+    drivetrain.odometry.set(Vector2::new(0.4719328284263611,2.0507166385650635));
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    shooter.set_shooter(1.0);
+    join!(
+        drive("SourceTwo.1", &mut drivetrain), // scoring position
+        intake.zero(),
+    );
+
+    // shoot
+    wait(|| shooter.get_velocity() > 5000.).await;
+    shooter.set_feeder(-0.4);
+    sleep(Duration::from_secs_f64(0.3)).await;
+    shooter.set_feeder(0.);
+
+    let mut failure = false;
+    join!(
+        drive("SourceTwo.2", &mut drivetrain), // goto note
+        async {
+            sleep(Duration::from_millis(1500)).await;
+            lower_intake(&mut intake).await;
+            intake.set_rollers(0.4);
+            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        drive("SourceTwo.3", &mut drivetrain) // scoring position
     );
 
     shoot(&intake, &mut shooter).await;
