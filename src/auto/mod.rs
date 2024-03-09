@@ -803,29 +803,25 @@ async fn top_one(robot: Ferris) {
     let mut intake = robot.intake.deref().borrow_mut();
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
     let mut shooter = robot.shooter.deref().borrow_mut();
-    let telemetry = robot.telemetry.clone();
 
     drivetrain.odometry.set(Vector2::new(0.46920153498649597,7.0344977378845215));
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
-    sleep(Duration::from_millis(7000)).await;
 
     shooter.set_shooter(1.0);
     join!(
-        drive("TopOne.1", &mut drivetrain), // scoring position
         intake.zero(),
+        sleep(Duration::from_millis(9000)),
     );
 
-    join!(
-        async { // shoot
-            wait(|| shooter.get_velocity() > 5000.).await;
-            shooter.set_feeder(-0.4);
-            sleep(Duration::from_secs_f64(0.3)).await;
-            shooter.set_feeder(0.);
-        },
-        lower_intake(&mut intake)
-    );
+    drive("TopOne.1", &mut drivetrain).await; // scoring position
+
+    // shoot
+    wait(|| shooter.get_velocity() > 5000.).await;
+    shooter.set_feeder(-0.4);
+    sleep(Duration::from_secs_f64(0.3)).await;
+    shooter.set_feeder(0.);
 
     shooter.set_shooter(0.);
     drive("TopOne.2", &mut drivetrain).await;
