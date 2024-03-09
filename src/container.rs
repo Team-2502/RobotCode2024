@@ -146,7 +146,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
         telemetry::put_bool("beam break: {}", shooter.contains_note()).await;
 
         if *shooting {
-            if operator.get(5) {
+            if shooter.amp_deployed() && !operator.get(5) {
                 shooter.set_shooter(0.225)
             } else {
                 shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
