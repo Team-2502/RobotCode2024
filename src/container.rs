@@ -155,12 +155,20 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
             shooter.stop_shooter();
         }
 
-        if operator.get(11) {
-            shooter.set_amp_bar(-0.6);
-        } else if operator.get(16) {
-            shooter.set_amp_bar(0.6);
+        if operator.get(5) {
+            if operator.get(11) {
+                shooter.set_amp_bar(-0.6);
+            } else if operator.get(16) {
+                shooter.set_amp_bar(0.6);
+            } else {
+                shooter.set_amp_bar(0.);
+            }
         } else {
-            shooter.set_amp_bar(0.);
+            if operator.get(11) {
+                shooter.deploy_amp();
+            } else if operator.get(16) {
+                shooter.stow_amp();
+            }
         }
 
         if !staging {

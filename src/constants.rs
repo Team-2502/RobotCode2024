@@ -62,3 +62,8 @@ pub mod drivetrain {
 
     pub const SWERVE_ROTATIONS_TO_INCHES: f64 = (1./6.75) * (4. * PI);
 }
+
+pub mod amp {
+    pub const STOWED_POSITION: f64 = 0.;
+    pub const DEPLOYED_POSITION: f64 = -26.;
+}
