@@ -2,7 +2,7 @@ use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref, DerefMut}, rc::Rc, time
 
 use frcrs::{input::Joystick, alliance_station, };
 use frcrs::networktables::set_position;
-use tokio::{task::{JoinHandle, LocalSet}, time::sleep, join, sync::RwLock};
+use tokio::{join, sync::RwLock, task::{JoinHandle, LocalSet}, time::{sleep, timeout}};
 use uom::si::{angle::{degree, radian}, f64::Angle};
 use crate::{constants::{drivetrain::{SWERVE_TURN_KP, self}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self, TELEMETRY}};
 use frcrs::deadzone;
@@ -33,7 +33,6 @@ impl Ferris {
 
 pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick, operator: &mut Joystick, robot: &'a Ferris, executor: &'a LocalSet) {
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
-    let mut shooter = robot.shooter.deref().borrow_mut();
     let climber = robot.climber.deref().borrow();
     let mut shooter_state = robot.shooter_state.deref().borrow_mut();
     let (shooting, last_loop) = &mut *shooter_state;
@@ -58,7 +57,6 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
 
     set_position(drivetrain.odometry.position, -angle);
 
-    telemetry::put_number("flywheel speed", shooter.get_velocity()).await;
     telemetry::put_number("Odo X", drivetrain.odometry.position.x).await;
     telemetry::put_number("Odo Y", drivetrain.odometry.position.y).await;
 
@@ -87,10 +85,10 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
 
     let not = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_none());
     let staging = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_some());
-    if operator.get(7) && not && !shooter.contains_note() {
+    if operator.get(7) && not && robot.shooter.try_borrow().is_ok_and(|s| !s.contains_note()) {
         let intake = robot.intake.clone();
         let shooter = robot.shooter.clone();
-        robot.grab.replace(Some(executor.spawn_local(async move {
+        robot.stage.replace(Some(executor.spawn_local(async move {
             let intake = intake.deref().try_borrow_mut();
             let shooter = shooter.deref().try_borrow();
 
@@ -143,27 +141,44 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
 
     telemetry::put_bool("flywheel state", *shooting).await;
 
-    if *shooting {
-        shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
-    } else {
-        shooter.stop_shooter();
-    }
+    if let Ok(mut shooter) = robot.shooter.deref().try_borrow_mut() {
+        telemetry::put_number("flywheel speed", shooter.get_velocity()).await;
+        telemetry::put_bool("beam break: {}", shooter.contains_note()).await;
 
-    if operator.get(11) {
-        shooter.set_amp_bar(-0.2);
-    } else if operator.get(16) {
-        shooter.set_amp_bar(0.2);
-    } else {
-        shooter.set_amp_bar(0.);
-    }
-
-    if !staging {
-        if operator.get(1) {
-            shooter.set_feeder(-0.2);
-        } else if operator.get(10) {
-            shooter.set_feeder(0.5);
+        if *shooting {
+            if shooter.amp_deployed() && !operator.get(5) {
+                shooter.set_shooter(0.225)
+            } else {
+                shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
+            }
         } else {
-            shooter.stop_feeder();
+            shooter.stop_shooter();
+        }
+
+        if operator.get(5) {
+            if operator.get(11) {
+                shooter.set_amp_bar(-0.6);
+            } else if operator.get(16) {
+                shooter.set_amp_bar(0.6);
+            } else {
+                shooter.set_amp_bar(0.);
+            }
+        } else {
+            if operator.get(11) {
+                shooter.deploy_amp();
+            } else if operator.get(16) {
+                shooter.stow_amp();
+            }
+        }
+
+        if !staging {
+            if operator.get(1) {
+                shooter.set_feeder(-0.2);
+            } else if operator.get(10) {
+                shooter.set_feeder(0.5);
+            } else {
+                shooter.stop_feeder();
+            }
         }
     }
 
@@ -184,7 +199,6 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
         climber.stop()
     }
 
-    telemetry::put_bool("beam break: {}", shooter.contains_note()).await;
     //println!("doo dad: {}", get_dio(INTAKE_LIMIT));
 
     let drivetrain = robot.drivetrain.clone();
@@ -200,13 +214,13 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
 pub async fn stage(intake: &mut Intake, shooter: &Shooter) {
     intake.set_rollers(1.);
     raise_intake(intake).await;
-    intake.set_actuate(0.15);
-    wait(|| intake.at_limit()).await;
+    //intake.set_actuate(0.15);
+    //let _ = timeout(Duration::from_millis(200), wait(|| intake.at_limit())).await;
 
     sleep(Duration::from_millis(200)).await;
 
-    intake.set_rollers(-0.1);
-    shooter.set_feeder(-0.24);
+    intake.set_rollers(-0.13);
+    shooter.set_feeder(-0.14);
     wait(|| shooter.contains_note()).await;
     intake.set_rollers(0.0);
     intake.set_actuate(0.0);

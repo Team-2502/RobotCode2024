@@ -1,6 +1,8 @@
 use frcrs::dio::DIO;
 use frcrs::rev::MotorType::Brushless;
 use frcrs::rev::{Spark, SparkFlex, SparkMax};
+use uom::si::angle::revolution;
+use uom::si::f64::Angle;
 use crate::constants::*;
 
 use super::wait;
@@ -53,6 +55,18 @@ impl Shooter {
     pub fn set_feeder(&self, value: f64) {
         self.feeder_top.set(value);
         self.feeder_bottom.set(-value);
+    }
+
+    pub fn stow_amp(&self) {
+        self.amp_bar.set_position(Angle::new::<revolution>(amp::STOWED_POSITION));
+    }
+
+    pub fn deploy_amp(&self) {
+        self.amp_bar.set_position(Angle::new::<revolution>(amp::DEPLOYED_POSITION));
+    }
+
+    pub fn amp_deployed(&mut self) -> bool {
+        self.amp_bar.get_position().get::<revolution>() < (amp::DEPLOYED_POSITION + amp::STOWED_POSITION)/2.
     }
 
     pub fn set_amp_bar(&self, value: f64) {
