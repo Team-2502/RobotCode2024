@@ -22,13 +22,13 @@ pub struct Shooter {
 impl Shooter {
     pub fn new() -> Self {
         Self {
-            feeder_top: Spark::new(SHOOTER_FEEDER_TOP, Brushless),
-            feeder_bottom: Spark::new(SHOOTER_FEEDER_BOTTOM, Brushless),
+            feeder_top: Spark::new(SHOOTER_FEEDER_TOP),
+            feeder_bottom: Spark::new(SHOOTER_FEEDER_BOTTOM),
 
-            shooter_top: SparkFlex::new(SHOOTER_TOP, Brushless),
-            shooter_bottom: SparkFlex::new(SHOOTER_BOTTOM, Brushless),
+            shooter_top: SparkFlex::new(SHOOTER_TOP),
+            shooter_bottom: SparkFlex::new(SHOOTER_BOTTOM),
 
-            amp_bar: Spark::new(AMP_BAR, Brushless),
+            amp_bar: Spark::new(AMP_BAR),
 
             staged: DIO::new(BEAM_BREAK_SIGNAL),
         }
@@ -52,7 +52,7 @@ impl Shooter {
         self.shooter_bottom.stop();
     }
 
-    pub fn set_feeder(&self, value: f64) {
+    pub fn set_feeder(&self, value: f32) {
         self.feeder_top.set(value);
         self.feeder_bottom.set(-value);
     }
@@ -69,11 +69,11 @@ impl Shooter {
         self.amp_bar.get_position().get::<revolution>() < (amp::DEPLOYED_POSITION + amp::STOWED_POSITION)/2.
     }
 
-    pub fn set_amp_bar(&self, value: f64) {
+    pub fn set_amp_bar(&self, value: f32) {
         self.amp_bar.set(value);
     }
 
-    pub fn set_shooter(&self, value: f64) {
+    pub fn set_shooter(&self, value: f32) {
         self.shooter_top.set(value);
         self.shooter_bottom.set(-value);
     }
@@ -88,7 +88,7 @@ impl Shooter {
         self.stop_feeder();
     }
 
-    pub fn get_velocity(&mut self) -> f64 {
+    pub fn get_velocity(&mut self) -> f32 {
         self.shooter_top.get_velocity().abs().min(self.shooter_bottom.get_velocity().abs())
     }
 }

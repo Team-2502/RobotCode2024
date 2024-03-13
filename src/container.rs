@@ -1,10 +1,9 @@
 use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref, DerefMut}, rc::Rc, time::Duration, sync::Arc};
 
 use frcrs::{input::Joystick, alliance_station, };
-use frcrs::networktables::set_position;
 use tokio::{join, sync::RwLock, task::{JoinHandle, LocalSet}, time::{sleep, timeout}};
 use uom::si::{angle::{degree, radian}, f64::Angle};
-use crate::{constants::{drivetrain::{SWERVE_TURN_KP, self}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self, TELEMETRY}};
+use crate::{constants::{drivetrain::{SWERVE_TURN_KP, self}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self, TELEMETRY, Data}};
 use frcrs::deadzone;
 
 #[derive(Clone)]
@@ -42,9 +41,9 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     else { 0.0..1. };
     let power_rotate = if right_drive.get(3) { 0.0..0.2 }
     else { 0.0..1. };
-    let deadly = deadzone(left_drive.get_y(), &joystick_range, &power_translate);
-    let deadlx = deadzone(left_drive.get_x(), &joystick_range, &power_translate);
-    let deadrz = deadzone(right_drive.get_z(), &joystick_range, &power_rotate);
+    let deadly = deadzone(left_drive.get_y() as f64, &joystick_range, &power_translate);
+    let deadlx = deadzone(left_drive.get_x() as f64, &joystick_range, &power_translate);
+    let deadrz = deadzone(right_drive.get_z() as f64, &joystick_range, &power_rotate);
 
     let rot = if left_drive.get(4) {
         -drivetrain.get_offset().get::<radian>() * SWERVE_TURN_KP
@@ -55,7 +54,11 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     drivetrain.set_speeds(deadly, deadlx, rot);
     let angle = drivetrain.get_angle();
 
-    set_position(drivetrain.odometry.position, -angle);
+    TELEMETRY.write().await.data.insert("position".to_owned(), Data::Pose(telemetry::Pose{
+        x: drivetrain.odometry.position.x,
+        y: drivetrain.odometry.position.y,
+        theta: -angle.get::<radian>(),
+    }));
 
     telemetry::put_number("Odo X", drivetrain.odometry.position.x).await;
     telemetry::put_number("Odo Y", drivetrain.odometry.position.y).await;
@@ -142,7 +145,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     telemetry::put_bool("flywheel state", *shooting).await;
 
     if let Ok(mut shooter) = robot.shooter.deref().try_borrow_mut() {
-        telemetry::put_number("flywheel speed", shooter.get_velocity()).await;
+        telemetry::put_number("flywheel speed", shooter.get_velocity() as f64).await;
         telemetry::put_bool("beam break: {}", shooter.contains_note()).await;
 
         if *shooting {

@@ -10,8 +10,8 @@ pub struct Climber {
 impl Climber {
     pub fn new() -> Self {
         Self {
-            left: Spark::new(CLIMBER_LEFT, Brushless),
-            right: Spark::new(CLIMBER_RIGHT, Brushless),
+            left: Spark::new(CLIMBER_LEFT),
+            right: Spark::new(CLIMBER_RIGHT),
         }
     }
 
@@ -28,16 +28,16 @@ impl Climber {
         self.right.stop();
     }
 
-    pub fn set(&self, value: f64) {
+    pub fn set(&self, value: f32) {
         self.left.set(-value);
         self.right.set(value);
     }
 
-    pub fn set_left(&self, value: f64) {
+    pub fn set_left(&self, value: f32) {
         self.left.set(value);
     }
 
-    pub fn set_right(&self, value: f64) {
+    pub fn set_right(&self, value: f32) {
         self.right.set(value);
     }
 }

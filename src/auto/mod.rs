@@ -1,6 +1,5 @@
 use std::{ops::{Deref, DerefMut}, pin::Pin, time::Duration, mem};
 
-use frcrs::networktables::Chooser;
 use futures_lite::Future;
 use nalgebra::Vector2;
 use tokio::{join, time::{sleep, timeout}, fs::File, io::AsyncReadExt};
@@ -83,22 +82,6 @@ impl Default for Auto {
         Auto::Nop
     }
 }
-pub struct AutoChooser(Chooser<Auto>);
-
-impl AutoChooser {
-    pub fn new() -> Self {
-        Self(Chooser::new())
-    }
-
-    pub fn add(&mut self, name: &str, auto: Auto) 
-    {
-        self.0.add(name, auto);
-    }
-
-    pub fn get(&self) -> Auto {
-        Auto::from_i32(self.0.get()).unwrap()
-    }
-}
 
 pub async fn run_auto(auto: Auto, robot: Ferris) {
     match auto {
@@ -142,17 +125,6 @@ async fn drive(name: &str, drivetrain: &mut crate::subsystems::Drivetrain) {
     follow_path(drivetrain, path).await;
     drivetrain.set_speeds(0., 0., 0.)
 }
-
-pub fn autos() -> AutoChooser {
-    let mut chooser = AutoChooser::new();
-
-    //chooser.add("flat out", Auto::Short);
-    //chooser.add("crooked", Auto::Long);
-    //chooser.add("tk", Auto::Long);
-
-    chooser
-}
-
 
 async fn top_stop(robot: Ferris) {
     let mut intake = robot.intake.deref().borrow_mut();

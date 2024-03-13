@@ -1,12 +1,12 @@
 use std::{time::Duration, f64::consts::FRAC_2_PI};
 
-use frcrs::{networktables::set_position, alliance_station};
+use frcrs::alliance_station;
 use nalgebra::{Vector2, Rotation2};
 use tokio::time::{Instant, sleep};
 use uom::si::{f64::{Time, Angle, Length}, time::second, length::{meter, foot}, angle::{radian, degree}};
 use wpi_trajectory::{Path, Pose};
 
-use crate::{subsystems::Drivetrain, constants::drivetrain::SWERVE_TURN_KP, telemetry::{self, TelemetryStore, TELEMETRY}};
+use crate::{subsystems::Drivetrain, constants::drivetrain::SWERVE_TURN_KP, telemetry::{self, TelemetryStore, TELEMETRY, Data}};
 
 pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
     let start = Instant::now();
@@ -45,7 +45,18 @@ pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
 
         drivetrain.set_speeds(error_position.x, error_position.y, error_angle);
 
-        set_position(drivetrain.odometry.position, -drivetrain.get_angle());
+        let mut telemetry = telemetry.write().await; 
+        telemetry.data.insert("auto setpoint".to_owned(), Data::Pose(telemetry::Pose{
+            x: position.x,
+            y: position.y,
+            theta: angle.get::<radian>(),
+        }));
+
+        telemetry.data.insert("position".to_owned(), Data::Pose(telemetry::Pose{
+            x: drivetrain.odometry.position.x,
+            y: drivetrain.odometry.position.y,
+            theta: -drivetrain.get_angle().get::<radian>(),
+        }));
 
         sleep(Duration::from_millis(20)).await;
     }

@@ -22,15 +22,14 @@ const COUNTS_PER_REVOLUTION: f64 = 41.6;
 
 impl Intake {
     pub fn new() -> Self {
-        let left_roller = Spark::new(INTAKE_ROLLER_LEFT, MotorType::Brushless);
-        let right_roller = Spark::new(INTAKE_ROLLER_RIGHT, MotorType::Brushless);
+        let left_roller = Spark::new(INTAKE_ROLLER_LEFT);
+        let right_roller = Spark::new(INTAKE_ROLLER_RIGHT);
 
-        let left_actuate = Spark::new(INTAKE_ACTUATE_LEFT, MotorType::Brushless);
-        let pid = left_actuate.get_pid();
-        pid.set_p(0.08);
-        pid.set_d(0.45);
+        let left_actuate = Spark::new(INTAKE_ACTUATE_LEFT);
+        left_actuate.set_p(0.08);
+        left_actuate.set_d(0.45);
 
-        let right_actuate = Spark::new(INTAKE_ACTUATE_RIGHT, MotorType::Brushless);
+        let right_actuate = Spark::new(INTAKE_ACTUATE_RIGHT);
 
         let limit = DIO::new(INTAKE_LIMIT);
         let reverse_limit = DIO::new(INTAKE_DOWN_LIMIT);
@@ -67,12 +66,12 @@ impl Intake {
         //self.right_roller.stop();
     }
 
-    pub fn set_rollers(&self, value: f64) {
+    pub fn set_rollers(&self, value: f32) {
         self.left_roller.set(value);
         //self.right_roller.set(value);
     }
 
-    pub fn set_actuate(&self, value: f64) {
+    pub fn set_actuate(&self, value: f32) {
         self.left_actuate.set(value);
         //self.right_actuate.set(value);
     }

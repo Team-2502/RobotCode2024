@@ -1,7 +1,6 @@
 use std::f64::consts::{PI, FRAC_PI_2, FRAC_2_PI};
 use uom::{num_traits::{Pow, PrimInt}, si::{angle::{degree, radian}, f64::Length, length::inch}};
 use uom::si::f64::*;
-use frcrs::networktables::SmartDashboard;
 use nalgebra::{Vector2, Rotation2, ComplexField};
 
 pub type WheelSpeeds = Vec<ModuleState>;

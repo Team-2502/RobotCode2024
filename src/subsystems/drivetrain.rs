@@ -80,7 +80,7 @@ impl Drivetrain {
         }
 
         for (turn, offset) in [&fr_turn, &fl_turn, &bl_turn, &br_turn].iter().zip(absolute_offsets.offsets.iter_mut()) {
-            *offset -= turn.get().get::<degree>();
+            *offset -= turn.get_position().get::<degree>();
             *offset = 0.;
             dbg!(offset);
         }
@@ -142,7 +142,7 @@ impl Drivetrain {
         let mut speeds = Vec::new();
 
         for (module, offset) in [&self.fr_drive, &self.fl_drive, &self.bl_drive, &self.br_drive].iter().zip(angles.iter()) {
-            let distance = module.get_position() * SWERVE_ROTATIONS_TO_INCHES;
+            let distance = module.get_position().get::<revolution>() * SWERVE_ROTATIONS_TO_INCHES;
             speeds.push(ModuleReturn { 
                 angle: offset.angle.clone(),
                 distance:  Length::new::<inch>(distance),
@@ -158,7 +158,7 @@ impl Drivetrain {
         for (module, offset) in [&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn].iter().zip(self.absolute_offsets.offsets.iter()) {
             speeds.push(ModuleState { 
                 speed: 0., 
-                angle: -module.get() + Angle::new::<degree>(*offset),
+                angle: -module.get_position() + Angle::new::<degree>(*offset),
             });
         }
 
@@ -192,10 +192,10 @@ impl Drivetrain {
             })
             .collect();
 
-        self.fr_drive.set(wheel_speeds[0].speed);
-        self.fl_drive.set(wheel_speeds[1].speed);
-        self.bl_drive.set(wheel_speeds[2].speed);
-        self.br_drive.set(wheel_speeds[3].speed);
+        self.fr_drive.set(ControlMode::Percent, wheel_speeds[0].speed);
+        self.fl_drive.set(ControlMode::Percent, wheel_speeds[1].speed);
+        self.bl_drive.set(ControlMode::Percent, wheel_speeds[2].speed);
+        self.br_drive.set(ControlMode::Percent, wheel_speeds[3].speed);
 
         self.fr_turn.set(ControlMode::Position, -wheel_speeds[0].angle.get::<talon_encoder_tick>());
         self.fl_turn.set(ControlMode::Position, -wheel_speeds[1].angle.get::<talon_encoder_tick>());

@@ -43,10 +43,10 @@ pub const HALF_FIELD_WIDTH_METERS: f64 = 4.1148; // 54/4 feet
 pub const HALF_FIELD_LENGTH_METERS: f64 = 8.2296; // 54/2 feet
 
 pub mod intake {
-    pub const INTAKE_OCCUPIED_CURRENT: f64 = 30.;
-    pub const INTAKE_OCCUPIED_VELOCITY: f64 = 1500.;
+    pub const INTAKE_OCCUPIED_CURRENT: f32 = 30.;
+    pub const INTAKE_OCCUPIED_VELOCITY: f32 = 1500.;
     /// velocity that intake acceleration is "over" at
-    pub const INTAKE_FREE_VELOCITY: f64 = 2000.; 
+    pub const INTAKE_FREE_VELOCITY: f32 = 2000.; 
 
     pub const INTAKE_DOWN_THRESHOLD: f64 = -120.; 
     pub const INTAKE_UP_THRESHOLD: f64 = -3.; 

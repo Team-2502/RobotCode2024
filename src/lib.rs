@@ -10,17 +10,11 @@ pub mod telemetry;
 use std::thread;
 use std::time::{Instant, Duration};
 
-use auto::{autos, run_auto, Auto, AutoChooser};
+use auto::{run_auto, Auto};
 use constants::TELEMETRY_PORT;
 use container::Ferris;
-use frcrs::ctre::{Falcon};
-use frcrs::is_teleop;
-use frcrs::networktables::SmartDashboard;
 use frcrs::observe_user_program_starting;
 use frcrs::refresh_data;
-use j4rs_derive::call_from_java;
-use j4rs::Jvm;
-use j4rs::prelude::*;
 use frcrs::init_hal;
 use frcrs::hal_report;
 use frcrs::input::{Joystick, RobotState};
@@ -38,9 +32,6 @@ use std::rc::Rc;
 use send_wrapper::SendWrapper;
 
 
-//pub extern "system" fn entrypoint <'local>(mut env: JNIEnv<'local>, class: JClass<'local>) {
-
-#[call_from_java("frc.robot.Main.rustentry")]
 fn entrypoint() {
 
     observe_user_program_starting();
@@ -49,9 +40,9 @@ fn entrypoint() {
         panic!("Failed to init HAL")
     }
 
-    hal_report(2, 3, 0, "2024.2.1".to_string());
-
-    SmartDashboard::init();
+    const RUST: i32 = 7; // https://github.com/wpilibsuite/allwpilib/pull/6227
+                         // TODO: bother national instruments
+    hal_report(2, RUST, 0, "2024.2.1".to_string());
 
     let mut left_drive = Joystick::new(1);
     let mut right_drive = Joystick::new(0);
@@ -66,8 +57,6 @@ fn entrypoint() {
     let local = task::LocalSet::new();
 
     let mut auto = None;
-
-    let chooser = autos();
 
     let mut last_loop = Instant::now();
     let controller = local.run_until(async { loop {
