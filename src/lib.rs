@@ -32,7 +32,7 @@ use std::rc::Rc;
 use send_wrapper::SendWrapper;
 
 
-fn entrypoint() {
+pub fn entrypoint() {
 
     observe_user_program_starting();
 
