@@ -62,12 +62,8 @@ impl Odometry {
             if self.last_apriltag >= *time {
                 return;
             }
-            self.position.y = pose.y;
-            self.position.x = if mirror {
-                (HALF_FIELD_LENGTH_METERS - pose.x) + HALF_FIELD_LENGTH_METERS
-            } else {
-                pose.y
-            };
+
+            self.set(Vector2::new(pose.x, pose.y));
             self.last_apriltag = time.clone();
         }
 

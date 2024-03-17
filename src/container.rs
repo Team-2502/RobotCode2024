@@ -1,6 +1,6 @@
 use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref, DerefMut}, rc::Rc, time::Duration, sync::Arc};
 
-use frcrs::{input::Joystick, alliance_station, };
+use frcrs::{alliance_station, input::Joystick, networktables::SmartDashboard };
 use frcrs::networktables::set_position;
 use tokio::{join, sync::RwLock, task::{JoinHandle, LocalSet}, time::{sleep, timeout}};
 use uom::si::{angle::{degree, radian}, f64::Angle};
@@ -72,7 +72,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
         drivetrain.reset_angle();
     }
 
-    if operator.get(8) && robot.grab.deref().try_borrow().is_ok_and(|n| n.is_none()) {
+    if operator.get(8) && robot.grab.deref().try_borrow().is_ok_and(|n| n.is_none()) && !operator.get(7) {
         let intake = robot.intake.clone();
         robot.grab.replace(Some(executor.spawn_local(async move {
             intake.deref().borrow_mut().grab().await;
@@ -86,6 +86,14 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     let not = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_none());
     let staging = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_some());
     if operator.get(7) && not && robot.shooter.try_borrow().is_ok_and(|s| !s.contains_note()) {
+
+        // drop grab if done
+        if robot.grab.deref().try_borrow().is_ok_and(|n| n.as_ref().is_some_and(|n| n.is_finished())) {
+            if let Ok(mut grab) = robot.grab.deref().try_borrow_mut() {
+                *grab = None;
+            }
+        }
+
         let intake = robot.intake.clone();
         let shooter = robot.shooter.clone();
         robot.stage.replace(Some(executor.spawn_local(async move {
@@ -109,9 +117,9 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
             telemetry::put_number("intake position {}", intake.actuate_position().get::<degree>()).await;
 
             if operator.get(9) {
-                intake.set_rollers(0.4);
-            } else if operator.get(6) {
-                intake.set_rollers(-0.4);
+                intake.set_rollers(1.);
+            } else if operator.get(6) || operator.get(1) || right_drive.get(1) {
+                intake.set_rollers(-1.);
             } else {
                 intake.stop_rollers();
             }
@@ -172,8 +180,8 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
         }
 
         if !staging {
-            if operator.get(1) {
-                shooter.set_feeder(-0.2);
+            if operator.get(1) || right_drive.get(1) {
+                shooter.set_feeder(-1.);
             } else if operator.get(10) {
                 shooter.set_feeder(0.5);
             } else {
@@ -200,14 +208,6 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     }
 
     //println!("doo dad: {}", get_dio(INTAKE_LIMIT));
-
-    let drivetrain = robot.drivetrain.clone();
-    let telemetry = robot.telemetry.clone();
-    executor.spawn_local(async move {
-        if let Ok(mut dt) = drivetrain.deref().try_borrow_mut() {
-            dt.odometry.update_from_vision(telemetry, red).await;
-        }
-    });
 }
 
 /// Transfer note from intake to shooter

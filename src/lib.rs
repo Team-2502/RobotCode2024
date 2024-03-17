@@ -14,8 +14,8 @@ use auto::{autos, run_auto, Auto, AutoChooser};
 use constants::TELEMETRY_PORT;
 use container::Ferris;
 use frcrs::ctre::{Falcon};
-use frcrs::is_teleop;
-use frcrs::networktables::SmartDashboard;
+use frcrs::{alliance_station, is_teleop};
+use frcrs::networktables::{set_position, SmartDashboard};
 use frcrs::observe_user_program_starting;
 use frcrs::refresh_data;
 use j4rs_derive::call_from_java;
@@ -27,7 +27,7 @@ use frcrs::input::{Joystick, RobotState};
 use lazy_static::lazy_static;
 use num_traits::{FromPrimitive, ToPrimitive};
 use once_cell::sync::OnceCell;
-use telemetry::Data;
+use telemetry::{Data, TELEMETRY};
 use tokio::join;
 use tokio::time::{sleep, timeout};
 use crate::container::{container, stop_all};
@@ -114,6 +114,13 @@ fn entrypoint() {
 
         let elapsed = last_loop.elapsed().as_secs_f64();
         let left = (1./50. - elapsed).max(0.);
+
+        if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
+            let red = alliance_station().red();
+            drivetrain.odometry.update_from_vision(TELEMETRY.clone(), red).await;
+            let angle = drivetrain.get_angle();
+            set_position(drivetrain.odometry.position, -angle);
+        }
         
         sleep(Duration::from_secs_f64(left)).await;
         telemetry::put_number("loop rate (hz)", 1./last_loop.elapsed().as_secs_f64()).await;

@@ -80,7 +80,7 @@ impl Auto {
 
 impl Default for Auto {
     fn default() -> Self {
-        Auto::Nop
+        Auto::ZeroIntake
     }
 }
 pub struct AutoChooser(Chooser<Auto>);
