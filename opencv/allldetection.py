@@ -54,7 +54,8 @@ def BestieDetection(frame):
     #print("y", friendetey)
     #print("x", friendetex)
         cv2.imshow('Highlighted', frame)
-        return(friendetex, friendetey, friendeteh, friendetew)
+        tuples = (friendetex, friendetey, friendeteh, friendetew)
+        return(tuples)
 
 
     # Display the color of the image
@@ -106,7 +107,8 @@ def NoteDetetction(frame):
 
          contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
          cv2.imshow('Highlighted', frame)
-         return(notedetex, notedetey, notedeteh, notedetew)
+        tuples = (notedetex, notedetey, notedeteh, notedetew)
+        return(tuples)
 def OppDetection(frame):
     #print("oppd")
     success, frame = frame
@@ -156,7 +158,8 @@ def OppDetection(frame):
 
     # Display the color of the image
         cv2.imshow('Highlighted', frame)
-        return(oppdetex, oppdetey, oppdeteh, oppdetew)
+        tuples = (oppdetex, oppdetey, oppdeteh, oppdetew)
+        return(tuples)
 while camera.isOpened:
     framd = camera.read()
     framfrien = framd
@@ -165,13 +168,15 @@ while camera.isOpened:
     Bestiecoord =  BestieDetection(framfrien)
     oppcoord =  OppDetection(framopp)
     notecoord =  NoteDetetction(framnot)
+    Bestiecoordf = np.array(Bestiecoord).ravel()
+    oppcoordf = np.array(oppcoord).ravel()
+    notecoordf = np.array(notecoord).ravel()
     print("b", Bestiecoord)
     print("o", oppcoord)
     print("n", notecoord)
-    sd.putNumberArray("friendly coordinates:", Bestiecoord)
-    sd.putNumberArray("opponent coordinates:", oppcoord)
-    sd.putNumberArray("note coordinates:", notecoord)
-    DOUBLE_ARRAY = [Bestiecoord, oppcoord, notecoord]
+    sd.putNumberArray("friendly coordinates:", Bestiecoordf)
+    sd.putNumberArray("opponent coordinates:", oppcoordf)
+    sd.putNumberArray("note coordinates:", notecoordf)
     #print(oppcoord,"||", notecoord, "||", Bestiecoord)
     if cv2.waitKey(10) & 0xFF == ord('q'):
         break
