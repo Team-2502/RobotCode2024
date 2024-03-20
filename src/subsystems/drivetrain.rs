@@ -165,6 +165,7 @@ impl Drivetrain {
         speeds
     }
     pub fn set_speeds(&mut self, fwd: f64, str: f64, rot: f64) {
+        //println!("ODO X: {}", self.odometry.position.x);
         let mut transform = Vector2::new(str, -fwd);
         transform = Rotation2::new((self.get_angle() - self.offset).get::<radian>()) * transform;
         let wheel_speeds = self.kinematics.calculate(transform, rot);

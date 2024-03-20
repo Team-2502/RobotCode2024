@@ -33,6 +33,8 @@ pub enum Auto {
     TopCenter,
     BottomOut,
     BottomWait,
+    StageCloseFar,
+    OdoTest,
     Nop,
     Nop2,
     Nop3,
@@ -58,6 +60,8 @@ impl Auto {
             Auto::BottomWait => "near stage wait 7s one note",
             Auto::TopWait => "near amp wait 7s one note",
             Auto::TopBlock => "near amp wait one note stop mid",
+            Auto::StageCloseFar => "Stage close far",
+            Auto::OdoTest => "Odo Test",
             _ => "shoot a chicken",
         }
     }
@@ -115,6 +119,8 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         Auto::TopBlock => top_one_block(robot).await,
         Auto::TopCenter => Triple_Note(robot).await,
         Auto::SourceTwo => source_out(robot).await,
+        Auto::StageCloseFar => stage_close_far(robot).await,
+        Auto::OdoTest => odo_test(robot).await,
         Auto::PathTest => {
             let name = "Example.1";
             let mut drivetrain = robot.drivetrain.borrow_mut();
@@ -717,7 +723,7 @@ async fn bottom_close(robot: Ferris) {
     join!(
         drive("BottomClose.2", &mut drivetrain), // goto note
         async {
-            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+            failure = timeout(Duration::from_millis(2500), intake.grab()).await.is_err();
         }
     );
 
@@ -726,7 +732,7 @@ async fn bottom_close(robot: Ferris) {
     }
 
     let _ = join!(
-        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
+        timeout(Duration::from_millis(2000),stage(&mut intake, &shooter)),
         drive("BottomClose.3", &mut drivetrain) // scoring position
     );
 
@@ -737,7 +743,7 @@ async fn bottom_close(robot: Ferris) {
         drive("BottomClose.4", &mut drivetrain), // next note
         async {
             lower_intake(&mut intake).await;
-            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
+            failure = timeout(Duration::from_millis(2500), intake.grab()).await.is_err();
         },
     );
 
@@ -911,4 +917,74 @@ async fn bottom_close_wait(robot: Ferris) {
     shoot(&intake, &mut shooter).await;
 
     shooter.set_shooter(0.);
+}
+
+async fn stage_close_far(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+    let telemetry = robot.telemetry.clone();
+
+    drivetrain.odometry.set(Vector2::new(0.469, 4.09));
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    shooter.set_shooter(1.0);
+
+    join!(
+        drive("StageCloseFar.1", &mut drivetrain), // Shooting first
+        intake.zero()
+    );
+
+    join!(
+        async { // shoot
+            wait(|| shooter.get_velocity() > 5000.).await;
+            shooter.set_feeder(-0.4);
+            sleep(Duration::from_secs_f64(0.3)).await;
+            shooter.set_feeder(0.);
+        },
+        lower_intake(&mut intake)
+    );
+
+    intake.set_rollers(0.75);
+
+    drive("StageCloseFar.2", &mut drivetrain).await; // rotate so straight
+
+    let mut failure = false;
+    join!(
+        drive("StageCloseFar.3", &mut drivetrain), // drive to note
+        async {
+            failure = timeout(Duration::from_millis(2500), intake.grab()).await.is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(5000), stage(&mut intake, &shooter)),
+        drive("StageCloseFar.4", &mut drivetrain) // Shooting second
+    );
+
+    shoot(&intake, &mut shooter).await;
+
+    shooter.set_shooter(0.);
+
+    /*drive("StageCloseFar.6", &mut drivetrain).await; // rotate
+    drive("StageCloseFar.7", &mut drivetrain).await; // drive sideways*/
+}
+
+async fn odo_test(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+    let telemetry = robot.telemetry.clone();
+
+    drivetrain.odometry.set(Vector2::new(1.382, 5.572));
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    drive("OdoTest.1", &mut drivetrain).await;
+    drive("OdoTest.2", &mut drivetrain).await;
 }

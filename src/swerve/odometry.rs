@@ -66,7 +66,6 @@ impl Odometry {
             self.set(Vector2::new(pose.x, pose.y));
             self.last_apriltag = time.clone();
         }
-
     }
 
     pub fn calculate(&mut self, positions: Vec<ModuleReturn>, angle: Angle) {

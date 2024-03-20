@@ -1,7 +1,6 @@
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.sensors.CANCoder;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
@@ -9,13 +8,26 @@ import static com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkFlex;
 import static com.revrobotics.CANSparkMax.ControlType;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.DriverStationJNI;
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import org.photonvision.PhotonCamera;
+import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.EstimatedRobotPose;
+
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+import java.net.URL;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
@@ -115,5 +127,60 @@ public class Wrapper {
         m_field.setRobotPose(x, y, Rotation2d.fromRadians(theta));
 
         SmartDashboard.putData("field", m_field);
+    }
+
+    static AprilTagFieldLayout aprilTagFieldLayout = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+
+    static PhotonCamera cam = new PhotonCamera("Global_Shutter_Camera");
+    static Transform3d robotToCam = new Transform3d(new Translation3d(-0.5, 0.0, 0.5), new Rotation3d(0,0,180)); //Cam mounted facing forward, half a meter forward of center, half a meter up from center.
+    static PhotonPoseEstimator photonPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.LOWEST_AMBIGUITY, cam, robotToCam);
+
+    static Pose2d prevEstimatedRobotPose = new Pose2d();
+
+    public static void updateVisionOdo() {
+        //photonPoseEstimator.setReferencePose(prevEstimatedRobotPose);
+        Optional<EstimatedRobotPose> robotPose =  photonPoseEstimator.update();
+
+        if (robotPose.isPresent()) {
+            try {
+                // URL to which you want to send the POST request
+                URL url = new URL("http://10.25.2.2:5807/set_position");
+
+                //prevEstimatedRobotPose = robotPose.get().estimatedPose.toPose2d();
+
+                // JSON data to be sent in the request body
+                String jsonData = "{\"x\": " + robotPose.get().estimatedPose.getX() +
+                        ", \"y\": " + robotPose.get().estimatedPose.getY() + ", \"theta\": " +
+                        (robotPose.get().estimatedPose.getRotation().getZ() + Math.PI) + "}";
+
+                System.out.println(jsonData);
+
+                // Open connection
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+                // Set request method
+                connection.setRequestMethod("POST");
+
+                // Set headers
+                connection.setRequestProperty("Content-Type", "application/json");
+
+                // Enable output for the request body
+                connection.setDoOutput(true);
+
+                // Write JSON data to the output stream
+                try (OutputStream outputStream = connection.getOutputStream()) {
+                    byte[] input = jsonData.getBytes("utf-8");
+                    outputStream.write(input, 0, input.length);
+                }
+
+                int responseCode = connection.getResponseCode();
+
+                //System.out.println("Response Code: " + responseCode);
+
+                connection.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

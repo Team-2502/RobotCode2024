@@ -35,12 +35,12 @@ pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
         let mut error_angle = (angle - drivetrain.get_angle()).get::<radian>();
 
 
-        if elapsed > path.length() && error_position.abs().max() < 0.3 && error_angle.abs() < 0.2  {
+        if elapsed > path.length() && error_position.abs().max() < 0.075 && error_angle.abs() < 0.075  {
             break;
         }
 
         error_angle *= SWERVE_TURN_KP;
-        error_position *= -0.23;
+        error_position *= -0.28;
 
 
         drivetrain.set_speeds(error_position.x, error_position.y, error_angle);

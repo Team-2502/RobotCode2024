@@ -6,6 +6,7 @@ use tokio::{join, sync::RwLock, task::{JoinHandle, LocalSet}, time::{sleep, time
 use uom::si::{angle::{degree, radian}, f64::Angle};
 use crate::{constants::{drivetrain::{SWERVE_TURN_KP, self}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self, TELEMETRY}};
 use frcrs::deadzone;
+use j4rs::Jvm;
 
 #[derive(Clone)]
 pub struct Ferris {
@@ -51,6 +52,15 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     } else {
         deadrz
     };
+
+    //TODO: move
+    let jvm = Jvm::attach_thread().unwrap();
+
+    jvm.invoke_static(
+        "frc.robot.Wrapper",
+        "updateVisionOdo",
+        &[],
+    ).unwrap();
 
     drivetrain.set_speeds(deadly, deadlx, rot);
     let angle = drivetrain.get_angle();
