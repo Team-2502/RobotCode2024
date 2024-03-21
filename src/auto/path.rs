@@ -6,13 +6,21 @@ use tokio::time::{Instant, sleep};
 use uom::si::{angle::{degree, radian}, f64::{Angle, Length, Time}, length::{foot, meter}, time::{millisecond, second}, velocity::meter_per_second};
 use wpi_trajectory::{Path, Pose};
 
-use crate::{constants::drivetrain::{SWERVE_DRIVE_KF, SWERVE_DRIVE_KFA, SWERVE_DRIVE_KP, SWERVE_TURN_KP}, subsystems::Drivetrain, telemetry::{self, TelemetryStore, TELEMETRY}};
+use crate::{constants::drivetrain::{SWERVE_DRIVE_IE, SWERVE_DRIVE_KD, SWERVE_DRIVE_KF, SWERVE_DRIVE_KFA, SWERVE_DRIVE_KI, SWERVE_DRIVE_KP, SWERVE_DRIVE_MAX_ERR, SWERVE_TURN_KP}, subsystems::Drivetrain, telemetry::{self, TelemetryStore, TELEMETRY}};
 
 pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
     let start = Instant::now();
     let red = alliance_station().red();
 
+    let mut last_error = Vector2::zeros(); // TODO: delta t
+    let mut last_loop = Instant::now();
+    let mut i = Vector2::zeros();
+
     loop {
+        let now = Instant::now();
+        let dt = now-last_loop;
+        last_loop = now;
+
         let elapsed = Time::new::<second>(start.elapsed().as_secs_f64());
 
         let mut setpoint = path.get(elapsed);
@@ -36,7 +44,11 @@ pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
         let mut error_position = position - drivetrain.odometry.position;
         let mut error_angle = (angle - drivetrain.get_angle()).get::<radian>();
 
-        if elapsed > path.length() && error_position.abs().max() < 0.075 && error_angle.abs() < 0.075  {
+        if error_position.abs().max() < SWERVE_DRIVE_IE {
+            i += error_position;
+        }
+
+        if elapsed > path.length() && error_position.abs().max() < SWERVE_DRIVE_MAX_ERR && error_angle.abs() < 0.075  {
             break;
         }
 
@@ -54,6 +66,11 @@ pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
 
         speed += velocity * -SWERVE_DRIVE_KF;
         speed += acceleration * -SWERVE_DRIVE_KFA;
+        speed += i * -SWERVE_DRIVE_KI * dt.as_secs_f64() * 9.;
+
+        let speed_s = speed;
+        speed += (speed - last_error) * -SWERVE_DRIVE_KD * dt.as_secs_f64() * 9.;
+        last_error =  speed_s;
 
         drivetrain.set_speeds(speed.x, speed.y, error_angle);
 
