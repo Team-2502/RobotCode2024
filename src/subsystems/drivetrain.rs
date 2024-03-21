@@ -2,10 +2,10 @@ use std::fs::File;
 use std::io::{Read, Write};
 
 use frcrs::ctre::{talon_encoder_tick, CanCoder, ControlMode, Falcon, Kraken};
-use frcrs::drive::{ToTalonEncoder};
+
 use frcrs::navx::NavX;
 use nalgebra::{Vector2, Rotation2};
-use uom::si::angle::{degree, revolution, radian};
+use uom::si::angle::{degree, radian};
 use uom::si::f64::{Angle, Length};
 use uom::si::length::inch;
 use crate::constants::*;

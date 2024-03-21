@@ -106,13 +106,6 @@ public class Wrapper {
       return motor.getVelocity().getValue();
     }
 
-    public static CurrentLimitsConfigs createCurrentLimitConfig(double amperage) {
-        CurrentLimitsConfigs config = new CurrentLimitsConfigs();
-        config.withSupplyCurrentLimit(amperage);
-
-        return config;
-    }
-
     /*public static void setSpeed(TalonFX motor, double speed) {
       motor.set(ControlMode.PercentOutput, speed);
     }*/

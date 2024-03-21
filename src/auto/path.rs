@@ -1,12 +1,12 @@
-use std::{time::Duration, f64::consts::FRAC_2_PI};
+use std::{time::Duration};
 
 use frcrs::{networktables::set_position, alliance_station};
-use nalgebra::{Vector2, Rotation2};
+use nalgebra::{Vector2};
 use tokio::time::{Instant, sleep};
-use uom::si::{angle::{degree, radian}, f64::{Angle, Length, Time}, length::{foot, meter}, time::{millisecond, second}, velocity::meter_per_second};
-use wpi_trajectory::{Path, Pose};
+use uom::si::{angle::{radian}, f64::{Length, Time}, length::{foot, meter}, time::{millisecond, second}, velocity::meter_per_second};
+use wpi_trajectory::{Path};
 
-use crate::{constants::drivetrain::{SWERVE_DRIVE_IE, SWERVE_DRIVE_KD, SWERVE_DRIVE_KF, SWERVE_DRIVE_KFA, SWERVE_DRIVE_KI, SWERVE_DRIVE_KP, SWERVE_DRIVE_MAX_ERR, SWERVE_TURN_KP}, subsystems::Drivetrain, telemetry::{self, TelemetryStore, TELEMETRY}};
+use crate::{constants::drivetrain::{SWERVE_DRIVE_IE, SWERVE_DRIVE_KD, SWERVE_DRIVE_KF, SWERVE_DRIVE_KFA, SWERVE_DRIVE_KI, SWERVE_DRIVE_KP, SWERVE_DRIVE_MAX_ERR, SWERVE_TURN_KP}, subsystems::Drivetrain};
 
 pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
     let start = Instant::now();

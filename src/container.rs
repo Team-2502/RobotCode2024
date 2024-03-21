@@ -1,10 +1,10 @@
-use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref, DerefMut}, rc::Rc, time::Duration, sync::Arc};
+use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref}, rc::Rc, time::Duration};
 
-use frcrs::{alliance_station, input::Joystick, networktables::SmartDashboard };
+use frcrs::{alliance_station, input::Joystick };
 use frcrs::networktables::set_position;
-use tokio::{join, sync::RwLock, task::{JoinHandle, LocalSet}, time::{sleep, timeout}};
+use tokio::{task::{JoinHandle, LocalSet}, time::{sleep}};
 use uom::si::{angle::{degree, radian}, f64::Angle};
-use crate::{constants::{drivetrain::{SWERVE_TURN_KP, self}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, BEAM_BREAK_SIGNAL, INTAKE_LIMIT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self, TELEMETRY}};
+use crate::{constants::{drivetrain::{SWERVE_TURN_KP}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self, TELEMETRY}};
 use frcrs::deadzone;
 use j4rs::Jvm;
 

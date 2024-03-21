@@ -7,14 +7,14 @@ mod swerve;
 mod auto;
 pub mod telemetry;
 
-use std::thread;
+
 use std::time::{Instant, Duration};
 
-use auto::{autos, run_auto, Auto, AutoChooser};
+use auto::{autos, run_auto, Auto};
 use constants::TELEMETRY_PORT;
 use container::Ferris;
-use frcrs::ctre::{Falcon};
-use frcrs::{alliance_station, is_teleop};
+
+use frcrs::{alliance_station};
 use frcrs::networktables::{set_position, SmartDashboard};
 use frcrs::observe_user_program_starting;
 use frcrs::refresh_data;
@@ -24,18 +24,18 @@ use j4rs::prelude::*;
 use frcrs::init_hal;
 use frcrs::hal_report;
 use frcrs::input::{Joystick, RobotState};
-use lazy_static::lazy_static;
+
 use num_traits::{FromPrimitive, ToPrimitive};
-use once_cell::sync::OnceCell;
+
 use telemetry::{Data, TELEMETRY};
-use tokio::join;
-use tokio::time::{sleep, timeout};
-use crate::container::{container, stop_all};
-use crate::subsystems::{wait, Climber, Drivetrain, Intake, Shooter};
-use tokio::task::{self, JoinHandle};
+
+use tokio::time::{sleep};
+use crate::container::{container};
+
+use tokio::task::{self};
 use std::ops::Deref;
-use std::rc::Rc;
-use send_wrapper::SendWrapper;
+
+
 
 
 //pub extern "system" fn entrypoint <'local>(mut env: JNIEnv<'local>, class: JClass<'local>) {
@@ -67,7 +67,7 @@ fn entrypoint() {
 
     let mut auto = None;
 
-    let chooser = autos();
+    let _chooser = autos();
 
     let mut last_loop = Instant::now();
     let controller = local.run_until(async { loop {

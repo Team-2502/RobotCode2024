@@ -4,7 +4,7 @@ use frcrs::alliance_station;
 use nalgebra::{Vector2, Rotation2};
 use uom::si::{f64::{Length, Angle}, angle::radian, length::meter};
 
-use crate::{telemetry::{self, TelemetryStore}, constants::{HALF_FIELD_WIDTH_METERS, HALF_FIELD_LENGTH_METERS}};
+use crate::{telemetry::{TelemetryStore}, constants::{HALF_FIELD_WIDTH_METERS}};
 
 #[derive(Default, Clone)]
 pub struct ModuleReturn {
@@ -57,7 +57,7 @@ impl Odometry {
         }
     }
 
-    pub async fn update_from_vision(&mut self, telemetry: TelemetryStore, mirror: bool) {
+    pub async fn update_from_vision(&mut self, telemetry: TelemetryStore, _mirror: bool) {
         if let Some((time, pose)) = &telemetry.read().await.apriltag_pose {
             if self.last_apriltag >= *time {
                 return;
