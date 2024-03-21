@@ -78,6 +78,11 @@ impl Shooter {
         self.shooter_bottom.set(-value);
     }
 
+    pub fn set_velocity(&self, value: f64) {
+        self.shooter_top.set_reference(value, frcrs::rev::ControlType::Velocity);
+        self.shooter_bottom.set_reference(-value, frcrs::rev::ControlType::Velocity);
+    }
+
     pub fn contains_note(&self) -> bool {
         !self.staged.get()
     }

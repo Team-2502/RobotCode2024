@@ -46,6 +46,7 @@ public class Wrapper {
     public static IdleMode kCoast() { return IdleMode.kCoast; }
 
     public static ControlType kPosition() { return ControlType.kPosition; }
+    public static ControlType kVelocity() { return ControlType.kVelocity; }
 
     public static CANSparkFlex createSparkFlex(int id) { return new CANSparkFlex(id, MotorType.kBrushless); }
 
