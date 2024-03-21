@@ -78,10 +78,6 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
         drivetrain.reset_heading();
     }
 
-    if left_drive.get(1) {
-        drivetrain.reset_angle();
-    }
-
     if operator.get(8) && robot.grab.deref().try_borrow().is_ok_and(|n| n.is_none()) && !operator.get(7) {
         let intake = robot.intake.clone();
         robot.grab.replace(Some(executor.spawn_local(async move {

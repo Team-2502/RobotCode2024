@@ -1,6 +1,7 @@
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
@@ -103,6 +104,13 @@ public class Wrapper {
 
     public static double ctre6GetVelocity(com.ctre.phoenix6.hardware.TalonFX motor) {
       return motor.getVelocity().getValue();
+    }
+
+    public static CurrentLimitsConfigs createCurrentLimitConfig(double amperage) {
+        CurrentLimitsConfigs config = new CurrentLimitsConfigs();
+        config.withSupplyCurrentLimit(amperage);
+
+        return config;
     }
 
     /*public static void setSpeed(TalonFX motor, double speed) {

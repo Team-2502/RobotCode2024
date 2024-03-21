@@ -268,7 +268,6 @@ dependencies = [
 [[package]]
 name = "frcrs"
 version = "0.1.0"
-source = "git+https://www.github.com/Team-2502/frcrs.git?branch=comp#6683f423dcbc0329409edb821c2ac2b20b799e2a"
 dependencies = [
  "bitvec",
  "j4rs",

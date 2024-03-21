@@ -694,7 +694,7 @@ async fn bottom_close(robot: Ferris) {
 
     //shooter.set_shooter(1.0);
 
-    shooter.set_velocity(5000.);
+    shooter.set_velocity(5500.);
 
     join!(
         drive("BottomClose.1", &mut drivetrain), // scoring position
@@ -980,19 +980,19 @@ async fn odo_test(robot: Ferris) {
 }
 
 async fn shoot(intake: &Intake, shooter: &mut Shooter) {
-    wait(|| shooter.get_velocity() > 5000.).await;
+    wait(|| shooter.get_velocity() > 5475.).await;
     intake.set_rollers(-1.);
     shooter.set_feeder(-1.);
     //sleep(Duration::from_secs_f64(0.4)).await;
-    wait(|| shooter.get_velocity() < 4960.).await;
+    wait(|| shooter.get_velocity() < 5415.).await;
     shooter.set_feeder(0.);
     intake.set_rollers(0.);
 }
 
 async fn sushi_shoot(shooter: &mut Shooter) {
-    wait(|| shooter.get_velocity() > 5000.).await;
+    wait(|| shooter.get_velocity() > 5475.).await;
     shooter.set_feeder(-1.);
     //sleep(Duration::from_millis(150)).await;
-    wait(|| shooter.get_velocity() < 4990.).await;
+    wait(|| shooter.get_velocity() < 5415.).await;
     shooter.set_feeder(0.);
 }
