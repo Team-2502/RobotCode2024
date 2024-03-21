@@ -9,6 +9,9 @@ use wpi_trajectory::{Path};
 use crate::{constants::drivetrain::{SWERVE_DRIVE_IE, SWERVE_DRIVE_KD, SWERVE_DRIVE_KF, SWERVE_DRIVE_KFA, SWERVE_DRIVE_KI, SWERVE_DRIVE_KP, SWERVE_DRIVE_MAX_ERR, SWERVE_TURN_KP}, subsystems::Drivetrain};
 
 pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
+    follow_path_range(drivetrain, path, SWERVE_DRIVE_MAX_ERR).await
+}
+pub async fn follow_path_range(drivetrain: &mut Drivetrain, path: Path, max_err: f64) {
     let start = Instant::now();
     let red = alliance_station().red();
 
@@ -48,7 +51,7 @@ pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
             i += error_position;
         }
 
-        if elapsed > path.length() && error_position.abs().max() < SWERVE_DRIVE_MAX_ERR && error_angle.abs() < 0.075  {
+        if elapsed > path.length() && error_position.abs().max() < max_err && error_angle.abs() < 0.075  {
             break;
         }
 

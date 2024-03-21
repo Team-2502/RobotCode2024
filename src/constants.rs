@@ -69,6 +69,7 @@ pub mod drivetrain {
     pub const SWERVE_DRIVE_KFA: f64 = 0.; // Acceleration ff
 
     pub const SWERVE_DRIVE_MAX_ERR: f64 = 0.15;
+    pub const SWERVE_DRIVE_SUGGESTION_ERR: f64 = 0.35;
     pub const SWERVE_DRIVE_IE: f64 = 0.0; //0.175; // integral enable
 }
 

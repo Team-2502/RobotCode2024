@@ -7,12 +7,12 @@ use tokio::{join, time::{sleep, timeout}, fs::File, io::AsyncReadExt};
 use uom::si::{angle::degree, f64::Angle};
 use wpi_trajectory::Path;
 
-use crate::{constants::intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD}, container::{stage, Ferris}, subsystems::{wait, Intake, Shooter}, telemetry::{Picker}};
+use crate::{constants::{drivetrain::SWERVE_DRIVE_SUGGESTION_ERR, intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD}}, container::{stage, Ferris}, subsystems::{wait, Intake, Shooter}, telemetry::Picker};
 
 use num_derive::{FromPrimitive, ToPrimitive};    
 use num_traits::{FromPrimitive, ToPrimitive};
 
-use self::path::follow_path;
+use self::path::{follow_path, follow_path_range};
 
 pub mod path;
 
@@ -140,6 +140,15 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
     }
 }
 
+async fn drive_err(name: &str, drivetrain: &mut crate::subsystems::Drivetrain, acceptable_error: f64) {
+    let mut path = String::new();
+    File::open(format!("/home/lvuser/deploy/choreo/{}.traj", name)).await.unwrap().read_to_string(&mut path).await.unwrap();
+    let path = Path::from_trajectory(&path).unwrap();
+
+    follow_path_range(drivetrain, path, acceptable_error).await;
+    drivetrain.set_speeds(0., 0., 0.)
+}
+
 async fn drive(name: &str, drivetrain: &mut crate::subsystems::Drivetrain) {
     let mut path = String::new();
     File::open(format!("/home/lvuser/deploy/choreo/{}.traj", name)).await.unwrap().read_to_string(&mut path).await.unwrap();
@@ -164,14 +173,11 @@ async fn top_stop(robot: Ferris) {
     let mut intake = robot.intake.deref().borrow_mut();
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
     let mut shooter = robot.shooter.deref().borrow_mut();
-    let _telemetry = robot.telemetry.clone();
 
     drivetrain.odometry.set(Vector2::new(0.469,7.034497));
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
-    //shooter.set_shooter(1.0);
-    
     shooter.set_velocity(5500.);
 
     join!(
@@ -228,7 +234,7 @@ async fn top_stop(robot: Ferris) {
     let mut failure = false;
 
     join!(
-        drive("TopStop.6", &mut drivetrain),
+        drive_err("TopStop.6", &mut drivetrain, SWERVE_DRIVE_SUGGESTION_ERR),
         async {
             lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(2500), intake.grab()).await.is_err();
