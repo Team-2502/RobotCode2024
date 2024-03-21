@@ -62,11 +62,11 @@ pub mod drivetrain {
 
     pub const SWERVE_ROTATIONS_TO_INCHES: f64 = (1./6.75) * (4. * PI);
 
-    pub const SWERVE_DRIVE_KP: f64 = 0.28;
-    pub const SWERVE_DRIVE_KI: f64 = 0.028;
-    pub const SWERVE_DRIVE_KD: f64 = 0.98;
-    pub const SWERVE_DRIVE_KF: f64 = 0.13; // Velocity ff
-    pub const SWERVE_DRIVE_KFA: f64 = 0.47; // Acceleration ff
+    pub const SWERVE_DRIVE_KP: f64 = 0.4;
+    pub const SWERVE_DRIVE_KI: f64 = 0.;
+    pub const SWERVE_DRIVE_KD: f64 = 0.;
+    pub const SWERVE_DRIVE_KF: f64 = 0.; // Velocity ff
+    pub const SWERVE_DRIVE_KFA: f64 = 0.; // Acceleration ff
 
     pub const SWERVE_DRIVE_MAX_ERR: f64 = 0.045;
     pub const SWERVE_DRIVE_IE: f64 = 0.175; // integral enable

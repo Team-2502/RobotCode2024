@@ -984,7 +984,7 @@ async fn shoot(intake: &Intake, shooter: &mut Shooter) {
     intake.set_rollers(-1.);
     shooter.set_feeder(-1.);
     //sleep(Duration::from_secs_f64(0.4)).await;
-    wait(|| shooter.get_velocity() < 4990.).await;
+    wait(|| shooter.get_velocity() < 4960.).await;
     shooter.set_feeder(0.);
     intake.set_rollers(0.);
 }
