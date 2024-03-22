@@ -352,7 +352,7 @@ async fn source_out(robot: Ferris) {
     let mut shooter = robot.shooter.deref().borrow_mut();
     let _telemetry = robot.telemetry.clone();
 
-    drivetrain.odometry.set(Vector2::new(0.4719328284263611,2.0507166385650635));
+    drivetrain.odometry.set(Vector2::new(0.4808354377746582,4.043473720550537));
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
@@ -363,29 +363,24 @@ async fn source_out(robot: Ferris) {
     );
 
     // shoot
-    wait(|| shooter.get_velocity() > 5000.).await;
+    wait(|| shooter.get_velocity() > 3500.).await;
     shooter.set_feeder(-0.4);
     sleep(Duration::from_secs_f64(0.3)).await;
     shooter.set_feeder(0.);
 
-    let mut failure = false;
-    join!(
-        drive("SourceTwo.2", &mut drivetrain), // goto note
-        async {
-            sleep(Duration::from_millis(1500)).await;
-            lower_intake(&mut intake).await;
-            intake.set_rollers(0.4);
-            failure = timeout(Duration::from_millis(3000), intake.grab()).await.is_err();
-        }
-    );
+    drive_err("SourceTwo.2", &mut drivetrain, 1.8).await;
 
-    if failure {
-        println!("womp womp :(");
-    }
+    join!(
+        drive("SourceTwo.3", &mut drivetrain), // goto note
+        lower_intake(&mut intake),
+    );
+    intake.set_rollers(1.);
 
     let _ = join!(
-        timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)),
-        drive("SourceTwo.3", &mut drivetrain) // scoring position
+        drive("SourceTwo.4", &mut drivetrain), // scoring position
+        async {
+            let _ = timeout(Duration::from_millis(2500),stage(&mut intake, &shooter)).await;
+        }
     );
 
     shoot(&intake, &mut shooter).await;

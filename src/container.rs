@@ -4,7 +4,7 @@ use frcrs::{alliance_station, input::Joystick };
 use frcrs::networktables::set_position;
 use tokio::{task::{JoinHandle, LocalSet}, time::{sleep}};
 use uom::si::{angle::{degree, radian}, f64::Angle};
-use crate::{constants::{drivetrain::{SWERVE_TURN_KP}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, auto::raise_intake, telemetry::{TelemetryStore, self, TELEMETRY}};
+use crate::{auto::raise_intake, constants::{drivetrain::{PODIUM_SHOT_ANGLE, SWERVE_TURN_KP}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, telemetry::{self, TelemetryStore, TELEMETRY}};
 use frcrs::deadzone;
 use j4rs::Jvm;
 
@@ -17,6 +17,7 @@ pub struct Ferris {
     grab: Rc<RefCell<Option<JoinHandle<()>>>>,
     stage: Rc<RefCell<Option<JoinHandle<()>>>>,
     shooter_state: Rc<RefCell<(bool,bool)>>,
+    saved_angle: Rc<RefCell<Option<Angle>>>,
     pub telemetry: TelemetryStore,
 }
 
@@ -27,8 +28,9 @@ impl Ferris {
         let shooter = Rc::new(RefCell::new(Shooter::new()));
         let climber = Rc::new(RefCell::new(Climber::new()));
         let shooter_state = Rc::new(RefCell::new((false,false)));
+        let saved_angle = Rc::new(RefCell::new(None));
         let telemetry = TELEMETRY.clone();
-        Self { drivetrain, intake, shooter, climber, grab: Rc::new(RefCell::new(None)), shooter_state, stage: Rc::new(RefCell::new(None)), telemetry } 
+        Self { drivetrain, intake, shooter, climber, grab: Rc::new(RefCell::new(None)), shooter_state, saved_angle, stage: Rc::new(RefCell::new(None)), telemetry } 
     }
 }
 
@@ -37,18 +39,35 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     let climber = robot.climber.deref().borrow();
     let mut shooter_state = robot.shooter_state.deref().borrow_mut();
     let (shooting, last_loop) = &mut *shooter_state;
+    let mut saved_angle = robot.saved_angle.deref().borrow_mut();
 
     let joystick_range = 0.04..1.;
-    let power_translate = if right_drive.get(3) { 0.0..0.3 }
+    let power_translate = if left_drive.get(1) { 0.0..0.3 }
     else { 0.0..1. };
-    let power_rotate = if right_drive.get(3) { 0.0..0.2 }
+    let power_rotate = if left_drive.get(1) { 0.0..0.2 }
     else { 0.0..1. };
     let deadly = deadzone(left_drive.get_y(), &joystick_range, &power_translate);
     let deadlx = deadzone(left_drive.get_x(), &joystick_range, &power_translate);
     let deadrz = deadzone(right_drive.get_z(), &joystick_range, &power_rotate);
 
+    let hold_angle = deadrz == 0. && right_drive.get(3);
+
+    if !hold_angle {
+        *saved_angle = Some(drivetrain.get_angle());
+    }
+
     let rot = if left_drive.get(4) {
         -drivetrain.get_offset().get::<radian>() * SWERVE_TURN_KP
+    } else if right_drive.get(2) {
+        let error = drivetrain.get_offset() + Angle::new::<degree>(PODIUM_SHOT_ANGLE);
+        -error.get::<radian>() * SWERVE_TURN_KP
+    } else if hold_angle {
+        if let Some(ref saved_angle) = (*saved_angle).as_ref() {
+            let error = drivetrain.get_angle() - **saved_angle;
+            -error.get::<radian>() * SWERVE_TURN_KP
+        } else {
+            0.
+        }
     } else {
         deadrz
     };
@@ -198,8 +217,6 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
 
     // Todo: cleanup
     if left_drive.get(2) {
-        climber.set(-1.)
-    } else if right_drive.get(2) {
         climber.set(1.);
     } else if operator.get(14) {
         climber.set_left(-1.);

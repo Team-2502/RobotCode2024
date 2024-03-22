@@ -71,9 +71,11 @@ pub mod drivetrain {
     pub const SWERVE_DRIVE_MAX_ERR: f64 = 0.15;
     pub const SWERVE_DRIVE_SUGGESTION_ERR: f64 = 0.35;
     pub const SWERVE_DRIVE_IE: f64 = 0.0; //0.175; // integral enable
+
+    pub const PODIUM_SHOT_ANGLE: f64 = 35.35; // degrees
 }
 
 pub mod amp {
     pub const STOWED_POSITION: f64 = 0.;
-    pub const DEPLOYED_POSITION: f64 = -26.;
+    pub const DEPLOYED_POSITION: f64 = -30.4;
 }
