@@ -29,6 +29,6 @@ mime_guess = "2.0.4"
 include_dir = "0.7.3"
 
 [dependencies.frcrs]
-#git = "https://www.github.com/Team-2502/frcrs.git"
-#branch = "comp"
-path = "../frcrs"
+git = "https://www.github.com/Team-2502/frcrs.git"
+branch = "comp"
+#path = "../frcrs"
