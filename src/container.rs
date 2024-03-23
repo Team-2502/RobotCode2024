@@ -1,10 +1,10 @@
-use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref}, rc::Rc, time::Duration};
+use std::{borrow::BorrowMut, cell::{BorrowMutError, RefCell}, ops::Deref, rc::Rc, time::Duration};
 
 use frcrs::{alliance_station, dio::DO, input::Joystick };
 use frcrs::networktables::set_position;
 use tokio::{task::{JoinHandle, LocalSet}, time::{sleep}};
 use uom::si::{angle::{degree, radian}, f64::Angle};
-use crate::{auto::raise_intake, constants::{drivetrain::{PODIUM_SHOT_ANGLE, SWERVE_TURN_KP}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, INDICATOR_PORT_LEFT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, telemetry::{self, TelemetryStore, TELEMETRY}};
+use crate::{auto::{lower_intake, raise_intake}, constants::{drivetrain::{PODIUM_SHOT_ANGLE, SWERVE_TURN_KP}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, INDICATOR_PORT_LEFT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, telemetry::{self, TelemetryStore, TELEMETRY}};
 use frcrs::deadzone;
 use j4rs::Jvm;
 
@@ -17,6 +17,7 @@ pub struct Ferris {
     pub led: Rc<RefCell<DO>>,
     grab: Rc<RefCell<Option<JoinHandle<()>>>>,
     stage: Rc<RefCell<Option<JoinHandle<()>>>>,
+    grab_full: Rc<RefCell<Option<JoinHandle<()>>>>,
     shooter_state: Rc<RefCell<(bool,bool)>>,
     saved_angle: Rc<RefCell<Option<Angle>>>,
     pub telemetry: TelemetryStore,
@@ -34,7 +35,7 @@ impl Ferris {
         let shooter_state = Rc::new(RefCell::new((false,false)));
         let saved_angle = Rc::new(RefCell::new(None));
         let telemetry = TELEMETRY.clone();
-        Self { drivetrain, intake, shooter, climber, led, grab: Rc::new(RefCell::new(None)), shooter_state, saved_angle, stage: Rc::new(RefCell::new(None)), telemetry } 
+        Self { drivetrain, intake, shooter, climber, led, grab: Rc::new(RefCell::new(None)),grab_full: Rc::new(RefCell::new(None)), shooter_state, saved_angle, stage: Rc::new(RefCell::new(None)), telemetry } 
     }
 }
 
@@ -122,6 +123,20 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
         }
     }
 
+    if operator.get(6) && robot.grab_full.deref().try_borrow().is_ok_and(|n| n.is_none()) && !operator.get(7) && !operator.get(5) {
+        let robot_ = robot.clone();
+        robot.grab_full.replace(Some(executor.spawn_local(async move {
+            let _ = grab_full(robot_).await;
+        })));
+    } else if !operator.get(6) {
+        if let Some(grab_full) = robot.grab_full.take() {
+            grab_full.abort();
+            if let Ok(led) = robot.led.try_borrow() {
+                led.set(false);
+            }
+        }
+    }
+
     let not = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_none());
     let staging = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_some());
     if !operator.get(5) && operator.get(7) && not && robot.shooter.try_borrow().is_ok_and(|s| !s.contains_note()) {
@@ -196,7 +211,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
             if shooter.amp_deployed() && !operator.get(5) {
                 shooter.set_shooter(0.225)
             } else if right_drive.get(2) {
-                shooter.set_velocity(2179.)
+                shooter.set_velocity(1979.)
             } else {
                 shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
             }
@@ -292,4 +307,19 @@ pub fn stop_all(robot: &Ferris) {
     robot.intake.borrow().stop();
     robot.shooter.borrow().stop();
     robot.climber.borrow().stop();
+}
+
+async fn grab_full(robot: Ferris) -> anyhow::Result<()> {
+    let intake = robot.intake.clone();
+    let shooter = robot.shooter.clone();
+    let led = robot.led.clone();
+    let led = led.try_borrow();
+    let mut intake = intake.deref().try_borrow_mut()?;
+    let shooter = shooter.deref().try_borrow()?;
+    let _ = led.as_ref().inspect(|l| l.set(true));
+    lower_intake(&mut intake).await;
+    intake.grab().await;
+    stage(&mut intake, &shooter).await;
+    let _ = led.inspect(|l| l.set(false));
+    Ok(())
 }
