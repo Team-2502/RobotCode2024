@@ -1,0 +1,11 @@
+[package]
+name = "testing-server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = "1.36.0"
+axum = "0.7.4"
+
+[dependencies.RobotCode2024]
+path = "../.."

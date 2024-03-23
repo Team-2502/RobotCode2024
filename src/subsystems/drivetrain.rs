@@ -2,14 +2,16 @@ use std::fs::File;
 use std::io::{Read, Write};
 
 use frcrs::ctre::{talon_encoder_tick, CanCoder, ControlMode, Falcon, Kraken};
-use frcrs::drive::{ToTalonEncoder};
+
 use frcrs::navx::NavX;
 use nalgebra::{Vector2, Rotation2};
-use uom::si::angle::{degree, revolution, radian};
+use uom::si::angle::{degree, radian};
 use uom::si::f64::{Angle, Length};
 use uom::si::length::inch;
 use crate::constants::*;
+use crate::constants::drivetrain::SWERVE_ROTATIONS_TO_INCHES;
 use crate::swerve::kinematics::{Swerve, ModuleState};
+use crate::swerve::odometry::{ModuleReturn, Odometry};
 use serde::Serialize;
 use serde::Deserialize;
 
@@ -33,8 +35,9 @@ pub struct Drivetrain {
     br_encoder: CanCoder,
 
     kinematics: Swerve,
+    pub odometry: Odometry,
 
-    offset: Angle,
+    pub offset: Angle,
 
     absolute_offsets: Offsets,
 }
@@ -45,14 +48,15 @@ struct Offsets {
 }
 
 impl Offsets {
+    const PATH: &'static str = "/home/lvuser/absolut_homosezual.json";
     fn load() -> Self {
-        let mut file = File::open("/home/lvuser/absolut_homosezual.json").unwrap();
+        let mut file = File::open(Self::PATH).unwrap();
         let mut buf = String::new();
         file.read_to_string(&mut buf).unwrap();
         serde_json::from_str(&buf).unwrap_or(Self { offsets: [0.;4] })
     }
     fn store(&self) {
-        let mut file = File::create("/home/lvuser/absolut_homosezual.json").unwrap();
+        let mut file = File::create(Self::PATH).unwrap();
         let buf = serde_json::to_string(&self).unwrap();
         file.write_all(buf.as_bytes()).unwrap();
     }
@@ -66,37 +70,47 @@ impl Drivetrain {
         let bl_encoder = CanCoder::new(BL_ENCODER, Some("can0".to_owned()));
         let br_encoder = CanCoder::new(BR_ENCODER, Some("can0".to_owned()));
 
+        let fr_turn = Falcon::new(FR_TURN, Some("can0".to_owned()));
+        let fl_turn = Falcon::new(FL_TURN, Some("can0".to_owned()));
+        let bl_turn = Falcon::new(BL_TURN, Some("can0".to_owned()));
+        let br_turn = Falcon::new(BR_TURN, Some("can0".to_owned()));
+
         for (encoder, offset) in [&fr_encoder, &fl_encoder, &bl_encoder, &br_encoder].iter().zip(absolute_offsets.offsets.iter_mut()) {
             *offset -= encoder.get_absolute();
+        }
+
+        for (turn, offset) in [&fr_turn, &fl_turn, &bl_turn, &br_turn].iter().zip(absolute_offsets.offsets.iter_mut()) {
+            *offset -= turn.get().get::<degree>();
+            *offset = 0.;
+            dbg!(offset);
         }
 
         let dt = Self {
             navx: NavX::new(),
 
             fr_drive: Kraken::new(FR_DRIVE, Some("can0".to_owned())),
-            fr_turn: Falcon::new(FR_TURN, Some("can0".to_owned())),
+            fr_turn,
             fr_encoder,
 
             fl_drive: Kraken::new(FL_DRIVE, Some("can0".to_owned())),
-            fl_turn: Falcon::new(FL_TURN, Some("can0".to_owned())),
+            fl_turn,
             fl_encoder,
 
             bl_drive: Kraken::new(BL_DRIVE, Some("can0".to_owned())),
-            bl_turn: Falcon::new(BL_TURN, Some("can0".to_owned())),
+            bl_turn,
             bl_encoder,
 
             br_drive: Kraken::new(BR_DRIVE, Some("can0".to_owned())),
-            br_turn: Falcon::new(BR_TURN, Some("can0".to_owned())),
+            br_turn,
             br_encoder,
 
             kinematics: Swerve::rectangle(Length::new::<inch>(22.5), Length::new::<inch>(23.5)),
+            odometry: Odometry::new(),
 
             offset: Angle::new::<degree>(0.),
 
             absolute_offsets,
         };
-
-        dbg!(dt.fr_encoder.get_absolute());
 
         dt
     }
@@ -124,20 +138,34 @@ impl Drivetrain {
         self.br_turn.stop();
     }
 
-    fn get_speeds(&self) -> Vec<ModuleState> {
+    fn get_positions(&self, angles: &Vec<ModuleState>) -> Vec<ModuleReturn> {
         let mut speeds = Vec::new();
 
-        for (module, offset) in [&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn].iter().zip(self.absolute_offsets.offsets.iter()) {
-            speeds.push(ModuleState { 
-                speed: 0., 
-                angle: -module.get(),
+        for (module, offset) in [&self.fr_drive, &self.fl_drive, &self.bl_drive, &self.br_drive].iter().zip(angles.iter()) {
+            let distance = module.get_position() * SWERVE_ROTATIONS_TO_INCHES;
+            speeds.push(ModuleReturn { 
+                angle: offset.angle.clone(),
+                distance:  Length::new::<inch>(distance),
             });
         }
 
         speeds
     }
 
-    pub fn set_speeds(&self, fwd: f64, str: f64, rot: f64) {
+    fn get_speeds(&self) -> Vec<ModuleState> {
+        let mut speeds = Vec::new();
+
+        for (module, offset) in [&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn].iter().zip(self.absolute_offsets.offsets.iter()) {
+            speeds.push(ModuleState { 
+                speed: 0., 
+                angle: -module.get() + Angle::new::<degree>(*offset),
+            });
+        }
+
+        speeds
+    }
+    pub fn set_speeds(&mut self, fwd: f64, str: f64, rot: f64) {
+        //println!("ODO X: {}", self.odometry.position.x);
         let mut transform = Vector2::new(str, -fwd);
         transform = Rotation2::new((self.get_angle() - self.offset).get::<radian>()) * transform;
         let wheel_speeds = self.kinematics.calculate(transform, rot);
@@ -148,10 +176,22 @@ impl Drivetrain {
 
         let measured = self.get_speeds();
 
+        let positions = self.get_positions(&measured);
+
+        let angle = self.get_angle();
+
+        self.odometry.calculate(positions, angle);
+
         //println!("angle fr {}", measured[0].angle.get::<revolution>());
 
         let wheel_speeds: Vec<ModuleState> = wheel_speeds.into_iter().zip(measured.iter())
-            .map(|(calculated,measured)| calculated.optimize(measured)).collect();
+            .map(|(calculated,measured)| calculated.optimize(measured))
+            .zip(self.absolute_offsets.offsets.iter())
+            .map(|(mut state, offset)| {
+                state.angle -= Angle::new::<degree>(*offset);
+                state
+            })
+            .collect();
 
         self.fr_drive.set(wheel_speeds[0].speed);
         self.fl_drive.set(wheel_speeds[1].speed);

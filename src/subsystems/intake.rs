@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use frcrs::{rev::{MotorType, Spark, SparkMax}, dio::DIO};
 use tokio::time::sleep;
+use uom::si::{angle::degree, f64::Angle};
 use crate::constants::*;
 
 pub struct Intake {
@@ -12,7 +13,12 @@ pub struct Intake {
     right_actuate: Spark,
 
     limit: DIO,
+    reverse_limit: DIO,
+
+    actuate_zero: Angle,
 }
+
+const COUNTS_PER_REVOLUTION: f64 = 41.6;
 
 impl Intake {
     pub fn new() -> Self {
@@ -20,9 +26,14 @@ impl Intake {
         let right_roller = Spark::new(INTAKE_ROLLER_RIGHT, MotorType::Brushless);
 
         let left_actuate = Spark::new(INTAKE_ACTUATE_LEFT, MotorType::Brushless);
+        let pid = left_actuate.get_pid();
+        pid.set_p(0.08);
+        pid.set_d(0.45);
+
         let right_actuate = Spark::new(INTAKE_ACTUATE_RIGHT, MotorType::Brushless);
 
         let limit = DIO::new(INTAKE_LIMIT);
+        let reverse_limit = DIO::new(INTAKE_DOWN_LIMIT);
 
         Self {
             left_roller,
@@ -32,6 +43,9 @@ impl Intake {
             right_actuate,
 
             limit,
+            reverse_limit,
+
+            actuate_zero: Angle::new::<degree>(0.),
         }
     }
 
@@ -74,8 +88,20 @@ impl Intake {
             self.left_roller.get_velocity() > intake::INTAKE_FREE_VELOCITY
     }
 
+    pub fn at_reverse_limit(&self) -> bool {
+        !self.reverse_limit.get()
+    }
+
     pub fn at_limit(&self) -> bool {
         !self.limit.get()
+    }
+
+    pub fn actuate_position(&mut self) -> Angle {
+        (self.left_actuate.get_position() - self.actuate_zero) / COUNTS_PER_REVOLUTION
+    }
+
+    pub fn constrained(&self) -> bool {
+        self.at_limit() || self.at_reverse_limit()
     }
 
     pub async fn grab(&mut self) {
@@ -83,6 +109,24 @@ impl Intake {
         wait(|| self.running()).await;
         wait(|| self.stalled()).await;
         self.stop_rollers();
+    }
+
+    pub async fn zero(&mut self) {
+        self.set_actuate(0.3);
+        wait(|| self.at_limit()).await;
+        self.set_actuate(0.);
+        sleep(Duration::from_millis(750)).await;
+        wait(|| self.at_limit()).await;
+        self.set_actuate(-0.15);
+        wait(|| !self.at_limit()).await;
+        self.set_actuate(0.);
+        self.actuate_zero = self.left_actuate.get_position();
+    }
+
+    /// 0deg is stowed
+    /// 180deg is out
+    pub fn actuate_to(&self, angle: Angle) {
+        self.left_actuate.set_position(angle * COUNTS_PER_REVOLUTION + self.actuate_zero)
     }
 }
 
