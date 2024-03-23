@@ -7,7 +7,7 @@ check:
 	cargo check
 
 .PHONY: compile
-compile: libRobotCode2024.so
+compile: $(OUT)
 
 $(OUT): src/** Cargo.* talon-board/out
 	cargo build --release --target arm-unknown-linux-gnueabi

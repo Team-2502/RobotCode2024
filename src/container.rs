@@ -1,10 +1,10 @@
 use std::{borrow::BorrowMut, cell::RefCell, ops::{Deref}, rc::Rc, time::Duration};
 
-use frcrs::{alliance_station, input::Joystick };
+use frcrs::{alliance_station, dio::DO, input::Joystick };
 use frcrs::networktables::set_position;
 use tokio::{task::{JoinHandle, LocalSet}, time::{sleep}};
 use uom::si::{angle::{degree, radian}, f64::Angle};
-use crate::{auto::raise_intake, constants::{drivetrain::{PODIUM_SHOT_ANGLE, SWERVE_TURN_KP}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, telemetry::{self, TelemetryStore, TELEMETRY}};
+use crate::{auto::raise_intake, constants::{drivetrain::{PODIUM_SHOT_ANGLE, SWERVE_TURN_KP}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, INDICATOR_PORT_LEFT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, telemetry::{self, TelemetryStore, TELEMETRY}};
 use frcrs::deadzone;
 use j4rs::Jvm;
 
@@ -14,6 +14,7 @@ pub struct Ferris {
     pub intake: Rc<RefCell<Intake>>,
     pub shooter: Rc<RefCell<Shooter>>, 
     pub climber: Rc<RefCell<Climber>>,
+    pub led: Rc<RefCell<DO>>,
     grab: Rc<RefCell<Option<JoinHandle<()>>>>,
     stage: Rc<RefCell<Option<JoinHandle<()>>>>,
     shooter_state: Rc<RefCell<(bool,bool)>>,
@@ -27,10 +28,13 @@ impl Ferris {
         let intake = Rc::new(RefCell::new(Intake::new()));
         let shooter = Rc::new(RefCell::new(Shooter::new()));
         let climber = Rc::new(RefCell::new(Climber::new()));
+        let led = Rc::new(RefCell::new({
+            DO::new(INDICATOR_PORT_LEFT)
+        }));
         let shooter_state = Rc::new(RefCell::new((false,false)));
         let saved_angle = Rc::new(RefCell::new(None));
         let telemetry = TELEMETRY.clone();
-        Self { drivetrain, intake, shooter, climber, grab: Rc::new(RefCell::new(None)), shooter_state, saved_angle, stage: Rc::new(RefCell::new(None)), telemetry } 
+        Self { drivetrain, intake, shooter, climber, led, grab: Rc::new(RefCell::new(None)), shooter_state, saved_angle, stage: Rc::new(RefCell::new(None)), telemetry } 
     }
 }
 
@@ -56,9 +60,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
         *saved_angle = Some(drivetrain.get_angle());
     }
 
-    let rot = if left_drive.get(4) {
-        -drivetrain.get_offset().get::<radian>() * SWERVE_TURN_KP
-    } else if right_drive.get(2) {
+    let rot = if right_drive.get(2) {
         let error = drivetrain.get_offset() + Angle::new::<degree>(PODIUM_SHOT_ANGLE);
         -error.get::<radian>() * SWERVE_TURN_KP
     } else if hold_angle {
@@ -68,18 +70,23 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
         } else {
             0.
         }
+    } else if left_drive.get(2) {
+        let angle = (drivetrain.get_angle() - drivetrain.offset).get::<degree>();
+        let goal = (angle / 90.).round() * 90.;
+        let error = angle - goal;
+        -error.to_radians() * SWERVE_TURN_KP
     } else {
         deadrz
     };
 
     //TODO: move
-    let jvm = Jvm::attach_thread().unwrap();
+    //let jvm = Jvm::attach_thread().unwrap();
 
-    jvm.invoke_static(
-        "frc.robot.Wrapper",
-        "updateVisionOdo",
-        &[],
-    ).unwrap();
+    //jvm.invoke_static(
+    //    "frc.robot.Wrapper",
+    //    "updateVisionOdo",
+    //    &[],
+    //).unwrap();
 
     drivetrain.set_speeds(deadly, deadlx, rot);
     let angle = drivetrain.get_angle();
@@ -93,24 +100,31 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     let red = alliance_station().red();
     telemetry::put_bool("red", red).await;
 
-    if left_drive.get(3) {
+    if left_drive.get(4) {
         drivetrain.reset_heading();
     }
 
-    if operator.get(8) && robot.grab.deref().try_borrow().is_ok_and(|n| n.is_none()) && !operator.get(7) {
+    if operator.get(8) && robot.grab.deref().try_borrow().is_ok_and(|n| n.is_none()) && !operator.get(7) && !operator.get(5) {
         let intake = robot.intake.clone();
+        let led = robot.led.clone();
         robot.grab.replace(Some(executor.spawn_local(async move {
+            let led = led.try_borrow().ok();
+            led.as_ref().inspect(|l| l.set(true));
             intake.deref().borrow_mut().grab().await;
+            led.inspect(|l| l.set(false));
         })));
     } else if !operator.get(8) {
         if let Some(grab) = robot.grab.take() {
             grab.abort();
+            if let Ok(led) = robot.led.try_borrow() {
+                led.set(false);
+            }
         }
     }
 
     let not = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_none());
     let staging = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_some());
-    if operator.get(7) && not && robot.shooter.try_borrow().is_ok_and(|s| !s.contains_note()) {
+    if !operator.get(5) && operator.get(7) && not && robot.shooter.try_borrow().is_ok_and(|s| !s.contains_note()) {
 
         // drop grab if done
         if robot.grab.deref().try_borrow().is_ok_and(|n| n.as_ref().is_some_and(|n| n.is_finished())) {
@@ -141,9 +155,9 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
             telemetry::put_bool("intake at reverse limit {}", intake.at_reverse_limit()).await;
             telemetry::put_number("intake position {}", intake.actuate_position().get::<degree>()).await;
 
-            if operator.get(9) {
+            if operator.get(8) && operator.get(5) {
                 intake.set_rollers(1.);
-            } else if operator.get(6) || operator.get(1) || right_drive.get(1) {
+            } else if (operator.get(7) && operator.get(5)) || operator.get(1) || right_drive.get(1) {
                 intake.set_rollers(-1.);
             } else {
                 intake.stop_rollers();
@@ -181,6 +195,8 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
         if *shooting {
             if shooter.amp_deployed() && !operator.get(5) {
                 shooter.set_shooter(0.225)
+            } else if right_drive.get(2) {
+                shooter.set_velocity(2179.)
             } else {
                 shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
             }
@@ -216,18 +232,36 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     }
 
     // Todo: cleanup
-    if left_drive.get(2) {
+    let mut climbing = false;
+    if left_drive.get(3) {
         climber.set(1.);
-    } else if operator.get(14) {
-        climber.set_left(-1.);
-    } else if operator.get(13) {
-        climber.set_left(1.);
-    } else if operator.get(15) {
-        climber.set_right(1.);
-    } else if operator.get(12) {
-        climber.set_right(-1.);
+        climbing = true;
     } else {
-        climber.stop()
+        if operator.get(14) {
+            climber.set_left(-1.);
+            climbing = true;
+        } else if operator.get(13) {
+            climber.set_left(1.);
+            climbing = true;
+        } 
+
+        if operator.get(15) {
+            climber.set_right(1.);
+            climbing = true;
+        } else if operator.get(12) {
+            climber.set_right(-1.);
+            climbing = true;
+        }
+    };
+    if !climbing { climber.stop(); }
+
+    if operator.get(9) {
+        let intake = robot.intake.clone();
+        executor.spawn_local(async move {
+            if let Ok(mut intake) = intake.try_borrow_mut() {
+                intake.zero().await;
+            }
+        });
     }
 
     //println!("doo dad: {}", get_dio(INTAKE_LIMIT));

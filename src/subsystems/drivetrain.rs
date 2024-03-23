@@ -37,7 +37,7 @@ pub struct Drivetrain {
     kinematics: Swerve,
     pub odometry: Odometry,
 
-    offset: Angle,
+    pub offset: Angle,
 
     absolute_offsets: Offsets,
 }
