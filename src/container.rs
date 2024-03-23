@@ -62,7 +62,8 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     }
 
     let rot = if right_drive.get(2) {
-        let error = drivetrain.get_offset() + Angle::new::<degree>(PODIUM_SHOT_ANGLE);
+        let mut error = drivetrain.get_offset() + Angle::new::<degree>(PODIUM_SHOT_ANGLE);
+        if alliance_station().blue() { error *= -1.; }
         -error.get::<radian>() * SWERVE_TURN_KP
     } else if hold_angle {
         if let Some(ref saved_angle) = (*saved_angle).as_ref() {
@@ -101,6 +102,8 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     let red = alliance_station().red();
     telemetry::put_bool("red", red).await;
 
+    let firing = operator.get(1) || right_drive.get(1);
+
     if left_drive.get(4) {
         drivetrain.reset_heading();
     }
@@ -114,7 +117,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
             intake.deref().borrow_mut().grab().await;
             led.inspect(|l| l.set(false));
         })));
-    } else if !operator.get(8) {
+    } else if !operator.get(8) || firing {
         if let Some(grab) = robot.grab.take() {
             grab.abort();
             if let Ok(led) = robot.led.try_borrow() {
@@ -128,7 +131,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
         robot.grab_full.replace(Some(executor.spawn_local(async move {
             let _ = grab_full(robot_).await;
         })));
-    } else if !operator.get(6) {
+    } else if !operator.get(6) || firing {
         if let Some(grab_full) = robot.grab_full.take() {
             grab_full.abort();
             if let Ok(led) = robot.led.try_borrow() {
@@ -158,7 +161,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
                 stage(&mut intake, &shooter).await;
             }
         })));
-    } else if !operator.get(7) {
+    } else if !operator.get(7) || firing {
         if let Some(stage) = robot.stage.take() {
             stage.abort();
         }
@@ -211,7 +214,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
             if shooter.amp_deployed() && !operator.get(5) {
                 shooter.set_shooter(0.225)
             } else if right_drive.get(2) {
-                shooter.set_velocity(1979.)
+                shooter.set_velocity(1917.)
             } else {
                 shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
             }
@@ -236,7 +239,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
         }
 
         if !staging {
-            if operator.get(1) || right_drive.get(1) {
+            if firing {
                 shooter.set_feeder(-1.);
             } else if operator.get(10) {
                 shooter.set_feeder(0.5);
@@ -318,7 +321,15 @@ async fn grab_full(robot: Ferris) -> anyhow::Result<()> {
     let shooter = shooter.deref().try_borrow()?;
     let _ = led.as_ref().inspect(|l| l.set(true));
     lower_intake(&mut intake).await;
-    intake.grab().await;
+    {
+        let this = &mut intake;
+        async move {
+            this.set_rollers(0.6);
+            wait(|| this.running()).await;
+            wait(|| this.stalled()).await;
+            this.stop_rollers();
+        }
+    }.await;
     stage(&mut intake, &shooter).await;
     let _ = led.inspect(|l| l.set(false));
     Ok(())
