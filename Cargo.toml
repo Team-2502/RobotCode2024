@@ -31,5 +31,5 @@ anyhow = "1.0.81"
 
 [dependencies.frcrs]
 git = "https://www.github.com/Team-2502/frcrs.git"
-branch = "comp"
-#path = "../frcrs"
+branch = "jni"
+#path = "../frcrs-jni"

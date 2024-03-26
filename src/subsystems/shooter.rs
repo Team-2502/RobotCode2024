@@ -1,6 +1,6 @@
 use frcrs::dio::DIO;
 use frcrs::rev::MotorType::Brushless;
-use frcrs::rev::{Spark, SparkFlex, SparkMax};
+use frcrs::rev::Spark;
 use uom::si::angle::revolution;
 use uom::si::f64::Angle;
 use crate::constants::*;
@@ -11,8 +11,8 @@ pub struct Shooter {
     feeder_top: Spark,
     feeder_bottom: Spark,
 
-    shooter_top: SparkFlex,
-    shooter_bottom: SparkFlex,
+    shooter_top: Spark,
+    shooter_bottom: Spark,
 
     amp_bar: Spark,
 
@@ -25,8 +25,8 @@ impl Shooter {
             feeder_top: Spark::new(SHOOTER_FEEDER_TOP, Brushless),
             feeder_bottom: Spark::new(SHOOTER_FEEDER_BOTTOM, Brushless),
 
-            shooter_top: SparkFlex::new(SHOOTER_TOP, Brushless),
-            shooter_bottom: SparkFlex::new(SHOOTER_BOTTOM, Brushless),
+            shooter_top: Spark::flex(SHOOTER_TOP),
+            shooter_bottom: Spark::flex(SHOOTER_BOTTOM),
 
             amp_bar: Spark::new(AMP_BAR, Brushless),
 
@@ -57,11 +57,11 @@ impl Shooter {
         self.feeder_bottom.set(-value);
     }
 
-    pub fn stow_amp(&self) {
+    pub fn stow_amp(&mut self) {
         self.amp_bar.set_position(Angle::new::<revolution>(amp::STOWED_POSITION));
     }
 
-    pub fn deploy_amp(&self) {
+    pub fn deploy_amp(&mut self) {
         self.amp_bar.set_position(Angle::new::<revolution>(amp::DEPLOYED_POSITION));
     }
 
@@ -78,7 +78,7 @@ impl Shooter {
         self.shooter_bottom.set(-value);
     }
 
-    pub fn set_velocity(&self, value: f64) {
+    pub fn set_velocity(&mut self, value: f64) {
         self.shooter_top.set_reference(value, frcrs::rev::ControlType::Velocity);
         self.shooter_bottom.set_reference(-value, frcrs::rev::ControlType::Velocity);
     }

@@ -1,4 +1,4 @@
-use frcrs::rev::{Spark, SparkMax};
+use frcrs::rev::Spark;
 use frcrs::rev::MotorType::Brushless;
 use crate::constants::*;
 

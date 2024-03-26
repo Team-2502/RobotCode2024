@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use frcrs::{rev::{MotorType, Spark, SparkMax}, dio::DIO};
+use frcrs::{rev::{MotorType, Spark}, dio::DIO};
 use tokio::time::sleep;
 use uom::si::{angle::degree, f64::Angle};
 use crate::constants::*;
@@ -25,8 +25,8 @@ impl Intake {
         let left_roller = Spark::new(INTAKE_ROLLER_LEFT, MotorType::Brushless);
         let right_roller = Spark::new(INTAKE_ROLLER_RIGHT, MotorType::Brushless);
 
-        let left_actuate = Spark::new(INTAKE_ACTUATE_LEFT, MotorType::Brushless);
-        let pid = left_actuate.get_pid();
+        let mut left_actuate = Spark::new(INTAKE_ACTUATE_LEFT, MotorType::Brushless);
+        let mut pid = left_actuate.get_pid();
         pid.set_p(0.08);
         pid.set_d(0.45);
 
@@ -125,7 +125,7 @@ impl Intake {
 
     /// 0deg is stowed
     /// 180deg is out
-    pub fn actuate_to(&self, angle: Angle) {
+    pub fn actuate_to(&mut self, angle: Angle) {
         self.left_actuate.set_position(angle * COUNTS_PER_REVOLUTION + self.actuate_zero)
     }
 }
