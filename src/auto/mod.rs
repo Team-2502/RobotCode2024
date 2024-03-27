@@ -7,7 +7,7 @@ use tokio::{join, time::{sleep, timeout}, fs::File, io::AsyncReadExt};
 use uom::si::{angle::degree, f64::Angle};
 use wpi_trajectory::Path;
 
-use crate::{constants::{drivetrain::SWERVE_DRIVE_SUGGESTION_ERR, intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD}}, container::{stage, Ferris}, subsystems::{wait, Intake, Shooter}, telemetry::Picker};
+use crate::{constants::{drivetrain::SWERVE_DRIVE_SUGGESTION_ERR, intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD}}, input::{stage, Ferris}, subsystems::{wait, Intake, Shooter}, telemetry::Picker};
 
 use num_derive::{FromPrimitive, ToPrimitive};    
 use num_traits::{FromPrimitive, ToPrimitive};

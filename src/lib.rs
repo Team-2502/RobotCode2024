@@ -1,6 +1,6 @@
 #![feature(variant_count)]
 
-mod container;
+mod input;
 mod subsystems;
 pub mod constants;
 mod swerve;
@@ -12,7 +12,7 @@ use std::time::{Instant, Duration};
 
 use auto::{autos, run_auto, Auto};
 use constants::TELEMETRY_PORT;
-use container::Ferris;
+use input::Ferris;
 
 use frcrs::{alliance_station};
 use frcrs::networktables::{set_position, SmartDashboard};
@@ -29,8 +29,8 @@ use num_traits::{FromPrimitive, ToPrimitive};
 
 use telemetry::{Data, TELEMETRY};
 
-use tokio::time::{sleep};
-use crate::container::{container};
+use tokio::time::sleep;
+use crate::input::container;
 
 use tokio::task::{self};
 use std::ops::Deref;
