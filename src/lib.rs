@@ -12,7 +12,7 @@ use std::time::{Instant, Duration};
 
 use auto::{autos, run_auto, Auto};
 use constants::TELEMETRY_PORT;
-use input::Ferris;
+use input::{Controllers, Ferris};
 
 use frcrs::{alliance_station};
 use frcrs::networktables::{set_position, SmartDashboard};
@@ -53,9 +53,15 @@ fn entrypoint() {
 
     SmartDashboard::init();
 
-    let mut left_drive = Joystick::new(1);
-    let mut right_drive = Joystick::new(0);
-    let mut operator = Joystick::new(2);
+    let left_drive = Joystick::new(1);
+    let right_drive = Joystick::new(0);
+    let operator = Joystick::new(2);
+
+    let mut controllers = Controllers {
+        left_drive,
+        right_drive,
+        operator,
+    };
 
     let mut robot = Ferris::new();
 
@@ -77,9 +83,7 @@ fn entrypoint() {
 
         if state.enabled() && state.teleop() && !state.test() {
             container(
-                &mut left_drive,
-                &mut right_drive,
-                &mut operator,
+                &mut controllers,
                 &mut robot,
                 &local,
             ).await;
