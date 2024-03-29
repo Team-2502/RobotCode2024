@@ -15,7 +15,7 @@ use std::time::{Instant, Duration};
 
 use auto::{autos, run_auto, Auto};
 use constants::TELEMETRY_PORT;
-use input::Ferris;
+use input::{Controllers, Ferris};
 
 use frcrs::{alliance_station};
 use frcrs::networktables::{set_position, SmartDashboard};
@@ -78,9 +78,7 @@ pub fn entrypoint() {
 
         if state.enabled() && state.teleop() && !state.test() {
             container(
-                &mut left_drive,
-                &mut right_drive,
-                &mut operator,
+                &mut controllers,
                 &mut robot,
                 &local,
             ).await;
