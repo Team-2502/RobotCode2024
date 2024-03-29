@@ -1,6 +1,7 @@
 LIB=libRobotCode2024.so
 OUT=target/arm-unknown-linux-gnueabi/release/$(LIB)
 DEPLOY=javastub/src/main/deploy/$(LIB)
+TEAM=25.02
 
 .PHONY: check
 check:
@@ -17,6 +18,10 @@ $(dir $(DEPLOY)):
 
 $(DEPLOY): $(dir $(DEPLOY)) $(OUT)
 	cp $(OUT) $(dir $(DEPLOY))
+
+.PHONY: deploy-scp
+deploy-scp: $(OUT)
+	scp $(OUT) lvuser@10.$(TEAM).2:
 
 .PHONY: deploy
 deploy: $(DEPLOY)

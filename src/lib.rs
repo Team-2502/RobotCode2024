@@ -8,6 +8,9 @@ mod auto;
 pub mod telemetry;
 
 
+use std::borrow::BorrowMut;
+use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 use std::time::{Instant, Duration};
 
 use auto::{autos, run_auto, Auto};
@@ -35,42 +38,40 @@ use crate::input::container;
 use tokio::task::{self};
 use std::ops::Deref;
 
-
-
-
 //pub extern "system" fn entrypoint <'local>(mut env: JNIEnv<'local>, class: JClass<'local>) {
 
-#[call_from_java("frc.robot.Main.rustentry")]
-fn entrypoint() {
-
-    observe_user_program_starting();
-
-    if !init_hal() {
-        panic!("Failed to init HAL")
-    }
-
-    hal_report(2, 3, 0, "2024.2.1".to_string());
-
-    SmartDashboard::init();
-
-    let mut left_drive = Joystick::new(1);
-    let mut right_drive = Joystick::new(0);
-    let mut operator = Joystick::new(2);
-
-    let mut robot = Ferris::new();
-
-    let router = telemetry::server()
-        .with_state(robot.telemetry.clone());
-
+pub fn entrypoint() {
     let executor = tokio::runtime::Runtime::new().unwrap();
     let local = task::LocalSet::new();
 
+    let controller = local.run_until(async { 
+        observe_user_program_starting();
+
+        if !init_hal() {
+            panic!("Failed to init HAL")
+        }
+
+        hal_report(2, 3, 0, "2024.2.1".to_string());
+
+        let mut left_drive = Joystick::new(1);
+        let mut right_drive = Joystick::new(0);
+        let mut operator = Joystick::new(2);
+
+        let mut robot = Ferris::new();
+
+        let router = telemetry::server()
+            .with_state(robot.telemetry.clone());
+
+        executor.spawn(async move {
+            let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", TELEMETRY_PORT)).await.unwrap();
+            axum::serve(listener, router).await.unwrap();
+        }).abort_handle();
+
     let mut auto = None;
 
-    let _chooser = autos();
-
     let mut last_loop = Instant::now();
-    let controller = local.run_until(async { loop {
+        loop {
+        
         refresh_data();
 
         let state = RobotState::get();
@@ -115,22 +116,18 @@ fn entrypoint() {
         let elapsed = last_loop.elapsed().as_secs_f64();
         let left = (1./50. - elapsed).max(0.);
 
-        if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
-            let red = alliance_station().red();
-            drivetrain.odometry.update_from_vision(TELEMETRY.clone(), red).await;
-            let angle = drivetrain.get_angle();
-            set_position(drivetrain.odometry.position, -angle);
-        }
+        //if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
+        //    let red = alliance_station().red();
+        //    drivetrain.odometry.update_from_vision(TELEMETRY.clone(), red).await;
+        //    let angle = drivetrain.get_angle();
+        //    set_position(drivetrain.odometry.position, -angle);
+        //}
         
-        sleep(Duration::from_secs_f64(left)).await;
+        //sleep(Duration::from_secs_f64(left)).await;
         telemetry::put_number("loop rate (hz)", 1./last_loop.elapsed().as_secs_f64()).await;
         last_loop = Instant::now();
+        //println!("hz {}", 1./last_loop.elapsed().as_secs_f64());
     }});
-
-    executor.spawn(async {
-        let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", TELEMETRY_PORT)).await.unwrap();
-        axum::serve(listener, router).await.unwrap();
-    }).abort_handle();
 
     executor.block_on(controller);
 }

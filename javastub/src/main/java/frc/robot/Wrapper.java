@@ -18,6 +18,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
@@ -104,6 +105,18 @@ public class Wrapper {
 
     public static double ctre6GetVelocity(com.ctre.phoenix6.hardware.TalonFX motor) {
       return motor.getVelocity().getValue();
+    }
+
+    public static RumbleType kBothRumble() {
+        return RumbleType.kBothRumble;
+    }
+
+    public static RumbleType kLeftRumble() {
+        return RumbleType.kLeftRumble;
+    }
+
+    public static RumbleType kRightRumble() {
+        return RumbleType.kRightRumble;
     }
 
     /*public static void setSpeed(TalonFX motor, double speed) {

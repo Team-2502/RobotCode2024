@@ -89,7 +89,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     drivetrain.set_speeds(deadly, deadlx, rot);
     let angle = drivetrain.get_angle();
 
-    set_position(drivetrain.odometry.position, -angle);
+    //set_position(drivetrain.odometry.position, -angle);
 
     telemetry::put_number("Odo X", drivetrain.odometry.position.x).await;
     telemetry::put_number("Odo Y", drivetrain.odometry.position.y).await;
@@ -281,7 +281,7 @@ pub async fn stage(intake: &mut Intake, shooter: &Shooter) {
     sleep(Duration::from_millis(200)).await;
 
     intake.set_rollers(-0.13);
-    shooter.set_feeder(-0.14);
+    shooter.set_feeder(-0.34);
     wait(|| shooter.contains_note()).await;
     intake.set_rollers(0.0);
     intake.set_actuate(0.0);
