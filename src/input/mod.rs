@@ -8,11 +8,12 @@ use crate::{auto::{lower_intake, raise_intake}, constants::{drivetrain::{PODIUM_
 use frcrs::deadzone;
 use j4rs::Jvm;
 
-use self::{drivetrain::{control_drivetrain, DrivetrainControlState}, intake::control_intake};
+use self::{climber::control_climber, drivetrain::{control_drivetrain, DrivetrainControlState}, intake::control_intake, shooter::{control_shooter, ShooterControlState}};
 
 mod drivetrain;
 mod intake;
 mod shooter;
+mod climber;
 
 #[derive(Clone)]
 pub struct Ferris {
@@ -31,6 +32,7 @@ pub struct Ferris {
 #[derive(Default)]
 struct TeleopState {
     drivetrain_state: DrivetrainControlState,
+    shooter_state: ShooterControlState,
 }
 
 pub struct Controllers {
@@ -57,28 +59,42 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
     let mut shooter_state = robot.shooter_state.deref().borrow_mut();
     let (shooting, last_loop) = &mut *shooter_state;
     let TeleopState { 
-        mut drivetrain_state,
+        ref mut drivetrain_state,
+        ref mut shooter_state,
     } = *robot.teleop_state.deref().borrow_mut();
 
-    if let Ok(drivetrain) = robot.drivetrain.try_borrow_mut() {
-        control_drivetrain(&mut drivetrain, controllers, &mut drivetrain_state).await;
+    if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
+        control_drivetrain(&mut drivetrain, controllers, drivetrain_state).await;
     }
     
     if let Ok(mut intake) = robot.intake.try_borrow_mut() {
         control_intake(&mut intake, controllers).await;
     }
 
+    if let Ok(mut shooter) = robot.shooter.try_borrow_mut() {
+        control_shooter(&mut shooter, controllers, shooter_state).await;
+    }
+
+    if let Ok(mut climber) = robot.climber.try_borrow_mut() {
+        control_climber(&mut climber, controllers).await;
+    }
+
     let red = alliance_station().red();
     telemetry::put_bool("red", red).await;
 
-    let firing = operator.get(1) || right_drive.get(1);
+    let right_drive = &mut controllers.right_drive;
+    let left_drive = &mut controllers.left_drive;
+    let operator = &mut controllers.operator;
+    let staging = &mut shooter_state.staging;
+    let firing = &mut shooter_state.firing;
+
 
     if operator.get(8) && robot.grab.deref().try_borrow().is_ok_and(|n| n.is_none()) && !operator.get(7) && !operator.get(5) {
         let intake = robot.intake.clone();
         robot.grab.replace(Some(executor.spawn_local(async move {
             intake.deref().borrow_mut().grab().await;
         })));
-    } else if !operator.get(8) || firing {
+    } else if !operator.get(8) || *firing {
         if let Some(grab) = robot.grab.take() {
             grab.abort();
         }
@@ -89,14 +105,14 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
         robot.grab_full.replace(Some(executor.spawn_local(async move {
             let _ = grab_full(robot_).await;
         })));
-    } else if !operator.get(6) || firing {
+    } else if !operator.get(6) || *firing {
         if let Some(grab_full) = robot.grab_full.take() {
             grab_full.abort();
         }
     }
 
     let not = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_none());
-    let staging = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_some());
+    *staging = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_some());
     if !operator.get(5) && operator.get(7) && not && robot.shooter.try_borrow().is_ok_and(|s| !s.contains_note()) {
 
         // drop grab if done
@@ -116,45 +132,13 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
                 stage(&mut intake, &shooter).await;
             }
         })));
-    } else if !operator.get(7) || firing {
+    } else if !operator.get(7) || *firing {
         if let Some(stage) = robot.stage.take() {
             stage.abort();
         }
     }
 
-    if operator.get(2) && !*last_loop { 
-        *shooting = !*shooting; 
-    }
-    *last_loop = operator.get(2);
-
     telemetry::put_bool("flywheel state", *shooting).await;
-
-    if let Ok(mut shooter) = robot.shooter.deref().try_borrow_mut() {
-    }
-
-    // Todo: cleanup
-    let mut climbing = false;
-    if left_drive.get(3) {
-        climber.set(1.);
-        climbing = true;
-    } else {
-        if operator.get(14) {
-            climber.set_left(-1.);
-            climbing = true;
-        } else if operator.get(13) {
-            climber.set_left(1.);
-            climbing = true;
-        } 
-
-        if operator.get(15) {
-            climber.set_right(1.);
-            climbing = true;
-        } else if operator.get(12) {
-            climber.set_right(-1.);
-            climbing = true;
-        }
-    };
-    if !climbing { climber.stop(); }
 
     if operator.get(9) {
         let intake = robot.intake.clone();

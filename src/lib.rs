@@ -45,7 +45,6 @@ pub fn entrypoint() {
     let local = task::LocalSet::new();
 
     let controller = local.run_until(async { 
-        observe_user_program_starting();
 
         if !init_hal() {
             panic!("Failed to init HAL")
@@ -53,11 +52,13 @@ pub fn entrypoint() {
 
         hal_report(2, 3, 0, "2024.2.1".to_string());
 
-        let mut left_drive = Joystick::new(1);
-        let mut right_drive = Joystick::new(0);
-        let mut operator = Joystick::new(2);
+        let left_drive = Joystick::new(1);
+        let right_drive = Joystick::new(0);
+        let operator = Joystick::new(2);
+        let mut controllers = Controllers { left_drive, right_drive, operator };
 
         let mut robot = Ferris::new();
+        observe_user_program_starting();
 
         let router = telemetry::server()
             .with_state(robot.telemetry.clone());

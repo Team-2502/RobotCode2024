@@ -8,12 +8,29 @@ use super::Controllers;
 
 #[derive(Default)]
 pub struct ShooterControlState {
-    saved_angle: Option<Angle>
+    shooting: bool,
+    last_loop: bool, // shoot button
+    pub staging: bool,
+    pub firing: bool,
 }
 
-pub async fn control_shooter(drivetrain: &mut Shooter, controllers: &mut Controllers, state: &mut ShooterControlState) {
+pub async fn control_shooter(shooter: &mut Shooter, controllers: &mut Controllers, state: &mut ShooterControlState) {
+    let right_drive = &mut controllers.right_drive;
+    let left_drive = &mut controllers.left_drive;
+    let operator = &mut controllers.operator;
+    let shooting = &mut state.shooting;
+    let staging = &mut state.staging;
+    let firing = &mut state.firing;
+    let last_loop = &mut state.last_loop;
     telemetry::put_number("flywheel speed", shooter.get_velocity()).await;
     telemetry::put_bool("beam break: {}", shooter.contains_note()).await;
+
+    if operator.get(2) && !*last_loop { 
+        *shooting = !*shooting; 
+    }
+    *last_loop = operator.get(2);
+
+    *firing = operator.get(1) || right_drive.get(1);
 
     if *shooting {
         if shooter.amp_deployed() && !operator.get(5) {
@@ -43,8 +60,8 @@ pub async fn control_shooter(drivetrain: &mut Shooter, controllers: &mut Control
         }
     }
 
-    if !staging {
-        if firing {
+    if !*staging {
+        if *firing {
             shooter.set_feeder(-1.);
         } else if operator.get(10) {
             shooter.set_feeder(0.5);
