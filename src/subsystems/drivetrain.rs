@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{Read, Write};
 
-use frcrs::ctre::{talon_encoder_tick, CanCoder, ControlMode, Falcon, Kraken};
+use frcrs::ctre::{talon_encoder_tick, CanCoder, ControlMode, Talon};
 
 use frcrs::navx::NavX;
 use nalgebra::{Vector2, Rotation2};
@@ -18,20 +18,20 @@ use serde::Deserialize;
 pub struct Drivetrain {
     navx: NavX,
 
-    fr_drive: Kraken,
-    fr_turn: Falcon,
+    fr_drive: Talon,
+    fr_turn: Talon,
     fr_encoder: CanCoder,
 
-    fl_drive: Kraken,
-    fl_turn: Falcon,
+    fl_drive: Talon,
+    fl_turn: Talon,
     fl_encoder: CanCoder,
 
-    bl_drive: Kraken,
-    bl_turn: Falcon,
+    bl_drive: Talon,
+    bl_turn: Talon,
     bl_encoder: CanCoder,
 
-    br_drive: Kraken,
-    br_turn: Falcon,
+    br_drive: Talon,
+    br_turn: Talon,
     br_encoder: CanCoder,
 
     kinematics: Swerve,
@@ -70,17 +70,17 @@ impl Drivetrain {
         let bl_encoder = CanCoder::new(BL_ENCODER, Some("can0".to_owned()));
         let br_encoder = CanCoder::new(BR_ENCODER, Some("can0".to_owned()));
 
-        let fr_turn = Falcon::new(FR_TURN, Some("can0".to_owned()));
-        let fl_turn = Falcon::new(FL_TURN, Some("can0".to_owned()));
-        let bl_turn = Falcon::new(BL_TURN, Some("can0".to_owned()));
-        let br_turn = Falcon::new(BR_TURN, Some("can0".to_owned()));
+        let fr_turn = Talon::new(FR_TURN, Some("can0".to_owned()));
+        let fl_turn = Talon::new(FL_TURN, Some("can0".to_owned()));
+        let bl_turn = Talon::new(BL_TURN, Some("can0".to_owned()));
+        let br_turn = Talon::new(BR_TURN, Some("can0".to_owned()));
 
         for (encoder, offset) in [&fr_encoder, &fl_encoder, &bl_encoder, &br_encoder].iter().zip(absolute_offsets.offsets.iter_mut()) {
             *offset -= encoder.get_absolute();
         }
 
         for (turn, offset) in [&fr_turn, &fl_turn, &bl_turn, &br_turn].iter().zip(absolute_offsets.offsets.iter_mut()) {
-            *offset -= turn.get().get::<degree>();
+            *offset -= turn.get_position();
             *offset = 0.;
             dbg!(offset);
         }
@@ -88,19 +88,19 @@ impl Drivetrain {
         let dt = Self {
             navx: NavX::new(),
 
-            fr_drive: Kraken::new(FR_DRIVE, Some("can0".to_owned())),
+            fr_drive: Talon::new(FR_DRIVE, Some("can0".to_owned())),
             fr_turn,
             fr_encoder,
 
-            fl_drive: Kraken::new(FL_DRIVE, Some("can0".to_owned())),
+            fl_drive: Talon::new(FL_DRIVE, Some("can0".to_owned())),
             fl_turn,
             fl_encoder,
 
-            bl_drive: Kraken::new(BL_DRIVE, Some("can0".to_owned())),
+            bl_drive: Talon::new(BL_DRIVE, Some("can0".to_owned())),
             bl_turn,
             bl_encoder,
 
-            br_drive: Kraken::new(BR_DRIVE, Some("can0".to_owned())),
+            br_drive: Talon::new(BR_DRIVE, Some("can0".to_owned())),
             br_turn,
             br_encoder,
 
@@ -143,7 +143,7 @@ impl Drivetrain {
 
         for (module, offset) in [&self.fr_drive, &self.fl_drive, &self.bl_drive, &self.br_drive].iter().zip(angles.iter()) {
             let distance = module.get_position() * SWERVE_ROTATIONS_TO_INCHES;
-            speeds.push(ModuleReturn { 
+            speeds.push(ModuleReturn {
                 angle: offset.angle.clone(),
                 distance:  Length::new::<inch>(distance),
             });
@@ -156,9 +156,9 @@ impl Drivetrain {
         let mut speeds = Vec::new();
 
         for (module, offset) in [&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn].iter().zip(self.absolute_offsets.offsets.iter()) {
-            speeds.push(ModuleState { 
-                speed: 0., 
-                angle: -module.get() + Angle::new::<degree>(*offset),
+            speeds.push(ModuleState {
+                speed: 0.,
+                angle: Angle::new::<degree>(-module.get_position()) + Angle::new::<degree>(*offset),
             });
         }
 
@@ -193,10 +193,10 @@ impl Drivetrain {
             })
             .collect();
 
-        self.fr_drive.set(wheel_speeds[0].speed);
-        self.fl_drive.set(wheel_speeds[1].speed);
-        self.bl_drive.set(wheel_speeds[2].speed);
-        self.br_drive.set(wheel_speeds[3].speed);
+        self.fr_drive.set(ControlMode::Percent, wheel_speeds[0].speed);
+        self.fl_drive.set(ControlMode::Percent, wheel_speeds[1].speed);
+        self.bl_drive.set(ControlMode::Percent, wheel_speeds[2].speed);
+        self.br_drive.set(ControlMode::Percent, wheel_speeds[3].speed);
 
         self.fr_turn.set(ControlMode::Position, -wheel_speeds[0].angle.get::<talon_encoder_tick>());
         self.fl_turn.set(ControlMode::Position, -wheel_speeds[1].angle.get::<talon_encoder_tick>());

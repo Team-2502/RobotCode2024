@@ -1,6 +1,6 @@
 use std::{borrow::BorrowMut, cell::{BorrowMutError, RefCell}, ops::Deref, rc::Rc, time::Duration};
 
-use frcrs::{alliance_station, dio::DO, input::Joystick };
+use frcrs::{alliance_station, input::Joystick };
 use frcrs::networktables::set_position;
 use tokio::{task::{JoinHandle, LocalSet}, time::{sleep}};
 use uom::si::{angle::{degree, radian}, f64::Angle};
@@ -14,7 +14,6 @@ pub struct Ferris {
     pub intake: Rc<RefCell<Intake>>,
     pub shooter: Rc<RefCell<Shooter>>, 
     pub climber: Rc<RefCell<Climber>>,
-    pub led: Rc<RefCell<DO>>,
     grab: Rc<RefCell<Option<JoinHandle<()>>>>,
     stage: Rc<RefCell<Option<JoinHandle<()>>>>,
     grab_full: Rc<RefCell<Option<JoinHandle<()>>>>,
@@ -29,13 +28,10 @@ impl Ferris {
         let intake = Rc::new(RefCell::new(Intake::new()));
         let shooter = Rc::new(RefCell::new(Shooter::new()));
         let climber = Rc::new(RefCell::new(Climber::new()));
-        let led = Rc::new(RefCell::new({
-            DO::new(INDICATOR_PORT_LEFT)
-        }));
         let shooter_state = Rc::new(RefCell::new((false,false)));
         let saved_angle = Rc::new(RefCell::new(None));
         let telemetry = TELEMETRY.clone();
-        Self { drivetrain, intake, shooter, climber, led, grab: Rc::new(RefCell::new(None)),grab_full: Rc::new(RefCell::new(None)), shooter_state, saved_angle, stage: Rc::new(RefCell::new(None)), telemetry } 
+        Self { drivetrain, intake, shooter, climber, grab: Rc::new(RefCell::new(None)),grab_full: Rc::new(RefCell::new(None)), shooter_state, saved_angle, stage: Rc::new(RefCell::new(None)), telemetry } 
     }
 }
 
@@ -93,7 +89,7 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     drivetrain.set_speeds(deadly, deadlx, rot);
     let angle = drivetrain.get_angle();
 
-    set_position(drivetrain.odometry.position, -angle);
+    //set_position(drivetrain.odometry.position, -angle);
 
     telemetry::put_number("Odo X", drivetrain.odometry.position.x).await;
     telemetry::put_number("Odo Y", drivetrain.odometry.position.y).await;
@@ -110,19 +106,12 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
 
     if operator.get(8) && robot.grab.deref().try_borrow().is_ok_and(|n| n.is_none()) && !operator.get(7) && !operator.get(5) {
         let intake = robot.intake.clone();
-        let led = robot.led.clone();
         robot.grab.replace(Some(executor.spawn_local(async move {
-            let led = led.try_borrow().ok();
-            led.as_ref().inspect(|l| l.set(true));
             intake.deref().borrow_mut().grab().await;
-            led.inspect(|l| l.set(false));
         })));
     } else if !operator.get(8) || firing {
         if let Some(grab) = robot.grab.take() {
             grab.abort();
-            if let Ok(led) = robot.led.try_borrow() {
-                led.set(false);
-            }
         }
     }
 
@@ -134,9 +123,6 @@ pub async fn container<'a>(left_drive: &mut Joystick, right_drive: &mut Joystick
     } else if !operator.get(6) || firing {
         if let Some(grab_full) = robot.grab_full.take() {
             grab_full.abort();
-            if let Ok(led) = robot.led.try_borrow() {
-                led.set(false);
-            }
         }
     }
 
@@ -295,7 +281,7 @@ pub async fn stage(intake: &mut Intake, shooter: &Shooter) {
     sleep(Duration::from_millis(200)).await;
 
     intake.set_rollers(-0.13);
-    shooter.set_feeder(-0.14);
+    shooter.set_feeder(-0.34);
     wait(|| shooter.contains_note()).await;
     intake.set_rollers(0.0);
     intake.set_actuate(0.0);
@@ -315,22 +301,13 @@ pub fn stop_all(robot: &Ferris) {
 async fn grab_full(robot: Ferris) -> anyhow::Result<()> {
     let intake = robot.intake.clone();
     let shooter = robot.shooter.clone();
-    let led = robot.led.clone();
-    let led = led.try_borrow();
     let mut intake = intake.deref().try_borrow_mut()?;
     let shooter = shooter.deref().try_borrow()?;
-    let _ = led.as_ref().inspect(|l| l.set(true));
     lower_intake(&mut intake).await;
-    {
-        let this = &mut intake;
-        async move {
-            this.set_rollers(0.6);
-            wait(|| this.running()).await;
-            wait(|| this.stalled()).await;
-            this.stop_rollers();
-        }
-    }.await;
+    intake.set_rollers(0.6);
+    wait(|| intake.running()).await;
+    wait(|| intake.stalled()).await;
+    intake.stop_rollers();
     stage(&mut intake, &shooter).await;
-    let _ = led.inspect(|l| l.set(false));
     Ok(())
 }
