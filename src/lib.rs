@@ -15,7 +15,7 @@ use std::time::{Instant, Duration};
 
 use auto::{autos, run_auto, Auto};
 use constants::TELEMETRY_PORT;
-use input::{Controllers, Ferris};
+use input::{Controllers, Ferris, GamepadState};
 
 use frcrs::{alliance_station};
 use frcrs::networktables::{set_position, SmartDashboard};
@@ -26,7 +26,7 @@ use j4rs::Jvm;
 use j4rs::prelude::*;
 use frcrs::init_hal;
 use frcrs::hal_report;
-use frcrs::input::{Joystick, RobotState};
+use frcrs::input::{Gamepad, Joystick, RobotState};
 
 use num_traits::{FromPrimitive, ToPrimitive};
 
@@ -55,7 +55,8 @@ pub fn entrypoint() {
         let left_drive = Joystick::new(1);
         let right_drive = Joystick::new(0);
         let operator = Joystick::new(2);
-        let mut controllers = Controllers { left_drive, right_drive, operator };
+        let gamepad = Gamepad::new(3);
+        let mut controllers = Controllers { left_drive, right_drive, operator, gamepad, gamepad_state: GamepadState::Auto };
 
         let mut robot = Ferris::new();
         observe_user_program_starting();

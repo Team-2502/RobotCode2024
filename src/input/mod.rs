@@ -1,6 +1,6 @@
 use std::{borrow::BorrowMut, cell::{BorrowMutError, RefCell}, ops::{Deref, DerefMut}, rc::Rc, time::Duration};
 
-use frcrs::{alliance_station, input::Joystick };
+use frcrs::{alliance_station, input::{Direction, Gamepad, Joystick} };
 use frcrs::networktables::set_position;
 use tokio::{task::{JoinHandle, LocalSet}, time::{sleep}};
 use uom::si::{angle::{degree, radian}, f64::Angle};
@@ -39,6 +39,15 @@ pub struct Controllers {
     pub left_drive: Joystick,
     pub right_drive: Joystick,
     pub operator: Joystick,
+    pub gamepad: Gamepad,
+    pub gamepad_state: GamepadState
+}
+
+#[derive(Clone, Copy)]
+pub enum GamepadState {
+    Auto,
+    Manual,
+    Climb,
 }
 
 impl Ferris {
@@ -82,12 +91,22 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
     let red = alliance_station().red();
     telemetry::put_bool("red", red).await;
 
-    let right_drive = &mut controllers.right_drive;
-    let left_drive = &mut controllers.left_drive;
-    let operator = &mut controllers.operator;
+    let Controllers {
+        ref mut left_drive,
+        ref mut right_drive,
+        ref mut operator,
+        ref mut gamepad,
+        ref mut gamepad_state, 
+    } = controllers;
     let staging = &mut shooter_state.staging;
     let firing = &mut shooter_state.firing;
 
+    *gamepad_state = match gamepad.get_dpad_direction() {
+        Direction::Left => GamepadState::Manual,
+        Direction::Up => GamepadState::Climb,
+        Direction::Down => GamepadState::Auto,
+        _ => *gamepad_state
+    };
 
     if operator.get(8) && robot.grab.deref().try_borrow().is_ok_and(|n| n.is_none()) && !operator.get(7) && !operator.get(5) {
         let intake = robot.intake.clone();
@@ -100,7 +119,9 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
         }
     }
 
-    if operator.get(6) && robot.grab_full.deref().try_borrow().is_ok_and(|n| n.is_none()) && !operator.get(7) && !operator.get(5) {
+    if (operator.get(6) || (matches!(gamepad_state, GamepadState::Auto) && gamepad.left_bumper())) 
+        && robot.grab_full.deref().try_borrow().is_ok_and(|n| n.is_none()) 
+            && !operator.get(7) && !operator.get(5) {
         let robot_ = robot.clone();
         robot.grab_full.replace(Some(executor.spawn_local(async move {
             let _ = grab_full(robot_).await;
@@ -113,7 +134,8 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
 
     let not = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_none());
     *staging = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_some());
-    if !operator.get(5) && operator.get(7) && not && robot.shooter.try_borrow().is_ok_and(|s| !s.contains_note()) {
+    if (operator.get(7) || (matches!(gamepad_state, GamepadState::Auto) && gamepad.right_trigger() > 0.3))
+        && !operator.get(5) && not && robot.shooter.try_borrow().is_ok_and(|s| !s.contains_note()) {
 
         // drop grab if done
         if robot.grab.deref().try_borrow().is_ok_and(|n| n.as_ref().is_some_and(|n| n.is_finished())) {
@@ -140,7 +162,7 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
 
     telemetry::put_bool("flywheel state", *shooting).await;
 
-    if operator.get(9) {
+    if operator.get(9) || (matches!(gamepad_state, GamepadState::Manual) && gamepad.a()){
         let intake = robot.intake.clone();
         executor.spawn_local(async move {
             if let Ok(mut intake) = intake.try_borrow_mut() {

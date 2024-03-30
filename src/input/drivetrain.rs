@@ -3,7 +3,7 @@ use uom::si::{angle::{degree, radian}, f64::Angle};
 
 use crate::{constants::drivetrain::{PODIUM_SHOT_ANGLE, SWERVE_TURN_KP}, subsystems::Drivetrain, telemetry};
 
-use super::Controllers;
+use super::{Controllers, GamepadState};
 
 #[derive(Default)]
 pub struct DrivetrainControlState {
@@ -14,6 +14,8 @@ pub async fn control_drivetrain(drivetrain: &mut Drivetrain, controllers: &mut C
     let right_drive = &mut controllers.right_drive;
     let left_drive = &mut controllers.left_drive;
     let saved_angle = &mut state.saved_angle;
+    let gamepad = &mut controllers.gamepad;
+    let gamepad_state = &mut controllers.gamepad_state;
     let joystick_range = 0.04..1.;
     let power_translate = if left_drive.get(1) { 0.0..0.3 }
     else { 0.0..1. };
@@ -48,7 +50,13 @@ pub async fn control_drivetrain(drivetrain: &mut Drivetrain, controllers: &mut C
         deadrz
     };
 
-    drivetrain.set_speeds(deadly, deadlx, rot);
+    if deadrz != 0. || deadlx != 0. || deadly != 0. {
+        drivetrain.set_speeds(deadly, deadlx, rot);
+    } else if matches!(gamepad_state, GamepadState::Manual) && gamepad.y() {
+        drivetrain.zero_wheels()
+    }
+
+
     let angle = drivetrain.get_angle();
 
     if left_drive.get(4) {

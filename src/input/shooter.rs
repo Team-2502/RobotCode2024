@@ -4,7 +4,7 @@ use uom::si::{angle::{degree, radian}, f64::Angle};
 
 use crate::{constants::drivetrain::{PODIUM_SHOT_ANGLE, SWERVE_TURN_KP}, subsystems::{Drivetrain, Shooter}, telemetry};
 
-use super::Controllers;
+use super::{Controllers, GamepadState};
 
 #[derive(Default)]
 pub struct ShooterControlState {
@@ -12,27 +12,50 @@ pub struct ShooterControlState {
     last_loop: bool, // shoot button
     pub staging: bool,
     pub firing: bool,
+    gamepad_spinning: bool,
+    gamepad_spinning_last: bool,
 }
 
 pub async fn control_shooter(shooter: &mut Shooter, controllers: &mut Controllers, state: &mut ShooterControlState) {
     let right_drive = &mut controllers.right_drive;
     let left_drive = &mut controllers.left_drive;
+    let gamepad = &mut controllers.gamepad;
+    let gamepad_state = &mut controllers.gamepad_state;
     let operator = &mut controllers.operator;
     let shooting = &mut state.shooting;
     let staging = &mut state.staging;
     let firing = &mut state.firing;
     let last_loop = &mut state.last_loop;
+    let gamepad_spinning = &mut state.gamepad_spinning;
     telemetry::put_number("flywheel speed", shooter.get_velocity()).await;
     telemetry::put_bool("beam break: {}", shooter.contains_note()).await;
+
+    if matches!(gamepad_state, GamepadState::Auto | GamepadState::Manual) {
+        if gamepad.a() { // line shot
+            shooter.set_velocity(5500.);
+            shooter.stow_amp();
+            *gamepad_spinning = true;
+        } else if gamepad.b() { // amp
+            shooter.set_velocity(1917.);
+            shooter.deploy_amp();
+            *gamepad_spinning = true;
+        } else if gamepad.y() { // pass over stage
+            shooter.set_velocity(3000.);
+            *gamepad_spinning = true;
+        } else if gamepad.x() {
+            shooter.stop_shooter();
+            *gamepad_spinning = false;
+        }
+    }
 
     if operator.get(2) && !*last_loop { 
         *shooting = !*shooting; 
     }
     *last_loop = operator.get(2);
 
-    *firing = operator.get(1) || right_drive.get(1);
+    *firing = operator.get(1) || right_drive.get(1) || matches!(gamepad_state, GamepadState::Auto | GamepadState::Manual) && gamepad.right_bumper();
 
-    if *shooting {
+    if *shooting && !*gamepad_spinning {
         if shooter.amp_deployed() && !operator.get(5) {
             shooter.set_shooter(0.225)
         } else if right_drive.get(2) {
@@ -63,6 +86,8 @@ pub async fn control_shooter(shooter: &mut Shooter, controllers: &mut Controller
     if !*staging {
         if *firing {
             shooter.set_feeder(-1.);
+        } else if matches!(gamepad_state, GamepadState::Manual) && gamepad.left_trigger() > 0. {
+            shooter.set_feeder(gamepad.left_trigger());
         } else if operator.get(10) {
             shooter.set_feeder(0.5);
         } else {

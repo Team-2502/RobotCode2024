@@ -204,6 +204,16 @@ impl Drivetrain {
         self.br_turn.set(ControlMode::Position, -wheel_speeds[3].angle.get::<talon_encoder_tick>());
     }
 
+    pub fn zero_wheels(&self) {
+        let measured = self.get_speeds();
+
+        for (module, motor) in measured.into_iter().zip([&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn].into_iter()) {
+            let remainder = module.angle % Angle::new::<degree>(360.);
+            let angle = module.angle - remainder;
+            motor.set(ControlMode::Position, -angle.get::<talon_encoder_tick>());
+        }
+    }
+
     pub fn get_angle(&self) -> Angle {
         Angle::new::<degree>(self.navx.get_angle())
     }
