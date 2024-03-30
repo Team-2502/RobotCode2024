@@ -15,7 +15,7 @@ use std::time::{Instant, Duration};
 
 use auto::{autos, run_auto, Auto};
 use constants::TELEMETRY_PORT;
-use input::Ferris;
+use input::{Controllers, Ferris, GamepadState};
 
 use frcrs::{alliance_station};
 use frcrs::networktables::{set_position, SmartDashboard};
@@ -26,7 +26,7 @@ use j4rs::Jvm;
 use j4rs::prelude::*;
 use frcrs::init_hal;
 use frcrs::hal_report;
-use frcrs::input::{Joystick, RobotState};
+use frcrs::input::{Gamepad, Joystick, RobotState};
 
 use num_traits::{FromPrimitive, ToPrimitive};
 
@@ -45,7 +45,6 @@ pub fn entrypoint() {
     let local = task::LocalSet::new();
 
     let controller = local.run_until(async { 
-        observe_user_program_starting();
 
         if !init_hal() {
             panic!("Failed to init HAL")
@@ -53,11 +52,14 @@ pub fn entrypoint() {
 
         hal_report(2, 3, 0, "2024.2.1".to_string());
 
-        let mut left_drive = Joystick::new(1);
-        let mut right_drive = Joystick::new(0);
-        let mut operator = Joystick::new(2);
+        let left_drive = Joystick::new(1);
+        let right_drive = Joystick::new(0);
+        let operator = Joystick::new(2);
+        let gamepad = Gamepad::new(3);
+        let mut controllers = Controllers { left_drive, right_drive, operator, gamepad, gamepad_state: GamepadState::Auto };
 
         let mut robot = Ferris::new();
+        observe_user_program_starting();
 
         let router = telemetry::server()
             .with_state(robot.telemetry.clone());
@@ -78,9 +80,7 @@ pub fn entrypoint() {
 
         if state.enabled() && state.teleop() && !state.test() {
             container(
-                &mut left_drive,
-                &mut right_drive,
-                &mut operator,
+                &mut controllers,
                 &mut robot,
                 &local,
             ).await;

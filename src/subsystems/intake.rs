@@ -13,7 +13,6 @@ pub struct Intake {
     right_actuate: Spark,
 
     limit: DIO,
-    reverse_limit: DIO,
 
     actuate_zero: Angle,
 }
@@ -33,7 +32,6 @@ impl Intake {
         let right_actuate = Spark::new(INTAKE_ACTUATE_RIGHT, MotorType::Brushless);
 
         let limit = DIO::new(INTAKE_LIMIT);
-        let reverse_limit = DIO::new(INTAKE_DOWN_LIMIT);
 
         Self {
             left_roller,
@@ -43,7 +41,6 @@ impl Intake {
             right_actuate,
 
             limit,
-            reverse_limit,
 
             actuate_zero: Angle::new::<degree>(0.),
         }
@@ -88,10 +85,6 @@ impl Intake {
             self.left_roller.get_velocity() > intake::INTAKE_FREE_VELOCITY
     }
 
-    pub fn at_reverse_limit(&self) -> bool {
-        !self.reverse_limit.get()
-    }
-
     pub fn at_limit(&self) -> bool {
         !self.limit.get()
     }
@@ -101,7 +94,7 @@ impl Intake {
     }
 
     pub fn constrained(&self) -> bool {
-        self.at_limit() || self.at_reverse_limit()
+        self.at_limit()
     }
 
     pub async fn grab(&mut self) {

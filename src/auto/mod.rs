@@ -523,9 +523,7 @@ async fn center(robot: Ferris) {
             shooter.set_feeder(0.);
         },
         async { // lower intake
-            intake.set_actuate(-0.3);
-            let _ = timeout(Duration::from_millis(1720), wait(|| intake.at_reverse_limit())).await;
-            intake.set_actuate(0.);
+            lower_intake(&mut intake).await;
             intake.set_rollers(0.4);
         },
     );
@@ -547,15 +545,9 @@ async fn center(robot: Ferris) {
         drive("Top.3", &mut drivetrain) // scoring position
     );
 
-    join!(
-        shoot(&intake, &mut shooter),
-        async { // lower intake
-            intake.set_actuate(-0.3);
-            let _ = timeout(Duration::from_millis(1720), wait(|| intake.at_reverse_limit())).await;
-            intake.set_actuate(0.);
-            intake.set_rollers(0.4);
-        },
-    );
+    shoot(&intake, &mut shooter).await;
+    lower_intake(&mut intake).await;
+    intake.set_rollers(0.4);
 
     let mut failure = false;
     join!(
