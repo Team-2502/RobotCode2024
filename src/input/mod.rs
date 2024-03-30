@@ -161,7 +161,7 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
         }
     }
 
-    if operator.get(9) || (matches!(gamepad_state, GamepadState::Manual) && gamepad.a()){
+    if operator.get(9) || (matches!(gamepad_state, GamepadState::Climb) && gamepad.a()){
         let intake = robot.intake.clone();
         executor.spawn_local(async move {
             if let Ok(mut intake) = intake.try_borrow_mut() {

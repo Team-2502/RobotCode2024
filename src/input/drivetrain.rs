@@ -67,7 +67,7 @@ pub async fn control_drivetrain(drivetrain: &mut Drivetrain, controllers: &mut C
         deadrz
     };
 
-    if matches!(gamepad_state, GamepadState::Manual) && gamepad.y() {
+    if matches!(gamepad_state, GamepadState::Climb) && gamepad.y() {
             drivetrain.zero_wheels()
     } else {
         drivetrain.set_speeds(deadly, deadlx, rot);
@@ -75,7 +75,7 @@ pub async fn control_drivetrain(drivetrain: &mut Drivetrain, controllers: &mut C
 
     let angle = drivetrain.get_angle();
 
-    if left_drive.get(4) || matches!(gamepad_state, GamepadState::Manual) && gamepad.x() {
+    if left_drive.get(4) || matches!(gamepad_state, GamepadState::Climb) && gamepad.x() {
         drivetrain.reset_heading();
     }
 
