@@ -19,7 +19,7 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers) 
         intake.set_rollers(1.);
     } else if (operator.get(7) && operator.get(5)) 
         || operator.get(1) || right_drive.get(1) 
-        || matches!(gamepad_state, GamepadState::Manual | GamepadState::Auto) && gamepad.right_bumper() 
+        || matches!(gamepad_state, GamepadState::Manual | GamepadState::Auto | GamepadState::Drive) && gamepad.right_bumper() 
         || matches!(gamepad_state, GamepadState::Manual) && gamepad.left_bumper()
     {
         intake.set_rollers(-1.);

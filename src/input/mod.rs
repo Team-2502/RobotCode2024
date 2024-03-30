@@ -48,6 +48,7 @@ pub enum GamepadState {
     Auto,
     Manual,
     Climb,
+    Drive,
 }
 
 impl Ferris {
@@ -105,6 +106,7 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
         Direction::Left => GamepadState::Manual,
         Direction::Up => GamepadState::Climb,
         Direction::Down => GamepadState::Auto,
+        Direction::Right => GamepadState::Drive,
         _ => *gamepad_state
     };
 
@@ -119,7 +121,7 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
         }
     }
 
-    if (operator.get(6) || matches!(gamepad_state, GamepadState::Auto) && gamepad.left_bumper()) 
+    if (operator.get(6) || matches!(gamepad_state, GamepadState::Auto | GamepadState::Drive) && gamepad.left_bumper()) 
         && robot.grab_full.deref().try_borrow().is_ok_and(|n| n.is_none()) 
             && !operator.get(7) && !operator.get(5) {
         let robot_ = robot.clone();

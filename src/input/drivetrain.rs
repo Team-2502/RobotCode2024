@@ -1,4 +1,5 @@
 use frcrs::{alliance_station, deadzone};
+use nalgebra::ComplexField;
 use uom::si::{angle::{degree, radian}, f64::Angle};
 
 use crate::{constants::drivetrain::{PODIUM_SHOT_ANGLE, SWERVE_TURN_KP}, subsystems::Drivetrain, telemetry};
@@ -16,16 +17,31 @@ pub async fn control_drivetrain(drivetrain: &mut Drivetrain, controllers: &mut C
     let saved_angle = &mut state.saved_angle;
     let gamepad = &mut controllers.gamepad;
     let gamepad_state = &mut controllers.gamepad_state;
-    let joystick_range = 0.04..1.;
-    let power_translate = if left_drive.get(1) { 0.0..0.3 }
-    else { 0.0..1. };
-    let power_rotate = if left_drive.get(1) { 0.0..0.2 }
-    else { 0.0..1. };
-    let deadly = deadzone(left_drive.get_y(), &joystick_range, &power_translate);
-    let deadlx = deadzone(left_drive.get_x(), &joystick_range, &power_translate);
-    let deadrz = deadzone(right_drive.get_z(), &joystick_range, &power_rotate);
 
-    let hold_angle = deadrz == 0. && right_drive.get(3);
+    let joystick_range = 0.04..1.;
+    let mut power_translate = if left_drive.get(1) { 0.0..0.3 }
+    else { 0.0..1. };
+    let mut power_rotate = if left_drive.get(1) { 0.0..0.2 }
+    else { 0.0..1. };
+    let mut deadly = deadzone(left_drive.get_y(), &joystick_range, &power_translate);
+    let mut deadlx = deadzone(left_drive.get_x(), &joystick_range, &power_translate);
+    let mut deadrz = deadzone(right_drive.get_z(), &joystick_range, &power_rotate);
+
+    if matches!(gamepad_state, GamepadState::Drive) {
+        let gamepad_range = 0. .. 1.;
+        let pow = 2.;
+        let pow_rot = 3.;
+
+        power_rotate.end *= 1. - gamepad.right_trigger();
+        power_rotate.start = 0.1;
+        power_translate.end *= 1. - gamepad.left_trigger();
+
+        deadly += deadzone(gamepad.left_y().powf(pow), &gamepad_range, &power_translate);
+        deadlx += deadzone(gamepad.left_x().powf(pow), &gamepad_range, &power_translate);
+        deadrz += deadzone(gamepad.right_x().powf(pow_rot), &gamepad_range, &power_rotate);
+    }
+
+    let hold_angle = deadrz == 0. && (right_drive.get(3) || matches!(gamepad_state, GamepadState::Drive));
 
     if !hold_angle { *saved_angle = Some(drivetrain.get_angle());
     }

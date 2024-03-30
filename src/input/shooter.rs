@@ -30,7 +30,7 @@ pub async fn control_shooter(shooter: &mut Shooter, controllers: &mut Controller
     telemetry::put_number("flywheel speed", shooter.get_velocity()).await;
     telemetry::put_bool("beam break: {}", shooter.contains_note()).await;
 
-    if matches!(gamepad_state, GamepadState::Auto | GamepadState::Manual) {
+    if matches!(gamepad_state, GamepadState::Auto | GamepadState::Manual | GamepadState::Drive) {
         if gamepad.a() { // line shot
             shooter.set_velocity(5500.);
             shooter.stow_amp();
@@ -56,7 +56,8 @@ pub async fn control_shooter(shooter: &mut Shooter, controllers: &mut Controller
     }
     *last_loop = operator.get(2);
 
-    *firing = operator.get(1) || right_drive.get(1) || matches!(gamepad_state, GamepadState::Auto | GamepadState::Manual) && gamepad.right_bumper();
+    *firing = operator.get(1) || right_drive.get(1) || 
+        matches!(gamepad_state, GamepadState::Auto | GamepadState::Manual | GamepadState::Drive) && gamepad.right_bumper();
 
     if *shooting && !*gamepad_spinning {
         if shooter.amp_deployed() && !operator.get(5) {
