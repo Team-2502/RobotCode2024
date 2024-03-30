@@ -1,6 +1,6 @@
 use std::{time::Duration};
 
-use frcrs::{networktables::set_position, alliance_station};
+use frcrs::{alliance_station};
 use nalgebra::{Vector2};
 use tokio::time::{Instant, sleep};
 use uom::si::{angle::{radian}, f64::{Length, Time}, length::{foot, meter}, time::{millisecond, second}, velocity::meter_per_second};

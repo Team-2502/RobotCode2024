@@ -1,8 +1,8 @@
 
-use frcrs::{alliance_station, deadzone};
-use uom::si::{angle::{degree, radian}, f64::Angle};
 
-use crate::{constants::drivetrain::{PODIUM_SHOT_ANGLE, SWERVE_TURN_KP}, subsystems::{Drivetrain, Shooter}, telemetry};
+
+
+use crate::{subsystems::{Shooter}, telemetry};
 
 use super::{Controllers, GamepadState};
 
@@ -18,7 +18,7 @@ pub struct ShooterControlState {
 
 pub async fn control_shooter(shooter: &mut Shooter, controllers: &mut Controllers, state: &mut ShooterControlState) {
     let right_drive = &mut controllers.right_drive;
-    let left_drive = &mut controllers.left_drive;
+    let _left_drive = &mut controllers.left_drive;
     let gamepad = &mut controllers.gamepad;
     let gamepad_state = &mut controllers.gamepad_state;
     let operator = &mut controllers.operator;

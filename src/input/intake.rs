@@ -1,4 +1,4 @@
-use nalgebra::ComplexField;
+
 use uom::si::{angle::degree, f64::Angle};
 
 use crate::{constants::intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, subsystems::Intake, telemetry};

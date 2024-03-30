@@ -9,30 +9,30 @@ pub mod telemetry;
 
 
 use std::borrow::BorrowMut;
-use std::cell::RefCell;
-use std::sync::{Arc, Mutex};
-use std::time::{Instant, Duration};
 
-use auto::{autos, run_auto, Auto};
+
+use std::time::{Instant};
+
+use auto::{run_auto, Auto};
 use constants::TELEMETRY_PORT;
 use input::{Controllers, Ferris, GamepadState};
 
-use frcrs::{alliance_station};
-use frcrs::networktables::{set_position, SmartDashboard};
+
+
 use frcrs::observe_user_program_starting;
 use frcrs::refresh_data;
-use j4rs_derive::call_from_java;
-use j4rs::Jvm;
-use j4rs::prelude::*;
+
+
+
 use frcrs::init_hal;
 use frcrs::hal_report;
 use frcrs::input::{Gamepad, Joystick, RobotState};
 
 use num_traits::{FromPrimitive, ToPrimitive};
 
-use telemetry::{Data, TELEMETRY};
+use telemetry::{Data};
 
-use tokio::time::sleep;
+
 use crate::input::container;
 
 use tokio::task::{self};
@@ -114,7 +114,7 @@ pub fn entrypoint() {
 
 
         let elapsed = last_loop.elapsed().as_secs_f64();
-        let left = (1./50. - elapsed).max(0.);
+        let _left = (1./50. - elapsed).max(0.);
 
         //if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
         //    let red = alliance_station().red();

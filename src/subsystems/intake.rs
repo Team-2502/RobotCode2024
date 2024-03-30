@@ -28,7 +28,7 @@ impl Intake {
         let right_roller = Spark::new(INTAKE_ROLLER_RIGHT, MotorType::Brushless);
 
         let mut left_actuate = Spark::new(INTAKE_ACTUATE_LEFT, MotorType::Brushless);
-        let mut pid = left_actuate.get_pid();
+        let pid = left_actuate.get_pid();
         pid.set_p(0.08);
         pid.set_d(0.45);
 

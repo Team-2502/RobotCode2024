@@ -1,13 +1,13 @@
 
-use uom::si::{angle::degree, f64::Angle};
 
-use crate::{constants::intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, subsystems::{Climber, Intake}, telemetry};
+
+use crate::{subsystems::{Climber}};
 
 use super::{Controllers, GamepadState};
 
 pub async fn control_climber(climber: &mut Climber, controllers: &mut Controllers) {
     let operator = &mut controllers.operator;
-    let right_drive = &mut controllers.right_drive;
+    let _right_drive = &mut controllers.right_drive;
     let left_drive = &mut controllers.left_drive;
     let gamepad = &mut controllers.gamepad;
     let gamepad_state = &mut controllers.gamepad_state;

@@ -1,12 +1,12 @@
-use std::{borrow::BorrowMut, cell::{BorrowMutError, RefCell}, ops::{Deref, DerefMut}, rc::Rc, sync::atomic::AtomicBool, time::Duration};
+use std::{borrow::BorrowMut, cell::{RefCell}, ops::{Deref}, rc::Rc, sync::atomic::AtomicBool, time::Duration};
 
 use frcrs::{alliance_station, input::{Direction, Gamepad, Joystick} };
-use frcrs::networktables::set_position;
+
 use tokio::{task::{JoinHandle, LocalSet}, time::{sleep}};
-use uom::si::{angle::{degree, radian}, f64::Angle};
-use crate::{auto::{lower_intake, raise_intake}, constants::{drivetrain::{PODIUM_SHOT_ANGLE, SWERVE_TURN_KP}, intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, INDICATOR_PORT_LEFT}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, telemetry::{self, TelemetryStore, TELEMETRY}};
-use frcrs::deadzone;
-use j4rs::Jvm;
+
+use crate::{auto::{lower_intake, raise_intake}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, telemetry::{self, TelemetryStore, TELEMETRY}};
+
+
 
 use self::{climber::control_climber, drivetrain::{control_drivetrain, DrivetrainControlState}, intake::control_intake, shooter::{control_shooter, ShooterControlState}};
 
@@ -94,8 +94,8 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
     let firing = &mut shooter_state.firing;
 
     let Controllers {
-        ref mut left_drive,
-        ref mut right_drive,
+        left_drive: _,
+        right_drive: _,
         ref mut operator,
         ref mut gamepad,
         ref mut gamepad_state, 
