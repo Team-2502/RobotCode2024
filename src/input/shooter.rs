@@ -1,8 +1,4 @@
-
-
-
-
-use crate::{subsystems::{Shooter}, telemetry};
+use crate::{subsystems::Shooter, telemetry};
 
 use super::{Controllers, GamepadState};
 
@@ -16,7 +12,11 @@ pub struct ShooterControlState {
     gamepad_spinning_last: bool,
 }
 
-pub async fn control_shooter(shooter: &mut Shooter, controllers: &mut Controllers, state: &mut ShooterControlState) {
+pub async fn control_shooter(
+    shooter: &mut Shooter,
+    controllers: &mut Controllers,
+    state: &mut ShooterControlState,
+) {
     let right_drive = &mut controllers.right_drive;
     let _left_drive = &mut controllers.left_drive;
     let gamepad = &mut controllers.gamepad;
@@ -32,44 +32,52 @@ pub async fn control_shooter(shooter: &mut Shooter, controllers: &mut Controller
     telemetry::put_bool("flywheel state", *shooting).await;
 
     if matches!(gamepad_state, GamepadState::Auto | GamepadState::Drive) {
-        if gamepad.a() { // line shot
-            if right_drive.get(2) {  // podium
+        if gamepad.a() {
+            // line shot
+            if right_drive.get(2) {
+                // podium
                 shooter.set_velocity(2080.);
-                gamepad.rumble_right((2080.-shooter.get_velocity())/2000.);
+                gamepad.rumble_right((2080. - shooter.get_velocity()) / 2000.);
             } else {
                 shooter.set_velocity(5500.);
-                gamepad.rumble_right((5500.-shooter.get_velocity())/2000.);
+                gamepad.rumble_right((5500. - shooter.get_velocity()) / 2000.);
             }
             shooter.stow_amp();
             *gamepad_spinning = true;
-        } else if gamepad.b() { // amp
+        } else if gamepad.b() {
+            // amp
             shooter.set_shooter(0.225);
-            gamepad.rumble_right((1000.-shooter.get_velocity())/2000.);
+            gamepad.rumble_right((1000. - shooter.get_velocity()) / 2000.);
             shooter.deploy_amp();
             *gamepad_spinning = true;
-        } else if gamepad.y() { // pass over stage
+        } else if gamepad.y() {
+            // pass over stage
             shooter.set_shooter(0.4);
-            gamepad.rumble_right((2500.-shooter.get_velocity())/2000.);
+            gamepad.rumble_right((2500. - shooter.get_velocity()) / 2000.);
             *gamepad_spinning = true;
         } else if gamepad.x() {
             shooter.stop_shooter();
             *gamepad_spinning = false;
         } else if matches!(gamepad_state, GamepadState::Manual) && gamepad.right_trigger() > 0. {
             shooter.set_shooter(gamepad.right_trigger());
-            gamepad.rumble_right(shooter.get_velocity()/3000.);
+            gamepad.rumble_right(shooter.get_velocity() / 3000.);
             *gamepad_spinning = true;
         } else {
             gamepad.rumble_right(0.);
         }
     }
 
-    if operator.get(2) && !*last_loop { 
-        *shooting = !*shooting; 
+    if operator.get(2) && !*last_loop {
+        *shooting = !*shooting;
     }
     *last_loop = operator.get(2);
 
-    *firing = operator.get(1) || right_drive.get(1) || 
-        matches!(gamepad_state, GamepadState::Auto | GamepadState::Manual | GamepadState::Drive) && gamepad.right_bumper();
+    *firing = operator.get(1)
+        || right_drive.get(1)
+        || matches!(
+            gamepad_state,
+            GamepadState::Auto | GamepadState::Manual | GamepadState::Drive
+        ) && gamepad.right_bumper();
 
     if *shooting && !*gamepad_spinning {
         if shooter.amp_deployed() && !operator.get(5) {

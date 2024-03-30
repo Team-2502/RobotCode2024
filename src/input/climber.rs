@@ -1,7 +1,4 @@
-
-
-
-use crate::{subsystems::{Climber}};
+use crate::subsystems::Climber;
 
 use super::{Controllers, GamepadState};
 
@@ -23,22 +20,28 @@ pub async fn control_climber(climber: &mut Climber, controllers: &mut Controller
         } else if operator.get(14) {
             climber.set_left(-1.);
             climbing = true;
-        } else if operator.get(13) || matches!(gamepad_state, GamepadState::Climb) && gamepad.left_bumper() {
+        } else if operator.get(13)
+            || matches!(gamepad_state, GamepadState::Climb) && gamepad.left_bumper()
+        {
             climber.set_left(1.);
             climbing = true;
-        } 
+        }
 
         if matches!(gamepad_state, GamepadState::Climb) && gamepad.right_trigger() > 0. {
             climber.set_right(-gamepad.right_trigger());
             climbing = true;
-        } if operator.get(15) {
+        }
+        if operator.get(15) {
             climber.set_right(1.);
             climbing = true;
-        } else if operator.get(12) || matches!(gamepad_state, GamepadState::Climb) && gamepad.right_bumper() {
+        } else if operator.get(12)
+            || matches!(gamepad_state, GamepadState::Climb) && gamepad.right_bumper()
+        {
             climber.set_right(-1.);
             climbing = true;
         }
     };
-    if !climbing { climber.stop(); }
+    if !climbing {
+        climber.stop();
+    }
 }
-

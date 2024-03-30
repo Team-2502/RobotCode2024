@@ -1,12 +1,24 @@
-use std::{time::Duration};
+use std::time::Duration;
 
-use frcrs::{alliance_station};
-use nalgebra::{Vector2};
-use tokio::time::{Instant, sleep};
-use uom::si::{angle::{radian}, f64::{Length, Time}, length::{foot, meter}, time::{millisecond, second}, velocity::meter_per_second};
-use wpi_trajectory::{Path};
+use frcrs::alliance_station;
+use nalgebra::Vector2;
+use tokio::time::{sleep, Instant};
+use uom::si::{
+    angle::radian,
+    f64::{Length, Time},
+    length::{foot, meter},
+    time::{millisecond, second},
+    velocity::meter_per_second,
+};
+use wpi_trajectory::Path;
 
-use crate::{constants::drivetrain::{SWERVE_DRIVE_IE, SWERVE_DRIVE_KD, SWERVE_DRIVE_KF, SWERVE_DRIVE_KFA, SWERVE_DRIVE_KI, SWERVE_DRIVE_KP, SWERVE_DRIVE_MAX_ERR, SWERVE_TURN_KP}, subsystems::Drivetrain};
+use crate::{
+    constants::drivetrain::{
+        SWERVE_DRIVE_IE, SWERVE_DRIVE_KD, SWERVE_DRIVE_KF, SWERVE_DRIVE_KFA, SWERVE_DRIVE_KI,
+        SWERVE_DRIVE_KP, SWERVE_DRIVE_MAX_ERR, SWERVE_TURN_KP,
+    },
+    subsystems::Drivetrain,
+};
 
 pub async fn follow_path(drivetrain: &mut Drivetrain, path: Path) {
     follow_path_range(drivetrain, path, SWERVE_DRIVE_MAX_ERR).await
@@ -21,18 +33,18 @@ pub async fn follow_path_range(drivetrain: &mut Drivetrain, path: Path, max_err:
 
     loop {
         let now = Instant::now();
-        let dt = now-last_loop;
+        let dt = now - last_loop;
         last_loop = now;
 
         let elapsed = Time::new::<second>(start.elapsed().as_secs_f64());
 
         let mut setpoint = path.get(elapsed);
-        let mut setpoint_next = path.get(elapsed + Time::new::<millisecond>(20.)); // bodge 
+        let mut setpoint_next = path.get(elapsed + Time::new::<millisecond>(20.)); // bodge
 
         // TODO: red-blu detection
         if red {
             for setpoint in [&mut setpoint, &mut setpoint_next] {
-                setpoint.y = Length::new::<foot>(54./4.) - setpoint.y;
+                setpoint.y = Length::new::<foot>(54. / 4.) - setpoint.y;
                 setpoint.velocity_y = -setpoint.velocity_y;
                 //setpoint.heading = Angle::new::<degree>(180.)- setpoint.heading;
                 setpoint.heading = -setpoint.heading;
@@ -51,7 +63,10 @@ pub async fn follow_path_range(drivetrain: &mut Drivetrain, path: Path, max_err:
             i += error_position;
         }
 
-        if elapsed > path.length() && error_position.abs().max() < max_err && error_angle.abs() < 0.075  {
+        if elapsed > path.length()
+            && error_position.abs().max() < max_err
+            && error_angle.abs() < 0.075
+        {
             break;
         }
 
@@ -63,9 +78,10 @@ pub async fn follow_path_range(drivetrain: &mut Drivetrain, path: Path, max_err:
         let velocity = Vector2::new(setpoint.velocity_x, setpoint.velocity_y);
         let velocity = velocity.map(|x| x.get::<meter_per_second>());
 
-        let velocity_next = Vector2::new(setpoint.velocity_x, setpoint.velocity_y).map(|x| x.get::<meter_per_second>());
-        
-        let acceleration = (velocity_next - velocity) * 1000./20.;
+        let velocity_next = Vector2::new(setpoint.velocity_x, setpoint.velocity_y)
+            .map(|x| x.get::<meter_per_second>());
+
+        let acceleration = (velocity_next - velocity) * 1000. / 20.;
 
         speed += velocity * -SWERVE_DRIVE_KF;
         speed += acceleration * -SWERVE_DRIVE_KFA;
@@ -73,7 +89,7 @@ pub async fn follow_path_range(drivetrain: &mut Drivetrain, path: Path, max_err:
 
         let speed_s = speed;
         speed += (speed - last_error) * -SWERVE_DRIVE_KD * dt.as_secs_f64() * 9.;
-        last_error =  speed_s;
+        last_error = speed_s;
 
         drivetrain.set_speeds(speed.x, speed.y, error_angle);
 

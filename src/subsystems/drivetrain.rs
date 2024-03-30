@@ -3,17 +3,17 @@ use std::io::{Read, Write};
 
 use frcrs::ctre::{talon_encoder_tick, CanCoder, ControlMode, Talon};
 
+use crate::constants::drivetrain::SWERVE_ROTATIONS_TO_INCHES;
+use crate::constants::*;
+use crate::swerve::kinematics::{ModuleState, Swerve};
+use crate::swerve::odometry::{ModuleReturn, Odometry};
 use frcrs::navx::NavX;
-use nalgebra::{Vector2, Rotation2};
+use nalgebra::{Rotation2, Vector2};
+use serde::Deserialize;
+use serde::Serialize;
 use uom::si::angle::{degree, radian, revolution};
 use uom::si::f64::{Angle, Length};
 use uom::si::length::inch;
-use crate::constants::*;
-use crate::constants::drivetrain::SWERVE_ROTATIONS_TO_INCHES;
-use crate::swerve::kinematics::{Swerve, ModuleState};
-use crate::swerve::odometry::{ModuleReturn, Odometry};
-use serde::Serialize;
-use serde::Deserialize;
 
 pub struct Drivetrain {
     navx: NavX,
@@ -53,7 +53,7 @@ impl Offsets {
         let mut file = File::open(Self::PATH).unwrap();
         let mut buf = String::new();
         file.read_to_string(&mut buf).unwrap();
-        serde_json::from_str(&buf).unwrap_or(Self { offsets: [0.;4] })
+        serde_json::from_str(&buf).unwrap_or(Self { offsets: [0.; 4] })
     }
     fn store(&self) {
         let mut file = File::create(Self::PATH).unwrap();
@@ -75,11 +75,17 @@ impl Drivetrain {
         let bl_turn = Talon::new(BL_TURN, Some("can0".to_owned()));
         let br_turn = Talon::new(BR_TURN, Some("can0".to_owned()));
 
-        for (encoder, offset) in [&fr_encoder, &fl_encoder, &bl_encoder, &br_encoder].iter().zip(absolute_offsets.offsets.iter_mut()) {
+        for (encoder, offset) in [&fr_encoder, &fl_encoder, &bl_encoder, &br_encoder]
+            .iter()
+            .zip(absolute_offsets.offsets.iter_mut())
+        {
             *offset -= encoder.get_absolute();
         }
 
-        for (turn, offset) in [&fr_turn, &fl_turn, &bl_turn, &br_turn].iter().zip(absolute_offsets.offsets.iter_mut()) {
+        for (turn, offset) in [&fr_turn, &fl_turn, &bl_turn, &br_turn]
+            .iter()
+            .zip(absolute_offsets.offsets.iter_mut())
+        {
             *offset -= turn.get_position();
             *offset = 0.;
             dbg!(offset);
@@ -117,7 +123,15 @@ impl Drivetrain {
 
     pub fn write_absolute(&mut self) {
         let mut offsets = Offsets::load();
-        for (encoder, offset) in [&self.fr_encoder, &self.fl_encoder, &self.bl_encoder, &self.br_encoder].iter().zip(offsets.offsets.iter_mut()) {
+        for (encoder, offset) in [
+            &self.fr_encoder,
+            &self.fl_encoder,
+            &self.bl_encoder,
+            &self.br_encoder,
+        ]
+        .iter()
+        .zip(offsets.offsets.iter_mut())
+        {
             *offset = encoder.get_absolute();
         }
 
@@ -141,11 +155,19 @@ impl Drivetrain {
     fn get_positions(&self, angles: &Vec<ModuleState>) -> Vec<ModuleReturn> {
         let mut speeds = Vec::new();
 
-        for (module, offset) in [&self.fr_drive, &self.fl_drive, &self.bl_drive, &self.br_drive].iter().zip(angles.iter()) {
+        for (module, offset) in [
+            &self.fr_drive,
+            &self.fl_drive,
+            &self.bl_drive,
+            &self.br_drive,
+        ]
+        .iter()
+        .zip(angles.iter())
+        {
             let distance = module.get_position() * SWERVE_ROTATIONS_TO_INCHES;
             speeds.push(ModuleReturn {
                 angle: offset.angle.clone(),
-                distance:  Length::new::<inch>(distance),
+                distance: Length::new::<inch>(distance),
             });
         }
 
@@ -155,10 +177,14 @@ impl Drivetrain {
     fn get_speeds(&self) -> Vec<ModuleState> {
         let mut speeds = Vec::new();
 
-        for (module, offset) in [&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn].iter().zip(self.absolute_offsets.offsets.iter()) {
+        for (module, offset) in [&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn]
+            .iter()
+            .zip(self.absolute_offsets.offsets.iter())
+        {
             speeds.push(ModuleState {
                 speed: 0.,
-                angle: Angle::new::<talon_encoder_tick>(-module.get_position()) + Angle::new::<degree>(*offset),
+                angle: Angle::new::<talon_encoder_tick>(-module.get_position())
+                    + Angle::new::<degree>(*offset),
             });
         }
 
@@ -184,8 +210,10 @@ impl Drivetrain {
 
         //println!("angle fr {}", measured[0].angle.get::<revolution>());
 
-        let wheel_speeds: Vec<ModuleState> = wheel_speeds.into_iter().zip(measured.iter())
-            .map(|(calculated,measured)| calculated.optimize(measured))
+        let wheel_speeds: Vec<ModuleState> = wheel_speeds
+            .into_iter()
+            .zip(measured.iter())
+            .map(|(calculated, measured)| calculated.optimize(measured))
             .zip(self.absolute_offsets.offsets.iter())
             .map(|(mut state, offset)| {
                 state.angle -= Angle::new::<degree>(*offset);
@@ -193,23 +221,42 @@ impl Drivetrain {
             })
             .collect();
 
-        self.fr_drive.set(ControlMode::Percent, wheel_speeds[0].speed);
-        self.fl_drive.set(ControlMode::Percent, wheel_speeds[1].speed);
-        self.bl_drive.set(ControlMode::Percent, wheel_speeds[2].speed);
-        self.br_drive.set(ControlMode::Percent, wheel_speeds[3].speed);
+        self.fr_drive
+            .set(ControlMode::Percent, wheel_speeds[0].speed);
+        self.fl_drive
+            .set(ControlMode::Percent, wheel_speeds[1].speed);
+        self.bl_drive
+            .set(ControlMode::Percent, wheel_speeds[2].speed);
+        self.br_drive
+            .set(ControlMode::Percent, wheel_speeds[3].speed);
 
-        self.fr_turn.set(ControlMode::Position, -wheel_speeds[0].angle.get::<talon_encoder_tick>());
-        self.fl_turn.set(ControlMode::Position, -wheel_speeds[1].angle.get::<talon_encoder_tick>());
-        self.bl_turn.set(ControlMode::Position, -wheel_speeds[2].angle.get::<talon_encoder_tick>());
-        self.br_turn.set(ControlMode::Position, -wheel_speeds[3].angle.get::<talon_encoder_tick>());
+        self.fr_turn.set(
+            ControlMode::Position,
+            -wheel_speeds[0].angle.get::<talon_encoder_tick>(),
+        );
+        self.fl_turn.set(
+            ControlMode::Position,
+            -wheel_speeds[1].angle.get::<talon_encoder_tick>(),
+        );
+        self.bl_turn.set(
+            ControlMode::Position,
+            -wheel_speeds[2].angle.get::<talon_encoder_tick>(),
+        );
+        self.br_turn.set(
+            ControlMode::Position,
+            -wheel_speeds[3].angle.get::<talon_encoder_tick>(),
+        );
     }
 
     pub fn dbg_set(&self, angle: f64) {
-
-        println!("front right {}", (Angle::new::<talon_encoder_tick>(-self.fr_turn.get_position())).get::<revolution>());
+        println!(
+            "front right {}",
+            (Angle::new::<talon_encoder_tick>(-self.fr_turn.get_position())).get::<revolution>()
+        );
         println!("front right setting {}", angle);
         let angle = Angle::new::<revolution>(angle);
-        self.fr_turn.set(ControlMode::Position, angle.get::<talon_encoder_tick>());
+        self.fr_turn
+            .set(ControlMode::Position, angle.get::<talon_encoder_tick>());
         //self.fl_turn.set(ControlMode::Position, angle.get::<talon_encoder_tick>());
         //self.bl_turn.set(ControlMode::Position, angle.get::<talon_encoder_tick>());
         //self.br_turn.set(ControlMode::Position, angle.get::<talon_encoder_tick>());
@@ -218,7 +265,10 @@ impl Drivetrain {
     pub fn zero_wheels(&self) {
         let measured = self.get_speeds();
 
-        for (module, motor) in measured.into_iter().zip([&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn].into_iter()) {
+        for (module, motor) in measured
+            .into_iter()
+            .zip([&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn].into_iter())
+        {
             let remainder = module.angle % Angle::new::<degree>(360.);
             let angle = module.angle - remainder;
             motor.set(ControlMode::Position, -angle.get::<talon_encoder_tick>());
@@ -232,8 +282,10 @@ impl Drivetrain {
     pub fn get_offset(&self) -> Angle {
         let mut difference = (self.get_angle() - self.offset).get::<degree>();
 
-        difference = ( difference + 180. ) % 360. - 180.;
-        if difference < -180. { difference += 360. };
+        difference = (difference + 180.) % 360. - 180.;
+        if difference < -180. {
+            difference += 360.
+        };
 
         Angle::new::<degree>(difference)
     }

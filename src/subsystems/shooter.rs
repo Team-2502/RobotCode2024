@@ -1,9 +1,9 @@
+use crate::constants::*;
 use frcrs::dio::DIO;
 use frcrs::rev::MotorType::Brushless;
 use frcrs::rev::Spark;
 use uom::si::angle::revolution;
 use uom::si::f64::Angle;
-use crate::constants::*;
 
 use super::wait;
 
@@ -58,15 +58,18 @@ impl Shooter {
     }
 
     pub fn stow_amp(&mut self) {
-        self.amp_bar.set_position(Angle::new::<revolution>(amp::STOWED_POSITION));
+        self.amp_bar
+            .set_position(Angle::new::<revolution>(amp::STOWED_POSITION));
     }
 
     pub fn deploy_amp(&mut self) {
-        self.amp_bar.set_position(Angle::new::<revolution>(amp::DEPLOYED_POSITION));
+        self.amp_bar
+            .set_position(Angle::new::<revolution>(amp::DEPLOYED_POSITION));
     }
 
     pub fn amp_deployed(&mut self) -> bool {
-        self.amp_bar.get_position().get::<revolution>() < (amp::DEPLOYED_POSITION + amp::STOWED_POSITION)/2.
+        self.amp_bar.get_position().get::<revolution>()
+            < (amp::DEPLOYED_POSITION + amp::STOWED_POSITION) / 2.
     }
 
     pub fn set_amp_bar(&self, value: f64) {
@@ -79,8 +82,10 @@ impl Shooter {
     }
 
     pub fn set_velocity(&mut self, value: f64) {
-        self.shooter_top.set_reference(value, frcrs::rev::ControlType::Velocity);
-        self.shooter_bottom.set_reference(-value, frcrs::rev::ControlType::Velocity);
+        self.shooter_top
+            .set_reference(value, frcrs::rev::ControlType::Velocity);
+        self.shooter_bottom
+            .set_reference(-value, frcrs::rev::ControlType::Velocity);
     }
 
     pub fn contains_note(&self) -> bool {
@@ -94,6 +99,9 @@ impl Shooter {
     }
 
     pub fn get_velocity(&mut self) -> f64 {
-        self.shooter_top.get_velocity().abs().min(self.shooter_bottom.get_velocity().abs())
+        self.shooter_top
+            .get_velocity()
+            .abs()
+            .min(self.shooter_bottom.get_velocity().abs())
     }
 }

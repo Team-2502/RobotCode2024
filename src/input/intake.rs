@@ -1,7 +1,10 @@
-
 use uom::si::{angle::degree, f64::Angle};
 
-use crate::{constants::intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}, subsystems::Intake, telemetry};
+use crate::{
+    constants::intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL},
+    subsystems::Intake,
+    telemetry,
+};
 
 use super::{Controllers, GamepadState};
 
@@ -11,16 +14,26 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers) 
     let gamepad = &mut controllers.gamepad;
     let gamepad_state = &mut controllers.gamepad_state;
     telemetry::put_bool("intake at limit {}", intake.at_limit()).await;
-    telemetry::put_number("intake position {}", intake.actuate_position().get::<degree>()).await;
+    telemetry::put_number(
+        "intake position {}",
+        intake.actuate_position().get::<degree>(),
+    )
+    .await;
 
-    if matches!(gamepad_state, GamepadState::Manual | GamepadState::Auto) && gamepad.left_trigger() > 0. { 
+    if matches!(gamepad_state, GamepadState::Manual | GamepadState::Auto)
+        && gamepad.left_trigger() > 0.
+    {
         intake.set_rollers(gamepad.left_trigger());
-        gamepad.rumble_left(intake.roller_current()/30.);
-    } else if operator.get(8) && operator.get(5)  {
+        gamepad.rumble_left(intake.roller_current() / 30.);
+    } else if operator.get(8) && operator.get(5) {
         intake.set_rollers(1.);
-    } else if (operator.get(7) && operator.get(5)) 
-        || operator.get(1) || right_drive.get(1) 
-        || matches!(gamepad_state, GamepadState::Manual | GamepadState::Auto | GamepadState::Drive) && gamepad.right_bumper() 
+    } else if (operator.get(7) && operator.get(5))
+        || operator.get(1)
+        || right_drive.get(1)
+        || matches!(
+            gamepad_state,
+            GamepadState::Manual | GamepadState::Auto | GamepadState::Drive
+        ) && gamepad.right_bumper()
         || matches!(gamepad_state, GamepadState::Manual) && gamepad.left_bumper()
     {
         intake.set_rollers(-1.);
@@ -38,11 +51,12 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers) 
             intake.stop_actuate();
         }
     } else {
-        if operator.get(3) || matches!(gamepad_state, GamepadState::Auto) && gamepad.right_stick()  {
+        if operator.get(3) || matches!(gamepad_state, GamepadState::Auto) && gamepad.right_stick() {
             intake.actuate_to(Angle::new::<degree>(INTAKE_UP_GOAL));
-        } else if operator.get(4) || matches!(gamepad_state, GamepadState::Auto) && gamepad.left_stick() {
+        } else if operator.get(4)
+            || matches!(gamepad_state, GamepadState::Auto) && gamepad.left_stick()
+        {
             intake.actuate_to(Angle::new::<degree>(INTAKE_DOWN_GOAL));
         }
     }
 }
-

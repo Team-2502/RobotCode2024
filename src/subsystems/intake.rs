@@ -1,9 +1,12 @@
 use std::time::Duration;
 
-use frcrs::{rev::{MotorType, Spark}, dio::DIO};
+use crate::constants::*;
+use frcrs::{
+    dio::DIO,
+    rev::{MotorType, Spark},
+};
 use tokio::time::sleep;
 use uom::si::{angle::degree, f64::Angle};
-use crate::constants::*;
 
 use self::intake::INTAKE_ZERO_POINT;
 
@@ -84,14 +87,14 @@ impl Intake {
     }
 
     pub fn stalled(&mut self) -> bool {
-        self.left_roller.get_current() > intake::INTAKE_OCCUPIED_CURRENT &&
-            self.left_roller.get_velocity() < intake::INTAKE_OCCUPIED_VELOCITY
+        self.left_roller.get_current() > intake::INTAKE_OCCUPIED_CURRENT
+            && self.left_roller.get_velocity() < intake::INTAKE_OCCUPIED_VELOCITY
     }
 
     /// finished accelerating
     pub fn running(&mut self) -> bool {
-        self.left_roller.get_current() < intake::INTAKE_OCCUPIED_CURRENT &&
-            self.left_roller.get_velocity() > intake::INTAKE_FREE_VELOCITY
+        self.left_roller.get_current() < intake::INTAKE_OCCUPIED_CURRENT
+            && self.left_roller.get_velocity() > intake::INTAKE_FREE_VELOCITY
     }
 
     pub fn cam_limit(&self) -> bool {
@@ -126,20 +129,26 @@ impl Intake {
         self.set_actuate(-0.15);
         wait(|| !self.at_limit()).await;
         self.set_actuate(0.);
-        self.actuate_zero = self.left_actuate.get_position() - Angle::new::<degree>(INTAKE_ZERO_POINT);
+        self.actuate_zero =
+            self.left_actuate.get_position() - Angle::new::<degree>(INTAKE_ZERO_POINT);
     }
 
     /// 0deg is stowed
     /// 180deg is out
     pub fn actuate_to(&mut self, angle: Angle) {
-        self.left_actuate.set_position(angle * COUNTS_PER_REVOLUTION + self.actuate_zero)
+        self.left_actuate
+            .set_position(angle * COUNTS_PER_REVOLUTION + self.actuate_zero)
     }
 }
 
-pub async fn wait<F>(mut condition: F) 
-    where F: FnMut() -> bool {
-        loop {
-            if condition() { return };
-            sleep(Duration::from_millis(20)).await;
-        }
+pub async fn wait<F>(mut condition: F)
+where
+    F: FnMut() -> bool,
+{
+    loop {
+        if condition() {
+            return;
+        };
+        sleep(Duration::from_millis(20)).await;
+    }
 }

@@ -1,8 +1,12 @@
-use std::f64::consts::{FRAC_PI_2};
-use uom::{si::{angle::{degree, radian}, f64::Length, length::inch}};
+use std::f64::consts::FRAC_PI_2;
 use uom::si::f64::*;
+use uom::si::{
+    angle::{degree, radian},
+    f64::Length,
+    length::inch,
+};
 
-use nalgebra::{Vector2, Rotation2, ComplexField};
+use nalgebra::{ComplexField, Rotation2, Vector2};
 
 pub type WheelSpeeds = Vec<ModuleState>;
 pub type ModulePosition = Vector2<f64>;
@@ -18,8 +22,10 @@ impl ModuleState {
         let angle = self.angle.get::<degree>();
         let other_angle = other.angle.get::<degree>();
 
-        let mut difference = ( angle - other_angle + 180. ) % 360. - 180.;
-        if difference < -180. { difference += 360. };
+        let mut difference = (angle - other_angle + 180.) % 360. - 180.;
+        if difference < -180. {
+            difference += 360.
+        };
 
         if difference.abs() > 90. {
             self.speed *= -1.;
@@ -42,7 +48,7 @@ pub struct Swerve {
 }
 
 impl Swerve {
-    pub fn rectangle(width: Length, height: Length) -> Self { 
+    pub fn rectangle(width: Length, height: Length) -> Self {
         let mut positions: Vec<ModulePosition> = Vec::new();
 
         let x = width.get::<inch>() / 2.0;
@@ -52,7 +58,7 @@ impl Swerve {
         positions.push(ModulePosition::new(-x, -y));
         positions.push(ModulePosition::new(x, -y));
 
-        Self { positions } 
+        Self { positions }
     }
 
     /// Calculate module speeds from the given transform and rotation
@@ -99,7 +105,6 @@ impl Swerve {
 
         speeds
     }
-
 }
 
 pub trait ToTalonEncoder {
@@ -119,9 +124,13 @@ impl ToTalonEncoder for f64 {
 
 #[cfg(test)]
 mod tests {
-    
+
     use nalgebra::Vector2;
-    use uom::si::{f64::{Angle, Length}, angle::degree, length::inch};
+    use uom::si::{
+        angle::degree,
+        f64::{Angle, Length},
+        length::inch,
+    };
 
     use crate::swerve::kinematics::ModuleState;
 
@@ -161,9 +170,18 @@ mod tests {
 
     #[test]
     fn opposite() {
-        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(180.) };
-        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
-        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(0.) };
+        let this = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(180.),
+        };
+        let other = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(0.),
+        };
+        let goal = ModuleState {
+            speed: -1.,
+            angle: Angle::new::<degree>(0.),
+        };
 
         let to = this.optimize(&other);
 
@@ -172,9 +190,18 @@ mod tests {
 
     #[test]
     fn close_cycle() {
-        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(45.) };
-        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(360.) };
-        let goal = ModuleState { speed: 1., angle: Angle::new::<degree>(360. + 45.) };
+        let this = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(45.),
+        };
+        let other = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(360.),
+        };
+        let goal = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(360. + 45.),
+        };
 
         let to = this.optimize(&other);
 
@@ -183,9 +210,18 @@ mod tests {
 
     #[test]
     fn close() {
-        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(45.) };
-        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
-        let goal = ModuleState { speed: 1., angle: Angle::new::<degree>(45.) };
+        let this = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(45.),
+        };
+        let other = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(0.),
+        };
+        let goal = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(45.),
+        };
 
         let to = this.optimize(&other);
 
@@ -194,9 +230,18 @@ mod tests {
 
     #[test]
     fn close_opposite() {
-        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(45. + 180.) };
-        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
-        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(45.) };
+        let this = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(45. + 180.),
+        };
+        let other = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(0.),
+        };
+        let goal = ModuleState {
+            speed: -1.,
+            angle: Angle::new::<degree>(45.),
+        };
 
         let to = this.optimize(&other);
 
@@ -205,21 +250,38 @@ mod tests {
 
     #[test]
     fn zero_negative() {
-        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(-360. * 2.) };
-        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
-        let goal = ModuleState { speed: 1., angle: Angle::new::<degree>(0.) };
+        let this = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(-360. * 2.),
+        };
+        let other = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(0.),
+        };
+        let goal = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(0.),
+        };
 
         let to = this.optimize(&other);
 
         assert_eq!(to, goal);
-
     }
 
     #[test]
     fn zero_negative_far() {
-        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(-360. * 2.) };
-        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(360. + 180.) };
-        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(360. + 180.) };
+        let this = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(-360. * 2.),
+        };
+        let other = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(360. + 180.),
+        };
+        let goal = ModuleState {
+            speed: -1.,
+            angle: Angle::new::<degree>(360. + 180.),
+        };
 
         let to = this.optimize(&other);
 
@@ -228,9 +290,18 @@ mod tests {
 
     #[test]
     fn negative_far_close() {
-        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(-360. * 2. + 1.) };
-        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(360. + 180.) };
-        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(360. + 180. + 1.) };
+        let this = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(-360. * 2. + 1.),
+        };
+        let other = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(360. + 180.),
+        };
+        let goal = ModuleState {
+            speed: -1.,
+            angle: Angle::new::<degree>(360. + 180. + 1.),
+        };
 
         let to = this.optimize(&other);
 
@@ -239,9 +310,18 @@ mod tests {
 
     #[test]
     fn negative_far_close_below() {
-        let this = ModuleState { speed: 1., angle: Angle::new::<degree>(-360. * 2. - 30.) };
-        let other = ModuleState { speed: 1., angle: Angle::new::<degree>(360. + 180.) };
-        let goal = ModuleState { speed: -1., angle: Angle::new::<degree>(360. + 180. - 30.) };
+        let this = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(-360. * 2. - 30.),
+        };
+        let other = ModuleState {
+            speed: 1.,
+            angle: Angle::new::<degree>(360. + 180.),
+        };
+        let goal = ModuleState {
+            speed: -1.,
+            angle: Angle::new::<degree>(360. + 180. - 30.),
+        };
         let to = this.optimize(&other);
 
         assert_eq!(to, goal);

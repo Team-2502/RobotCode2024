@@ -1,20 +1,28 @@
-use std::{sync::Arc, collections::HashMap, time::Instant, };
-use axum::{Router, extract::{State, Path}, routing::{get, post}, response::{IntoResponse}, Json, http::{StatusCode, Response, HeaderValue, header}, body::Body,  };
+use axum::{
+    body::Body,
+    extract::{Path, State},
+    http::{header, HeaderValue, Response, StatusCode},
+    response::IntoResponse,
+    routing::{get, post},
+    Json, Router,
+};
 use include_dir::Dir;
 use lazy_static::lazy_static;
+use std::{collections::HashMap, sync::Arc, time::Instant};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
 use crate::auto::Auto;
 
 pub type TelemetryStore = Arc<RwLock<Telemetry>>;
 
-lazy_static!{
-        pub static ref TELEMETRY: TelemetryStore = {
-
+lazy_static! {
+    pub static ref TELEMETRY: TelemetryStore = {
         let mut telemetry: Telemetry = Default::default();
-        telemetry.data.insert("auto chooser".to_owned(), Data::Picker(Auto::picker()));
+        telemetry
+            .data
+            .insert("auto chooser".to_owned(), Data::Picker(Auto::picker()));
         Arc::new(RwLock::new(telemetry))
     };
 }
@@ -73,7 +81,8 @@ async fn set_key(
     "Success"
 }
 
-async fn get_key(State(state): State<TelemetryStore>,
+async fn get_key(
+    State(state): State<TelemetryStore>,
     Path(key): Path<String>,
 ) -> Json<Option<Data>> {
     Json(state.read().await.data.get(&key).cloned())
@@ -83,10 +92,7 @@ async fn get_keys(State(state): State<TelemetryStore>) -> Json<Vec<String>> {
     Json(state.read().await.data.keys().cloned().collect())
 }
 
-async fn set_position(
-    State(state): State<TelemetryStore>,
-    Json(pose): Json<Pose>,
-    ) -> &'static str {
+async fn set_position(State(state): State<TelemetryStore>, Json(pose): Json<Pose>) -> &'static str {
     let pose = (Instant::now(), pose);
     println!("apriltag pose at x{} y{}", pose.1.x, pose.1.y);
     state.write().await.apriltag_pose = Some(pose);
@@ -106,10 +112,10 @@ async fn frontend(Path(path): Path<Vec<String>>) -> impl IntoResponse {
     let mime_type = mime_guess::from_path(path).first_or_text_plain();
 
     match STATIC_DIR.get_file(path) {
-        None => {  Response::builder()
+        None => Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body(Body::empty())
-            .unwrap() },
+            .unwrap(),
         Some(file) => Response::builder()
             .status(StatusCode::OK)
             .header(
@@ -122,9 +128,17 @@ async fn frontend(Path(path): Path<Vec<String>>) -> impl IntoResponse {
 }
 
 pub async fn put_number(key: &str, value: f64) {
-    TELEMETRY.write().await.data.insert(key.to_owned(), Data::Number(value));
+    TELEMETRY
+        .write()
+        .await
+        .data
+        .insert(key.to_owned(), Data::Number(value));
 }
 
 pub async fn put_bool(key: &str, value: bool) {
-    TELEMETRY.write().await.data.insert(key.to_owned(), Data::Bool(value));
+    TELEMETRY
+        .write()
+        .await
+        .data
+        .insert(key.to_owned(), Data::Bool(value));
 }

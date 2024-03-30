@@ -14,13 +14,11 @@ pub const BR_DRIVE: i32 = 10;
 pub const BR_TURN: i32 = 11;
 pub const BR_ENCODER: i32 = 12;
 
-
 pub const INTAKE_ROLLER_LEFT: i32 = 1;
 pub const INTAKE_ROLLER_RIGHT: i32 = 2;
 
 pub const INTAKE_ACTUATE_LEFT: i32 = 3;
 pub const INTAKE_ACTUATE_RIGHT: i32 = 4;
-
 
 pub const SHOOTER_FEEDER_TOP: i32 = 5;
 pub const SHOOTER_FEEDER_BOTTOM: i32 = 6;
@@ -49,15 +47,14 @@ pub mod intake {
     pub const INTAKE_OCCUPIED_CURRENT: f64 = 20.;
     pub const INTAKE_OCCUPIED_VELOCITY: f64 = 2000.;
     /// velocity that intake acceleration is "over" at
-    pub const INTAKE_FREE_VELOCITY: f64 = 2000.; 
+    pub const INTAKE_FREE_VELOCITY: f64 = 2000.;
 
-    pub const INTAKE_DOWN_THRESHOLD: f64 = -120.; 
-    pub const INTAKE_UP_THRESHOLD: f64 = -3.; 
-    pub const INTAKE_DOWN_GOAL: f64 = -142.; 
-    pub const INTAKE_UP_GOAL: f64 = 40.; 
+    pub const INTAKE_DOWN_THRESHOLD: f64 = -120.;
+    pub const INTAKE_UP_THRESHOLD: f64 = -3.;
+    pub const INTAKE_DOWN_GOAL: f64 = -142.;
+    pub const INTAKE_UP_GOAL: f64 = 40.;
 
-    pub const INTAKE_ZERO_POINT: f64 = 3.; 
-
+    pub const INTAKE_ZERO_POINT: f64 = 3.;
 }
 
 pub mod drivetrain {
@@ -65,7 +62,7 @@ pub mod drivetrain {
 
     pub const SWERVE_TURN_KP: f64 = 0.3;
 
-    pub const SWERVE_ROTATIONS_TO_INCHES: f64 = (1./6.75) * (4. * PI);
+    pub const SWERVE_ROTATIONS_TO_INCHES: f64 = (1. / 6.75) * (4. * PI);
 
     pub const SWERVE_DRIVE_KP: f64 = 0.3;
     pub const SWERVE_DRIVE_KI: f64 = 0.;

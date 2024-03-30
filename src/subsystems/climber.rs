@@ -1,6 +1,6 @@
-use frcrs::rev::Spark;
-use frcrs::rev::MotorType::Brushless;
 use crate::constants::*;
+use frcrs::rev::MotorType::Brushless;
+use frcrs::rev::Spark;
 
 pub struct Climber {
     left: Spark,
