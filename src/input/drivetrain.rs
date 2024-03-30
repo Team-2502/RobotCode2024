@@ -30,15 +30,14 @@ pub async fn control_drivetrain(drivetrain: &mut Drivetrain, controllers: &mut C
     if matches!(gamepad_state, GamepadState::Drive) {
         let gamepad_range = 0. .. 1.;
         let pow = 2.;
-        let pow_rot = 3.;
 
-        power_rotate.end *= 1. - gamepad.right_trigger();
+        power_rotate.end *= 1. - gamepad.right_trigger() * 0.7;
         power_rotate.start = 0.1;
-        power_translate.end *= 1. - gamepad.left_trigger();
+        power_translate.end *= 1. - gamepad.left_trigger() * 0.7;
 
         deadly += deadzone(gamepad.left_y().powf(pow), &gamepad_range, &power_translate);
         deadlx += deadzone(gamepad.left_x().powf(pow), &gamepad_range, &power_translate);
-        deadrz += deadzone(gamepad.right_x().powf(pow_rot), &gamepad_range, &power_rotate);
+        deadrz += deadzone(gamepad.right_x().powf(pow), &gamepad_range, &power_rotate);
     }
 
     let hold_angle = deadrz == 0. && (right_drive.get(3) || matches!(gamepad_state, GamepadState::Drive));
@@ -66,12 +65,11 @@ pub async fn control_drivetrain(drivetrain: &mut Drivetrain, controllers: &mut C
         deadrz
     };
 
-    if deadrz != 0. || deadlx != 0. || deadly != 0. {
+    if matches!(gamepad_state, GamepadState::Manual) && gamepad.y() {
+            drivetrain.zero_wheels()
+    } else {
         drivetrain.set_speeds(deadly, deadlx, rot);
-    } else if matches!(gamepad_state, GamepadState::Manual) && gamepad.y() {
-        drivetrain.zero_wheels()
     }
-
 
     let angle = drivetrain.get_angle();
 

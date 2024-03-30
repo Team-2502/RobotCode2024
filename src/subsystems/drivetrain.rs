@@ -5,7 +5,7 @@ use frcrs::ctre::{talon_encoder_tick, CanCoder, ControlMode, Talon};
 
 use frcrs::navx::NavX;
 use nalgebra::{Vector2, Rotation2};
-use uom::si::angle::{degree, radian};
+use uom::si::angle::{degree, radian, revolution};
 use uom::si::f64::{Angle, Length};
 use uom::si::length::inch;
 use crate::constants::*;
@@ -158,7 +158,7 @@ impl Drivetrain {
         for (module, offset) in [&self.fr_turn, &self.fl_turn, &self.bl_turn, &self.br_turn].iter().zip(self.absolute_offsets.offsets.iter()) {
             speeds.push(ModuleState {
                 speed: 0.,
-                angle: Angle::new::<degree>(-module.get_position()) + Angle::new::<degree>(*offset),
+                angle: Angle::new::<talon_encoder_tick>(-module.get_position()) + Angle::new::<degree>(*offset),
             });
         }
 
@@ -202,6 +202,17 @@ impl Drivetrain {
         self.fl_turn.set(ControlMode::Position, -wheel_speeds[1].angle.get::<talon_encoder_tick>());
         self.bl_turn.set(ControlMode::Position, -wheel_speeds[2].angle.get::<talon_encoder_tick>());
         self.br_turn.set(ControlMode::Position, -wheel_speeds[3].angle.get::<talon_encoder_tick>());
+    }
+
+    pub fn dbg_set(&self, angle: f64) {
+
+        println!("front right {}", (Angle::new::<talon_encoder_tick>(-self.fr_turn.get_position())).get::<revolution>());
+        println!("front right setting {}", angle);
+        let angle = Angle::new::<revolution>(angle);
+        self.fr_turn.set(ControlMode::Position, angle.get::<talon_encoder_tick>());
+        //self.fl_turn.set(ControlMode::Position, angle.get::<talon_encoder_tick>());
+        //self.bl_turn.set(ControlMode::Position, angle.get::<talon_encoder_tick>());
+        //self.br_turn.set(ControlMode::Position, angle.get::<talon_encoder_tick>());
     }
 
     pub fn zero_wheels(&self) {

@@ -35,7 +35,8 @@ pub const CLIMBER_RIGHT: i32 = 10;
 
 pub const BEAM_BREAK_EMITTER: i32 = 2;
 pub const BEAM_BREAK_SIGNAL: i32 = 1;
-pub const INTAKE_LIMIT: i32 = 3;
+pub const INTAKE_LIMIT: i32 = 0;
+pub const INTAKE_CAM_LIMIT: i32 = 3;
 
 pub const INDICATOR_PORT_LEFT: i32 = 4;
 pub const INDICATOR_PORT_RIGHT: i32 = 5;

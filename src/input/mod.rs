@@ -64,10 +64,6 @@ impl Ferris {
 }
 
 pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, executor: &'a LocalSet) {
-    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
-    let climber = robot.climber.deref().borrow();
-    let mut shooter_state = robot.shooter_state.deref().borrow_mut();
-    let (shooting, last_loop) = &mut *shooter_state;
     let TeleopState { 
         ref mut drivetrain_state,
         ref mut shooter_state,
@@ -75,6 +71,8 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
 
     if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
         control_drivetrain(&mut drivetrain, controllers, drivetrain_state).await;
+    } else {
+        
     }
     
     if let Ok(mut intake) = robot.intake.try_borrow_mut() {
@@ -92,6 +90,9 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
     let red = alliance_station().red();
     telemetry::put_bool("red", red).await;
 
+    let staging = &mut shooter_state.staging;
+    let firing = &mut shooter_state.firing;
+
     let Controllers {
         ref mut left_drive,
         ref mut right_drive,
@@ -99,8 +100,6 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
         ref mut gamepad,
         ref mut gamepad_state, 
     } = controllers;
-    let staging = &mut shooter_state.staging;
-    let firing = &mut shooter_state.firing;
 
     *gamepad_state = match gamepad.get_dpad_direction() {
         Direction::Left => GamepadState::Manual,
@@ -161,8 +160,6 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
             stage.abort();
         }
     }
-
-    telemetry::put_bool("flywheel state", *shooting).await;
 
     if operator.get(9) || (matches!(gamepad_state, GamepadState::Manual) && gamepad.a()){
         let intake = robot.intake.clone();

@@ -13,6 +13,7 @@ pub struct Intake {
     right_actuate: Spark,
 
     limit: DIO,
+    cam_limit: DIO,
 
     actuate_zero: Angle,
 }
@@ -32,6 +33,7 @@ impl Intake {
         let right_actuate = Spark::new(INTAKE_ACTUATE_RIGHT, MotorType::Brushless);
 
         let limit = DIO::new(INTAKE_LIMIT);
+        let cam_limit = DIO::new(INTAKE_CAM_LIMIT);
 
         Self {
             left_roller,
@@ -41,6 +43,7 @@ impl Intake {
             right_actuate,
 
             limit,
+            cam_limit,
 
             actuate_zero: Angle::new::<degree>(0.),
         }
@@ -74,6 +77,10 @@ impl Intake {
         //self.right_actuate.set(value);
     }
 
+    pub fn roller_current(&mut self) -> f64 {
+        self.left_roller.get_current()
+    }
+
     pub fn stalled(&mut self) -> bool {
         self.left_roller.get_current() > intake::INTAKE_OCCUPIED_CURRENT &&
             self.left_roller.get_velocity() < intake::INTAKE_OCCUPIED_VELOCITY
@@ -83,6 +90,10 @@ impl Intake {
     pub fn running(&mut self) -> bool {
         self.left_roller.get_current() < intake::INTAKE_OCCUPIED_CURRENT &&
             self.left_roller.get_velocity() > intake::INTAKE_FREE_VELOCITY
+    }
+
+    pub fn cam_limit(&self) -> bool {
+        !self.cam_limit.get()
     }
 
     pub fn at_limit(&self) -> bool {

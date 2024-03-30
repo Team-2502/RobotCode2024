@@ -7,6 +7,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkFlex;
+import com.ctre.phoenix6.StatusSignal;
 import static com.revrobotics.CANSparkMax.ControlType;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
@@ -117,6 +118,10 @@ public class Wrapper {
 
     public static RumbleType kRightRumble() {
         return RumbleType.kRightRumble;
+    }
+
+    public static double getValue(StatusSignal<Double> holder) {
+        return holder.getValue();
     }
 
     /*public static void setSpeed(TalonFX motor, double speed) {
