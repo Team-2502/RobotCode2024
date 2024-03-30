@@ -8,7 +8,7 @@ use frcrs::{
 use tokio::time::sleep;
 use uom::si::{angle::degree, f64::Angle};
 
-use self::intake::INTAKE_ZERO_POINT;
+use self::intake::{INTAKE_DEGREES_PER_SECOND, INTAKE_ZERO_POINT};
 
 pub struct Intake {
     left_roller: Spark,
@@ -138,6 +138,21 @@ impl Intake {
     pub fn actuate_to(&mut self, angle: Angle) {
         self.left_actuate
             .set_position(angle * COUNTS_PER_REVOLUTION + self.actuate_zero)
+    }
+
+    /// 0deg is stowed
+    /// 180deg is out
+    pub fn actuate_to_trapezoid(&mut self, angle: Angle, dt: &Duration) {
+        let current = self.left_actuate.get_position();
+        let goal = angle * COUNTS_PER_REVOLUTION + self.actuate_zero;
+        let max = dt.as_secs_f64() * INTAKE_DEGREES_PER_SECOND;
+        let max = Angle::new::<degree>(max);
+        let compromise = if goal > current {
+            goal.min(current+max)
+        } else {
+            goal.max(current-max)
+        };
+        self.left_actuate.set_position(compromise)
     }
 }
 

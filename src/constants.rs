@@ -1,3 +1,4 @@
+pub const FPS_LIMIT: f64 = 500.;
 pub const FR_DRIVE: i32 = 1;
 pub const FR_TURN: i32 = 2;
 pub const FR_ENCODER: i32 = 3;
@@ -55,6 +56,8 @@ pub mod intake {
     pub const INTAKE_UP_GOAL: f64 = 40.;
 
     pub const INTAKE_ZERO_POINT: f64 = 3.;
+
+    pub const INTAKE_DEGREES_PER_SECOND: f64 = 15.;
 }
 
 pub mod drivetrain {

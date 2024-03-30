@@ -9,9 +9,11 @@ pub mod telemetry;
 
 use std::borrow::BorrowMut;
 
+use std::time::Duration;
 use std::time::Instant;
 
 use auto::{run_auto, Auto};
+use constants::FPS_LIMIT;
 use constants::TELEMETRY_PORT;
 use input::{Controllers, Ferris, GamepadState};
 
@@ -25,6 +27,7 @@ use frcrs::input::{Gamepad, Joystick, RobotState};
 use num_traits::{FromPrimitive, ToPrimitive};
 
 use telemetry::Data;
+use tokio::time::sleep;
 
 use crate::input::container;
 
@@ -73,13 +76,14 @@ pub fn entrypoint() {
         let mut auto = None;
 
         let mut last_loop = Instant::now();
+        let mut dt = Duration::from_millis(0);
         loop {
             refresh_data();
 
             let state = RobotState::get();
 
             if state.enabled() && state.teleop() && !state.test() {
-                container(&mut controllers, &mut robot, &local).await;
+                container(&mut controllers, &mut robot, &local, dt.clone()).await;
             };
 
             if state.enabled() && state.auto() {
@@ -114,17 +118,11 @@ pub fn entrypoint() {
                 robot.drivetrain.deref().borrow_mut().write_absolute();
             }
 
-            let elapsed = last_loop.elapsed().as_secs_f64();
-            let _left = (1. / 50. - elapsed).max(0.);
+            dt = last_loop.elapsed();
+            let elapsed = dt.as_secs_f64();
+            let left = (1. / FPS_LIMIT - elapsed).max(0.);
 
-            //if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
-            //    let red = alliance_station().red();
-            //    drivetrain.odometry.update_from_vision(TELEMETRY.clone(), red).await;
-            //    let angle = drivetrain.get_angle();
-            //    set_position(drivetrain.odometry.position, -angle);
-            //}
-
-            //sleep(Duration::from_secs_f64(left)).await;
+            sleep(Duration::from_secs_f64(left)).await;
             telemetry::put_number("loop rate (hz)", 1. / last_loop.elapsed().as_secs_f64()).await;
             last_loop = Instant::now();
             //println!("hz {}", 1./last_loop.elapsed().as_secs_f64());

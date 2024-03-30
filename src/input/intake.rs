@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use uom::si::{angle::degree, f64::Angle};
 
 use crate::{
@@ -8,7 +10,7 @@ use crate::{
 
 use super::{Controllers, GamepadState};
 
-pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers) {
+pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers, dt: &Duration) {
     let operator = &mut controllers.operator;
     let right_drive = &mut controllers.right_drive;
     let gamepad = &mut controllers.gamepad;
@@ -52,11 +54,11 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers) 
         }
     } else {
         if operator.get(3) || matches!(gamepad_state, GamepadState::Auto) && gamepad.right_stick() {
-            intake.actuate_to(Angle::new::<degree>(INTAKE_UP_GOAL));
+            intake.actuate_to_trapezoid(Angle::new::<degree>(INTAKE_UP_GOAL), &dt);
         } else if operator.get(4)
             || matches!(gamepad_state, GamepadState::Auto) && gamepad.left_stick()
         {
-            intake.actuate_to(Angle::new::<degree>(INTAKE_DOWN_GOAL));
+            intake.actuate_to_trapezoid(Angle::new::<degree>(INTAKE_DOWN_GOAL), &dt);
         }
     }
 }

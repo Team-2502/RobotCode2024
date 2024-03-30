@@ -93,6 +93,7 @@ pub async fn container<'a>(
     controllers: &mut Controllers,
     robot: &'a Ferris,
     executor: &'a LocalSet,
+    dt: Duration,
 ) {
     let TeleopState {
         ref mut drivetrain_state,
@@ -105,7 +106,7 @@ pub async fn container<'a>(
     }
 
     if let Ok(mut intake) = robot.intake.try_borrow_mut() {
-        control_intake(&mut intake, controllers).await;
+        control_intake(&mut intake, controllers, &dt).await;
     }
 
     if let Ok(mut shooter) = robot.shooter.try_borrow_mut() {
