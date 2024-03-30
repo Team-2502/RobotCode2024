@@ -21,7 +21,8 @@ $(DEPLOY): $(dir $(DEPLOY)) $(OUT)
 
 .PHONY: deploy-scp
 deploy-scp: $(OUT)
-	scp $(OUT) lvuser@10.$(TEAM).2:
+	ssh lvuser@10.$(TEAM).2 /usr/local/frc/bin/frcKillRobot.sh
+	scp $(OUT) admin@10.$(TEAM).2:/home/lvuser
 
 .PHONY: deploy
 deploy: $(DEPLOY)
