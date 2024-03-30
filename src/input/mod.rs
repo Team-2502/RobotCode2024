@@ -43,7 +43,7 @@ pub struct Controllers {
     pub gamepad_state: GamepadState
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum GamepadState {
     Auto,
     Manual,
@@ -119,14 +119,14 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
         }
     }
 
-    if (operator.get(6) || (matches!(gamepad_state, GamepadState::Auto) && gamepad.left_bumper())) 
+    if (operator.get(6) || matches!(gamepad_state, GamepadState::Auto) && gamepad.left_bumper()) 
         && robot.grab_full.deref().try_borrow().is_ok_and(|n| n.is_none()) 
             && !operator.get(7) && !operator.get(5) {
         let robot_ = robot.clone();
         robot.grab_full.replace(Some(executor.spawn_local(async move {
             let _ = grab_full(robot_).await;
         })));
-    } else if !operator.get(6) || *firing {
+    } else if !operator.get(6) || *firing || matches!(gamepad_state, GamepadState::Auto) && !gamepad.left_bumper() {
         if let Some(grab_full) = robot.grab_full.take() {
             grab_full.abort();
         }
@@ -154,7 +154,7 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
                 stage(&mut intake, &shooter).await;
             }
         })));
-    } else if !operator.get(7) || *firing {
+    } else if !operator.get(7) || *firing || matches!(gamepad_state, GamepadState::Auto) && gamepad.right_trigger() < 0.2{
         if let Some(stage) = robot.stage.take() {
             stage.abort();
         }

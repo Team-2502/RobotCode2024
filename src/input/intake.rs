@@ -11,7 +11,6 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers) 
     let gamepad = &mut controllers.gamepad;
     let gamepad_state = &mut controllers.gamepad_state;
     telemetry::put_bool("intake at limit {}", intake.at_limit()).await;
-    telemetry::put_bool("intake at reverse limit {}", intake.at_reverse_limit()).await;
     telemetry::put_number("intake position {}", intake.actuate_position().get::<degree>()).await;
 
     if matches!(gamepad_state, GamepadState::Manual | GamepadState::Auto) && gamepad.left_trigger() > 0. { 
@@ -29,9 +28,9 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers) 
     }
 
     if operator.get(5) || matches!(gamepad_state, GamepadState::Manual) {
-        if (operator.get(3) || gamepad.left_stick()) && !intake.at_limit() {
+        if operator.get(3) || gamepad.left_stick() {
             intake.set_actuate(0.3);
-        } else if (operator.get(4) || gamepad.right_stick()) && !intake.at_reverse_limit() {
+        } else if operator.get(4) || gamepad.right_stick() {
             intake.set_actuate(-0.3);
         } else {
             intake.stop_actuate();

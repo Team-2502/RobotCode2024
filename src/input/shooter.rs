@@ -45,6 +45,9 @@ pub async fn control_shooter(shooter: &mut Shooter, controllers: &mut Controller
         } else if gamepad.x() {
             shooter.stop_shooter();
             *gamepad_spinning = false;
+        } else if matches!(gamepad_state, GamepadState::Manual) && gamepad.right_trigger() > 0. {
+            shooter.set_shooter(gamepad.right_trigger());
+            *gamepad_spinning = true;
         }
     }
 
@@ -63,7 +66,7 @@ pub async fn control_shooter(shooter: &mut Shooter, controllers: &mut Controller
         } else {
             shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
         }
-    } else {
+    } else if !*gamepad_spinning {
         shooter.stop_shooter();
     }
 
@@ -88,6 +91,12 @@ pub async fn control_shooter(shooter: &mut Shooter, controllers: &mut Controller
             shooter.set_feeder(-1.);
         } else if matches!(gamepad_state, GamepadState::Manual) && gamepad.left_trigger() > 0. {
             shooter.set_feeder(gamepad.left_trigger());
+        } else if matches!(gamepad_state, GamepadState::Manual) && gamepad.left_bumper() {
+            if shooter.contains_note() {
+                shooter.set_feeder(0.1);
+            } else {
+                shooter.set_feeder(-0.3);
+            }
         } else if operator.get(10) {
             shooter.set_feeder(0.5);
         } else {

@@ -23,7 +23,7 @@ pub async fn control_climber(climber: &mut Climber, controllers: &mut Controller
         } else if operator.get(14) {
             climber.set_left(-1.);
             climbing = true;
-        } else if operator.get(13) {
+        } else if operator.get(13) || matches!(gamepad_state, GamepadState::Climb) && gamepad.left_bumper() {
             climber.set_left(1.);
             climbing = true;
         } 
@@ -34,7 +34,7 @@ pub async fn control_climber(climber: &mut Climber, controllers: &mut Controller
         } if operator.get(15) {
             climber.set_right(1.);
             climbing = true;
-        } else if operator.get(12) {
+        } else if operator.get(12) || matches!(gamepad_state, GamepadState::Climb) && gamepad.right_bumper() {
             climber.set_right(-1.);
             climbing = true;
         }
