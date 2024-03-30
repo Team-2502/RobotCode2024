@@ -77,7 +77,7 @@ pub async fn follow_path_range(drivetrain: &mut Drivetrain, path: Path, max_err:
 
         drivetrain.set_speeds(speed.x, speed.y, error_angle);
 
-        set_position(drivetrain.odometry.position, -drivetrain.get_angle());
+        //set_position(drivetrain.odometry.position, -drivetrain.get_angle());
 
         sleep(Duration::from_millis(20)).await;
     }

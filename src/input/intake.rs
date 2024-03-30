@@ -15,7 +15,7 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers) 
 
     if matches!(gamepad_state, GamepadState::Manual | GamepadState::Auto) && gamepad.left_trigger() > 0. { 
         intake.set_rollers(gamepad.left_trigger());
-        //gamepad.rumble_left(intake.roller_current()/30.);
+        gamepad.rumble_left(intake.roller_current()/30.);
     } else if operator.get(8) && operator.get(5)  {
         intake.set_rollers(1.);
     } else if (operator.get(7) && operator.get(5)) 
@@ -26,13 +26,13 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers) 
         intake.set_rollers(-1.);
     } else {
         intake.stop_rollers();
-        //gamepad.rumble_left(0.);
+        gamepad.rumble_left(0.);
     }
 
     if operator.get(5) || matches!(gamepad_state, GamepadState::Manual) {
-        if operator.get(3) || gamepad.left_stick() {
+        if operator.get(3) || gamepad.right_stick() {
             intake.set_actuate(0.3);
-        } else if operator.get(4) || gamepad.right_stick() {
+        } else if operator.get(4) || gamepad.left_stick() {
             intake.set_actuate(-0.3);
         } else {
             intake.stop_actuate();

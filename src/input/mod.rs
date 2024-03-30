@@ -1,4 +1,4 @@
-use std::{borrow::BorrowMut, cell::{BorrowMutError, RefCell}, ops::{Deref, DerefMut}, rc::Rc, time::Duration};
+use std::{borrow::BorrowMut, cell::{BorrowMutError, RefCell}, ops::{Deref, DerefMut}, rc::Rc, sync::atomic::AtomicBool, time::Duration};
 
 use frcrs::{alliance_station, input::{Direction, Gamepad, Joystick} };
 use frcrs::networktables::set_position;
@@ -120,30 +120,30 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
         }
     }
 
+    static CRASHED: AtomicBool = AtomicBool::new(false);
     if (operator.get(6) || matches!(gamepad_state, GamepadState::Auto | GamepadState::Drive) && gamepad.left_bumper()) 
-        && robot.grab_full.deref().try_borrow().is_ok_and(|n| n.is_none()) 
+        && (robot.grab_full.deref().try_borrow().is_ok_and(|n| n.is_none()) || CRASHED.load(std::sync::atomic::Ordering::SeqCst)) 
             && !operator.get(7) && !operator.get(5) {
         let robot_ = robot.clone();
+        CRASHED.store(false, std::sync::atomic::Ordering::SeqCst);
         robot.grab_full.replace(Some(executor.spawn_local(async move {
-            let _ = grab_full(robot_).await;
+            if let Err(_) = grab_full(robot_).await {
+                CRASHED.store(true, std::sync::atomic::Ordering::SeqCst);
+            }
         })));
-    } else if !operator.get(6) || *firing || matches!(gamepad_state, GamepadState::Auto) && !gamepad.left_bumper() {
+    } else if !operator.get(6)&& !matches!(gamepad_state, GamepadState::Auto) 
+        || *firing 
+            || matches!(gamepad_state, GamepadState::Auto) && !gamepad.left_bumper() {
         if let Some(grab_full) = robot.grab_full.take() {
             grab_full.abort();
         }
     }
 
-    let not = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_none());
     *staging = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_some());
     if (operator.get(7) || (matches!(gamepad_state, GamepadState::Auto) && gamepad.right_trigger() > 0.3))
-        && !operator.get(5) && not && robot.shooter.try_borrow().is_ok_and(|s| !s.contains_note()) {
-
-        // drop grab if done
-        if robot.grab.deref().try_borrow().is_ok_and(|n| n.as_ref().is_some_and(|n| n.is_finished())) {
-            if let Ok(mut grab) = robot.grab.deref().try_borrow_mut() {
-                *grab = None;
-            }
-        }
+        && !operator.get(5) 
+            && robot.stage.deref().try_borrow().is_ok_and(|n| n.is_none())            
+            && robot.shooter.try_borrow().is_ok_and(|s| !s.contains_note()) {
 
         let intake = robot.intake.clone();
         let shooter = robot.shooter.clone();
@@ -155,7 +155,7 @@ pub async fn container<'a>(controllers: &mut Controllers, robot: &'a Ferris, exe
                 stage(&mut intake, &shooter).await;
             }
         })));
-    } else if !operator.get(7) || *firing || matches!(gamepad_state, GamepadState::Auto) && gamepad.right_trigger() < 0.2{
+    } else if (!operator.get(7)&& !matches!(gamepad_state, GamepadState::Auto)) || *firing || matches!(gamepad_state, GamepadState::Auto) && gamepad.right_trigger() < 0.2 {
         if let Some(stage) = robot.stage.take() {
             stage.abort();
         }

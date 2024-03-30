@@ -33,22 +33,33 @@ pub async fn control_shooter(shooter: &mut Shooter, controllers: &mut Controller
 
     if matches!(gamepad_state, GamepadState::Auto | GamepadState::Drive) {
         if gamepad.a() { // line shot
-            shooter.set_velocity(5500.);
+            if right_drive.get(2) {  // podium
+                shooter.set_velocity(2080.);
+                gamepad.rumble_right((2080.-shooter.get_velocity())/2000.);
+            } else {
+                shooter.set_velocity(5500.);
+                gamepad.rumble_right((5500.-shooter.get_velocity())/2000.);
+            }
             shooter.stow_amp();
             *gamepad_spinning = true;
         } else if gamepad.b() { // amp
-            shooter.set_velocity(1917.);
+            shooter.set_shooter(0.225);
+            gamepad.rumble_right((1000.-shooter.get_velocity())/2000.);
             shooter.deploy_amp();
             *gamepad_spinning = true;
         } else if gamepad.y() { // pass over stage
-            shooter.set_velocity(3000.);
+            shooter.set_shooter(0.4);
+            gamepad.rumble_right((2500.-shooter.get_velocity())/2000.);
             *gamepad_spinning = true;
         } else if gamepad.x() {
             shooter.stop_shooter();
             *gamepad_spinning = false;
         } else if matches!(gamepad_state, GamepadState::Manual) && gamepad.right_trigger() > 0. {
             shooter.set_shooter(gamepad.right_trigger());
+            gamepad.rumble_right(shooter.get_velocity()/3000.);
             *gamepad_spinning = true;
+        } else {
+            gamepad.rumble_right(0.);
         }
     }
 

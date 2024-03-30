@@ -684,9 +684,10 @@ async fn bottom_close(robot: Ferris) {
 
     shooter.set_velocity(5500.);
 
+    intake.zero().await;
     join!(
         drive("BottomClose.1", &mut drivetrain), // scoring position
-        intake.zero(),
+        //intake.zero(),
     );
 
     join!(
@@ -735,12 +736,12 @@ async fn bottom_close(robot: Ferris) {
 
     shoot(&intake, &mut shooter).await;
     
-    drive("BottomClose.6", &mut drivetrain).await;
+    //drive("BottomClose.6", &mut drivetrain).await;
 
     let mut failure = false;
 
     join!(
-        drive("BottomClose.7", &mut drivetrain), // goto note
+        drive("BottomClose.6", &mut drivetrain), // goto note
         async {
             lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(2500), intake.grab()).await.is_err();
@@ -753,10 +754,18 @@ async fn bottom_close(robot: Ferris) {
 
     let _ = join!(
         timeout(Duration::from_millis(1000),stage(&mut intake, &shooter)),
-        drive("BottomClose.8", &mut drivetrain) // scoring position
+        drive("BottomClose.7", &mut drivetrain) // scoring position
     );
 
-    shoot(&intake, &mut shooter).await;
+    wait(|| shooter.get_velocity() > 5400.).await;
+    intake.set_rollers(-1.);
+    shooter.set_feeder(-1.);
+    join!(
+        wait(|| shooter.get_velocity() < 5300.),
+        sleep(Duration::from_millis(570)),
+    );
+    shooter.set_feeder(0.);
+    intake.set_rollers(0.);
 
     shooter.set_shooter(0.);
 }
@@ -970,17 +979,17 @@ async fn odo_test(robot: Ferris) {
 }
 
 async fn shoot(intake: &Intake, shooter: &mut Shooter) {
-    wait(|| shooter.get_velocity() > 5490.).await;
+    wait(|| shooter.get_velocity() > 5400.).await;
     intake.set_rollers(-1.);
     shooter.set_feeder(-1.);
-    wait(|| shooter.get_velocity() < 5375.).await;
+    wait(|| shooter.get_velocity() < 5300.).await;
     shooter.set_feeder(0.);
     intake.set_rollers(0.);
 }
 
 async fn sushi_shoot(shooter: &mut Shooter) {
-    wait(|| shooter.get_velocity() > 5490.).await;
+    wait(|| shooter.get_velocity() > 5400.).await;
     shooter.set_feeder(-1.);
-    wait(|| shooter.get_velocity() < 5375.).await;
+    wait(|| shooter.get_velocity() < 5300.).await;
     shooter.set_feeder(0.);
 }

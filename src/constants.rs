@@ -56,6 +56,8 @@ pub mod intake {
     pub const INTAKE_DOWN_GOAL: f64 = -142.; 
     pub const INTAKE_UP_GOAL: f64 = 40.; 
 
+    pub const INTAKE_ZERO_POINT: f64 = 3.; 
+
 }
 
 pub mod drivetrain {

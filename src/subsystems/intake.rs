@@ -5,6 +5,8 @@ use tokio::time::sleep;
 use uom::si::{angle::degree, f64::Angle};
 use crate::constants::*;
 
+use self::intake::INTAKE_ZERO_POINT;
+
 pub struct Intake {
     left_roller: Spark,
     right_roller: Spark,
@@ -124,7 +126,7 @@ impl Intake {
         self.set_actuate(-0.15);
         wait(|| !self.at_limit()).await;
         self.set_actuate(0.);
-        self.actuate_zero = self.left_actuate.get_position();
+        self.actuate_zero = self.left_actuate.get_position() - Angle::new::<degree>(INTAKE_ZERO_POINT);
     }
 
     /// 0deg is stowed
