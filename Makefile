@@ -1,4 +1,4 @@
-LIB=libRobotCode2024.so
+LIB=RobotCode2024
 OUT=target/arm-unknown-linux-gnueabi/release/$(LIB)
 DEPLOY=javastub/src/main/deploy/$(LIB)
 TEAM=25.02
@@ -22,7 +22,7 @@ $(DEPLOY): $(dir $(DEPLOY)) $(OUT)
 .PHONY: deploy-scp
 deploy-scp: $(OUT)
 	ssh lvuser@10.$(TEAM).2 /usr/local/frc/bin/frcKillRobot.sh
-	scp $(OUT) admin@10.$(TEAM).2:/home/lvuser
+	scp $(OUT) lvuser@10.$(TEAM).2:
 
 .PHONY: deploy
 deploy: $(DEPLOY)
