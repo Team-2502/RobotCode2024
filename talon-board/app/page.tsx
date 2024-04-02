@@ -37,7 +37,6 @@ export default function Home() {
 
         setInterval(() => get("get/loop rate (hz)").then(value => setHz(Number.parseFloat(JSON.parse(value)["Number"]))), 500)
         setInterval(() => get("get/flywheel state").then(value => {
-            console.log(value);
             setFlywheelState(JSON.parse(value)["Bool"]);
         }), 250)
     }, []);
@@ -66,7 +65,7 @@ export default function Home() {
   if (!autos) return (<></>);
 
   return (
-      <section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
+      <section style={{background: flywheelState ? "green" : "red"}} className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
           <a>{"Hz: " + hz.toFixed(2)}</a>
           <a>{`Flywheel State: ${flywheelState}`}</a>
           <div className="flex flex-col gap-4 w-full">
