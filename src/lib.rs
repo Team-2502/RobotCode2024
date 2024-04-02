@@ -50,7 +50,7 @@ pub fn entrypoint() {
             panic!("Failed to init HAL")
         }
 
-        hal_report(2, 3, 0, "2024.2.1".to_string());
+        hal_report(2, 7, 0, "2024.2.1".to_string());
 
         let left_drive = Joystick::new(1);
         let right_drive = Joystick::new(0);
