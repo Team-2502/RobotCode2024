@@ -28,6 +28,10 @@ deploy-scp: $(OUT)
 deploy: $(DEPLOY)
 	cd javastub; ./gradlew deploy
 
+.PHONY: deploy-static
+deploy-static: 
+	cd javastub; ./gradlew deployfrcStaticFileDeployroborio 
+
 .PHONY: win
 win:
 	cargo build --release --target arm-unknown-linux-gnueabi
