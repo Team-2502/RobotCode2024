@@ -19,14 +19,19 @@ $(dir $(DEPLOY)):
 $(DEPLOY): $(dir $(DEPLOY)) $(OUT)
 	cp $(OUT) $(dir $(DEPLOY))
 
+# just deploys robotcode
 .PHONY: deploy-scp
 deploy-scp: $(OUT)
 	ssh lvuser@10.$(TEAM).2 /usr/local/frc/bin/frcKillRobot.sh
 	scp $(OUT) lvuser@10.$(TEAM).2:
+	ssh lvuser@10.$(TEAM).2 /usr/local/frc/bin/frcRunRobot.sh
 
+# Deploys the "deploy" directory and robotcode
 .PHONY: deploy
-deploy: $(DEPLOY)
+deploy: $(OUT)
 	cd javastub; ./gradlew deploy
+	ssh lvuser@10.$(TEAM).2 cp robotCommand3 robotCommand
+	ssh lvuser@10.$(TEAM).2 chmod +x robotCommand
 
 .PHONY: deploy-static
 deploy-static: 
