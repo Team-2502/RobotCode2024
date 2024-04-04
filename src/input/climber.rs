@@ -28,7 +28,7 @@ pub async fn control_climber(climber: &mut Climber, controllers: &mut Controller
         }
 
         if matches!(gamepad_state, GamepadState::Climb) && gamepad.right_trigger() > 0. {
-            climber.set_right(-gamepad.right_trigger());
+            climber.set_right(gamepad.right_trigger());
             climbing = true;
         }
         if operator.get(15) {
