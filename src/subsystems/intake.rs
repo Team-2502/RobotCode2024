@@ -114,7 +114,7 @@ impl Intake {
     }
 
     pub async fn grab(&mut self) {
-        self.set_rollers(0.4);
+        self.set_rollers(0.6);
         wait(|| self.running()).await;
         wait(|| self.stalled()).await;
         self.stop_rollers();
