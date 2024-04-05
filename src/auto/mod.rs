@@ -233,12 +233,12 @@ async fn top_stop(robot: Ferris) {
     );
 
     shoot(&intake, &mut shooter).await;
+    lower_intake(&mut intake).await;
 
     let mut failure = false;
     join!(
         drive("TopStop.4", &mut drivetrain), // next note
         async {
-            lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(2000), intake.grab())
                 .await
                 .is_err();
@@ -255,13 +255,13 @@ async fn top_stop(robot: Ferris) {
     );
 
     shoot(&intake, &mut shooter).await;
+    lower_intake(&mut intake).await;
 
     let mut failure = false;
 
     join!(
         drive_err("TopStop.6", &mut drivetrain, SWERVE_DRIVE_SUGGESTION_ERR),
         async {
-            lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(2500), intake.grab())
                 .await
                 .is_err();
@@ -747,10 +747,9 @@ async fn bottom_close(robot: Ferris) {
 
     shooter.set_velocity(5500.);
 
-    intake.zero().await;
     join!(
         drive("BottomClose.1", &mut drivetrain), // scoring position
-                                                 //intake.zero(),
+        intake.zero(),
     );
 
     join!(sushi_shoot(&mut shooter), lower_intake(&mut intake));
@@ -778,11 +777,12 @@ async fn bottom_close(robot: Ferris) {
 
     shoot(&intake, &mut shooter).await;
 
+    lower_intake(&mut intake).await;
+
     let mut failure = false;
     join!(
         drive("BottomClose.4", &mut drivetrain), // next note
         async {
-            lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(2000), intake.grab())
                 .await
                 .is_err();
@@ -800,6 +800,8 @@ async fn bottom_close(robot: Ferris) {
 
     shoot(&intake, &mut shooter).await;
 
+    lower_intake(&mut intake).await;
+
     //drive("BottomClose.6", &mut drivetrain).await;
 
     let mut failure = false;
@@ -807,7 +809,6 @@ async fn bottom_close(robot: Ferris) {
     join!(
         drive("BottomClose.6", &mut drivetrain), // goto note
         async {
-            lower_intake(&mut intake).await;
             failure = timeout(Duration::from_millis(2500), intake.grab())
                 .await
                 .is_err();
