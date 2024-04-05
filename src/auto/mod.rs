@@ -17,7 +17,7 @@ use crate::{
         drivetrain::SWERVE_DRIVE_SUGGESTION_ERR,
         intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD},
     },
-    input::{stage, Ferris},
+    input::{lower_intake_trapezoidal, raise_intake_trapezoidal, stage, Ferris},
     subsystems::{wait, Intake, Shooter},
     telemetry::Picker,
 };
@@ -31,50 +31,47 @@ pub mod path;
 
 #[derive(Clone, FromPrimitive, ToPrimitive)]
 pub enum Auto {
-    TopBlock,
-    BottomCloseWait,
     TopStop,
     BottomClose,
     TopWait,
-    SourceTwo,
-    ZeroIntake,
-    Short,
-    PathTest,
-    Bottom,
-    Center,
-    Top,
-    TopCenter,
-    BottomOut,
+    TopBlock,
+    BottomCloseWait,
     BottomWait,
-    StageCloseFar,
-    OdoTest,
+    //SourceTwo,
+    ZeroIntake,
+    //Short,
+    //PathTest,
+    //Bottom,
+    //Center,
+    //Top,
+    //TopCenter,
+    //BottomOut,
+    //StageCloseFar,
+    //OdoTest,
     Nop,
-    Nop2,
-    Nop3,
-    Nop4,
 }
 
 impl Auto {
     pub fn name(&self) -> &'static str {
         match self {
-            Auto::Short => "close",
-            Auto::PathTest => "test",
+            //Auto::Short => "close",
+            //Auto::PathTest => "test",
             Auto::Nop => "hit the bell with the glock a couple times",
-            Auto::Top => "near amp 4 note, swing b4 last",
+            //Auto::Top => "near amp 4 note, swing b4 last",
             Auto::TopStop => "near amp 4 note, stop b4 last",
-            Auto::Center => "untested riley brain vomit",
-            Auto::Bottom => "internal then far (2 note)",
+            //Auto::Center => "untested riley brain vomit",
+            //Auto::Bottom => "internal then far (2 note)",
             Auto::ZeroIntake => "zero intake rotation",
-            Auto::TopCenter => "anish triple (internal then far)",
-            Auto::BottomOut => "internal then far not through stage (2 note)",
+            //Auto::TopCenter => "anish triple (internal then far)",
+            //Auto::BottomOut => "internal then far not through stage (2 note)",
             Auto::BottomClose => "near stage start 4 note",
             Auto::BottomCloseWait => "near stage start 2 note, delayed start",
-            Auto::SourceTwo => "near source start 2 note, second from bottom",
+            //Auto::SourceTwo => "near source start 2 note, second from bottom",
             Auto::BottomWait => "near stage wait 7s one note",
             Auto::TopWait => "near amp wait 7s one note",
             Auto::TopBlock => "near amp wait one note stop mid",
-            Auto::StageCloseFar => "Stage close far",
-            Auto::OdoTest => "Odo Test",
+            //Auto::StageCloseFar => "Stage close far",
+            //Auto::OdoTest => "Odo Test",
             _ => "shoot a chicken",
         }
     }
@@ -120,32 +117,32 @@ impl AutoChooser {
 
 pub async fn run_auto(auto: Auto, robot: Ferris) {
     match auto {
-        Auto::Short => auto_short(robot).await,
-        Auto::Top => top(robot).await,
+        //Auto::Short => auto_short(robot).await,
+        //Auto::Top => top(robot).await,
         Auto::TopStop => top_stop(robot).await,
-        Auto::Center => center(robot).await,
-        Auto::Bottom => bottom(robot).await,
-        Auto::BottomOut => bottom_out(robot).await,
+        //Auto::Center => center(robot).await,
+        //Auto::Bottom => bottom(robot).await,
+        //Auto::BottomOut => bottom_out(robot).await,
         Auto::BottomClose => bottom_close(robot).await,
         Auto::BottomCloseWait => bottom_close_wait(robot).await,
         Auto::BottomWait => bottom_one(robot).await,
         Auto::TopWait => top_one(robot).await,
         Auto::TopBlock => top_one_block(robot).await,
-        Auto::TopCenter => Triple_Note(robot).await,
-        Auto::SourceTwo => source_out(robot).await,
-        Auto::StageCloseFar => stage_close_far(robot).await,
-        Auto::OdoTest => odo_test(robot).await,
-        Auto::PathTest => {
-            let _name = "Example.1";
-            let _drivetrain = robot.drivetrain.borrow_mut();
-            //drive(name, &mut drivetrain, telemetry.clone()).await;
-            let mut shooter = robot.shooter.borrow_mut();
-            let mut intake = robot.intake.borrow_mut();
-            intake.zero().await;
-            stage(&mut intake, &mut shooter).await;
-            //raise_intake(&mut intake).await;
-            //lower_intake(&mut intake).await;
-        }
+        //Auto::TopCenter => Triple_Note(robot).await,
+        //Auto::SourceTwo => source_out(robot).await,
+        //Auto::StageCloseFar => stage_close_far(robot).await,
+        //Auto::OdoTest => odo_test(robot).await,
+        //Auto::PathTest => {
+        //    let _name = "Example.1";
+        //    let _drivetrain = robot.drivetrain.borrow_mut();
+        //    //drive(name, &mut drivetrain, telemetry.clone()).await;
+        //    let mut shooter = robot.shooter.borrow_mut();
+        //    let mut intake = robot.intake.borrow_mut();
+        //    intake.zero().await;
+        //    stage(&mut intake, &mut shooter).await;
+        //    //raise_intake(&mut intake).await;
+        //    //lower_intake(&mut intake).await;
+        //}
         Auto::ZeroIntake => {
             let mut intake = robot.intake.borrow_mut();
             intake.zero().await;
@@ -693,7 +690,7 @@ async fn bottom_out(robot: Ferris) {
     let mut shooter = robot.shooter.deref().borrow_mut();
     let _telemetry = robot.telemetry.clone();
 
-    drivetrain.odometry.set(Vector2::new(0.467, 4.044));
+    drivetrain.odometry.set(Vector2::new(0.4808354377746582, 4.043473720550537));
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
