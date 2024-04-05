@@ -254,12 +254,12 @@ async fn grab_full(robot: Ferris) -> anyhow::Result<()> {
     let shooter = robot.shooter.clone();
     let mut intake = intake.deref().try_borrow_mut()?;
     let shooter = shooter.deref().try_borrow()?;
-    lower_intake_trapezoidal(&mut intake).await;
+    lower_intake(&mut intake).await;
     intake.set_rollers(0.6);
     wait(|| intake.running()).await;
     wait(|| intake.stalled()).await;
     intake.set_rollers(1.);
-    raise_intake_trapezoidal(&mut intake).await;
+    raise_intake(&mut intake).await;
     sleep(Duration::from_millis(200)).await;
     intake.set_rollers(-0.43);
     shooter.set_feeder(-0.34);
