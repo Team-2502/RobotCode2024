@@ -1,4 +1,4 @@
-pub const FPS_LIMIT: f64 = 500.;
+pub const FPS_LIMIT: f64 = 50.;
 pub const FR_DRIVE: i32 = 1;
 pub const FR_TURN: i32 = 2;
 pub const FR_ENCODER: i32 = 3;
@@ -50,14 +50,14 @@ pub mod intake {
     /// velocity that intake acceleration is "over" at
     pub const INTAKE_FREE_VELOCITY: f64 = 2000.;
 
-    pub const INTAKE_DOWN_THRESHOLD: f64 = -120.;
-    pub const INTAKE_UP_THRESHOLD: f64 = -3.;
-    pub const INTAKE_DOWN_GOAL: f64 = -142.;
-    pub const INTAKE_UP_GOAL: f64 = 40.;
+    pub const INTAKE_DOWN_THRESHOLD: f64 = -67.;
+    pub const INTAKE_UP_THRESHOLD: f64 = -3.7;
+    pub const INTAKE_DOWN_GOAL: f64 = -70.;
+    pub const INTAKE_UP_GOAL: f64 = 4.5;
 
     pub const INTAKE_ZERO_POINT: f64 = 3.;
 
-    pub const INTAKE_DEGREES_PER_SECOND: f64 = 15.;
+    pub const INTAKE_DEGREES_PER_SECOND: f64 = 135.;
 }
 
 pub mod drivetrain {

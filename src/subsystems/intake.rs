@@ -1,6 +1,6 @@
-use std::time::Duration;
+use std::{sync::atomic::{AtomicI64, Ordering}, time::Duration};
 
-use crate::constants::*;
+use crate::{constants::*, subsystems::intake::intake::{INTAKE_DOWN_GOAL, INTAKE_UP_GOAL}};
 use frcrs::{
     dio::DIO,
     rev::{MotorType, Spark},
@@ -140,19 +140,38 @@ impl Intake {
             .set_position(angle * COUNTS_PER_REVOLUTION + self.actuate_zero)
     }
 
+
     /// 0deg is stowed
     /// 180deg is out
-    pub fn actuate_to_trapezoid(&mut self, angle: Angle, dt: &Duration) {
-        let current = self.left_actuate.get_position();
-        let goal = angle * COUNTS_PER_REVOLUTION + self.actuate_zero;
-        let max = dt.as_secs_f64() * INTAKE_DEGREES_PER_SECOND;
-        let max = Angle::new::<degree>(max);
+    pub fn actuate_to_trapezoid_rdy(&mut self, angle: Angle, dt: &Duration) -> bool {
+        // bodge
+        static ANGLE: AtomicI64 = AtomicI64::new((0) as i64 * 100);
+
+        let current = ANGLE.load(Ordering::SeqCst) as f64 / 100.;
+        let max = dt.as_secs_f64() * INTAKE_DEGREES_PER_SECOND * 6.;
+        let goal = angle.get::<degree>();
+
+        println!("at {current}, goal {goal}");
+
         let compromise = if goal > current {
             goal.min(current+max)
         } else {
             goal.max(current-max)
         };
-        self.left_actuate.set_position(compromise)
+
+        ANGLE.store((compromise * 100.) as i64, Ordering::SeqCst);
+        println!("setting {compromise}");
+
+        let compromise = Angle::new::<degree>(compromise);
+        self.left_actuate.set_position(compromise * COUNTS_PER_REVOLUTION + self.actuate_zero);
+
+        goal == current
+    }
+
+    /// 0deg is stowed
+    /// 180deg is out
+    pub fn actuate_to_trapezoid(&mut self, angle: Angle, dt: &Duration) {
+        self.actuate_to_trapezoid_rdy(angle, dt);
     }
 }
 

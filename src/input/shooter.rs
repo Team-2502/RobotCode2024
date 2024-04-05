@@ -29,9 +29,9 @@ pub async fn control_shooter(
     let gamepad_spinning = &mut state.gamepad_spinning;
     telemetry::put_number("flywheel speed", shooter.get_velocity()).await;
     telemetry::put_bool("beam break: {}", shooter.contains_note()).await;
-    telemetry::put_bool("flywheel state", *shooting).await;
+    telemetry::put_bool("flywheel state", *gamepad_spinning).await;
 
-    if matches!(gamepad_state, GamepadState::Auto | GamepadState::Drive) {
+    if matches!(gamepad_state, GamepadState::Auto | GamepadState::Drive | GamepadState::Manual) {
         if gamepad.a() {
             // line shot
             if right_drive.get(2) {
@@ -39,8 +39,8 @@ pub async fn control_shooter(
                 shooter.set_velocity(2080.);
                 gamepad.rumble_right((2080. - shooter.get_velocity()) / 2000.);
             } else {
-                shooter.set_velocity(5500.);
-                gamepad.rumble_right((5500. - shooter.get_velocity()) / 2000.);
+                shooter.set_velocity(5000.);
+                gamepad.rumble_right((5000. - shooter.get_velocity()) / 2000.);
             }
             shooter.stow_amp();
             *gamepad_spinning = true;

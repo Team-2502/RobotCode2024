@@ -45,7 +45,7 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers, 
     }
 
     if operator.get(5) || matches!(gamepad_state, GamepadState::Manual) {
-        if operator.get(3) || gamepad.right_stick() {
+        if operator.get(3) || gamepad.right_stick() && !intake.at_limit() {
             intake.set_actuate(0.3);
         } else if operator.get(4) || gamepad.left_stick() {
             intake.set_actuate(-0.3);
@@ -55,10 +55,12 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers, 
     } else {
         if operator.get(3) || matches!(gamepad_state, GamepadState::Auto) && gamepad.right_stick() {
             intake.actuate_to_trapezoid(Angle::new::<degree>(INTAKE_UP_GOAL), &dt);
+            //intake.actuate_to(Angle::new::<degree>(INTAKE_UP_GOAL));
         } else if operator.get(4)
             || matches!(gamepad_state, GamepadState::Auto) && gamepad.left_stick()
         {
             intake.actuate_to_trapezoid(Angle::new::<degree>(INTAKE_DOWN_GOAL), &dt);
+            //intake.actuate_to(Angle::new::<degree>(INTAKE_DOWN_GOAL));
         }
     }
 }

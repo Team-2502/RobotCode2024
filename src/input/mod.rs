@@ -11,11 +11,10 @@ use tokio::{
     task::{JoinHandle, LocalSet},
     time::sleep,
 };
+use uom::si::{angle::degree, f64::Angle};
 
 use crate::{
-    auto::{lower_intake, raise_intake},
-    subsystems::{wait, Climber, Drivetrain, Intake, Shooter},
-    telemetry::{self, TelemetryStore, TELEMETRY},
+    auto::{lower_intake, raise_intake}, constants::intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, telemetry::{self, TelemetryStore, TELEMETRY}
 };
 
 use self::{
@@ -255,11 +254,42 @@ async fn grab_full(robot: Ferris) -> anyhow::Result<()> {
     let shooter = robot.shooter.clone();
     let mut intake = intake.deref().try_borrow_mut()?;
     let shooter = shooter.deref().try_borrow()?;
-    lower_intake(&mut intake).await;
+    lower_intake_trapezoidal(&mut intake).await;
     intake.set_rollers(0.6);
     wait(|| intake.running()).await;
     wait(|| intake.stalled()).await;
-    intake.stop_rollers();
-    stage(&mut intake, &shooter).await;
+    intake.set_rollers(1.);
+    raise_intake_trapezoidal(&mut intake).await;
+    sleep(Duration::from_millis(200)).await;
+    intake.set_rollers(-0.43);
+    shooter.set_feeder(-0.34);
+    wait(|| shooter.contains_note()).await;
+    intake.set_rollers(0.0);
+    intake.set_actuate(0.0);
+    shooter.set_feeder(-0.10);
+    wait(|| !shooter.contains_note()).await;
+    shooter.set_feeder(0.0);
     Ok(())
+}
+
+pub async fn lower_intake_trapezoidal(intake: &mut Intake) {
+    loop {
+        let dt = Duration::from_millis(20);
+        intake.actuate_to_trapezoid(Angle::new::<degree>(INTAKE_DOWN_GOAL), &dt);
+        sleep(dt).await;
+        if intake.actuate_position().get::<degree>() < INTAKE_DOWN_THRESHOLD {
+            return
+        }
+    }
+}
+
+pub async fn raise_intake_trapezoidal(intake: &mut Intake) {
+    loop {
+        let dt = Duration::from_millis(20);
+        let trapd = intake.actuate_to_trapezoid_rdy(Angle::new::<degree>(INTAKE_UP_GOAL), &dt);
+        sleep(dt).await;
+        if intake.actuate_position().get::<degree>() > INTAKE_UP_THRESHOLD && trapd {
+            return
+        }
+    }
 }
