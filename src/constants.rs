@@ -1,4 +1,4 @@
-pub const FPS_LIMIT: f64 = 50.;
+pub const FPS_LIMIT: f64 = 200.;
 pub const FR_DRIVE: i32 = 1;
 pub const FR_TURN: i32 = 2;
 pub const FR_ENCODER: i32 = 3;

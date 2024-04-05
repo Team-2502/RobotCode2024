@@ -151,8 +151,6 @@ impl Intake {
         let max = dt.as_secs_f64() * INTAKE_DEGREES_PER_SECOND * 6.;
         let goal = angle.get::<degree>();
 
-        println!("at {current}, goal {goal}");
-
         let compromise = if goal > current {
             goal.min(current+max)
         } else {
@@ -160,7 +158,6 @@ impl Intake {
         };
 
         ANGLE.store((compromise * 100.) as i64, Ordering::SeqCst);
-        println!("setting {compromise}");
 
         let compromise = Angle::new::<degree>(compromise);
         self.left_actuate.set_position(compromise * COUNTS_PER_REVOLUTION + self.actuate_zero);

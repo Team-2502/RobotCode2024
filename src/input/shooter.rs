@@ -32,6 +32,7 @@ pub async fn control_shooter(
     telemetry::put_bool("flywheel state", *gamepad_spinning).await;
 
     if matches!(gamepad_state, GamepadState::Auto | GamepadState::Drive | GamepadState::Manual) {
+        println!("current speed {}rpm", shooter.get_velocity());
         if gamepad.a() {
             // line shot
             if right_drive.get(2) {
