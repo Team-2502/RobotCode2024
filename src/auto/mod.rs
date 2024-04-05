@@ -36,6 +36,7 @@ pub enum Auto {
     TopWait,
     TopBlock,
     BottomCloseWait,
+    BottomTwoLeave,
     BottomWait,
     //SourceTwo,
     ZeroIntake,
@@ -68,6 +69,7 @@ impl Auto {
             //Auto::BottomOut => "internal then far not through stage (2 note)",
             Auto::BottomClose => "near stage start 4 note",
             Auto::BottomCloseWait => "near stage start 2 note, delayed start",
+            Auto::BottomTwoLeave => "near stage start 2 note, then leave",
             //Auto::SourceTwo => "near source start 2 note, second from bottom",
             Auto::BottomWait => "near stage wait 7s one note",
             Auto::TopWait => "near amp wait 7s one note",
@@ -128,6 +130,7 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         //Auto::BottomOut => bottom_out(robot).await,
         Auto::BottomClose => bottom_close(robot).await,
         Auto::BottomCloseWait => bottom_close_wait(robot).await,
+        Auto::BottomTwoLeave => bottom_two_leave(robot).await,
         Auto::BottomWait => bottom_one(robot).await,
         Auto::TopWait => top_one(robot).await,
         Auto::TopBlock => top_one_block(robot).await,
@@ -265,10 +268,11 @@ async fn top_stop(robot: Ferris) {
     }
 
     let _ = join!(
-        timeout(Duration::from_millis(1000), stage(&mut intake, &shooter)),
+        timeout(Duration::from_millis(1300), stage(&mut intake, &shooter)),
         drive("TopStop.3", &mut drivetrain) // scoring position
     );
 
+    raise_intake(&mut intake).await;
     shoot(&intake, &mut shooter).await;
     lower_intake(&mut intake).await;
 
@@ -287,10 +291,11 @@ async fn top_stop(robot: Ferris) {
     }
 
     let _ = join!(
-        timeout(Duration::from_millis(1000), stage(&mut intake, &shooter)),
+        timeout(Duration::from_millis(1300), stage(&mut intake, &shooter)),
         drive("TopStop.5", &mut drivetrain) // scoring position
     );
 
+    raise_intake(&mut intake).await;
     shoot(&intake, &mut shooter).await;
     lower_intake(&mut intake).await;
 
@@ -310,10 +315,11 @@ async fn top_stop(robot: Ferris) {
     }
 
     let _ = join!(
-        timeout(Duration::from_millis(1000), stage(&mut intake, &shooter)),
+        timeout(Duration::from_millis(1300), stage(&mut intake, &shooter)),
         drive("TopStop.7", &mut drivetrain) // scoring position
     );
 
+    raise_intake(&mut intake).await;
     shoot(&intake, &mut shooter).await;
 
     shooter.set_shooter(0.);
@@ -808,10 +814,11 @@ async fn bottom_close(robot: Ferris) {
     }
 
     let _ = join!(
-        timeout(Duration::from_millis(1000), stage(&mut intake, &shooter)),
+        timeout(Duration::from_millis(1300), stage(&mut intake, &shooter)),
         drive("BottomClose.3", &mut drivetrain) // scoring position
     );
 
+    raise_intake(&mut intake).await;
     shoot(&intake, &mut shooter).await;
 
     lower_intake(&mut intake).await;
@@ -831,10 +838,11 @@ async fn bottom_close(robot: Ferris) {
     }
 
     let _ = join!(
-        timeout(Duration::from_millis(100), stage(&mut intake, &shooter)),
+        timeout(Duration::from_millis(500), stage(&mut intake, &shooter)),
         drive("BottomClose.5", &mut drivetrain) // scoring position
     );
 
+    raise_intake(&mut intake).await;
     shoot(&intake, &mut shooter).await;
 
     lower_intake(&mut intake).await;
@@ -857,10 +865,11 @@ async fn bottom_close(robot: Ferris) {
     }
 
     let _ = join!(
-        timeout(Duration::from_millis(1000), stage(&mut intake, &shooter)),
+        timeout(Duration::from_millis(1300), stage(&mut intake, &shooter)),
         drive("BottomClose.7", &mut drivetrain) // scoring position
     );
 
+    raise_intake(&mut intake).await;
     wait(|| shooter.get_velocity() > 5400.).await;
     intake.set_rollers(-1.);
     shooter.set_feeder(-1.);
@@ -958,6 +967,55 @@ async fn top_one_block(robot: Ferris) {
 
     shooter.set_shooter(0.);
     drive("TopOneBlock.2", &mut drivetrain).await;
+}
+
+async fn bottom_two_leave(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+
+    drivetrain
+        .odometry
+        .set(Vector2::new(0.4808354377746582, 4.043473720550537));
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    shooter.set_velocity(5500.);
+
+    join!(
+        drive("BottomTwoLeave.1", &mut drivetrain), // scoring position
+        intake.zero(),
+    );
+
+    join!(sushi_shoot(&mut shooter), lower_intake(&mut intake));
+
+    intake.set_rollers(0.4);
+
+    let mut failure = false;
+    join!(
+        drive("BottomTwoLeave.2", &mut drivetrain), // goto note
+        async {
+            failure = timeout(Duration::from_millis(3000), intake.grab())
+                .await
+                .is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2500), stage(&mut intake, &shooter)),
+        drive("BottomTwoLeave.3", &mut drivetrain) // scoring position
+    );
+
+    raise_intake(&mut intake).await;
+    shoot(&intake, &mut shooter).await;
+
+    shooter.set_shooter(0.);
+
+    drive("BottomTwoLeave2.1", &mut drivetrain).await;
 }
 
 async fn bottom_close_wait(robot: Ferris) {
