@@ -27,6 +27,7 @@ export default function Home() {
     const [autos, setAutos] = useState<Auto | null>(null)
     const [selected, setSelected] = useState(0)
     const [hz, setHz] = useState(0)
+    const [load, setLoad] = useState(0)
     const [flywheelState, setFlywheelState] = useState(false)
 
     useEffect(() => {
@@ -36,6 +37,7 @@ export default function Home() {
         })
 
         setInterval(() => get("get/loop rate (hz)").then(value => setHz(Number.parseFloat(JSON.parse(value)["Number"]))), 500)
+        setInterval(() => get("get/rio load").then(value => setLoad(Number.parseFloat(JSON.parse(value)["Number"]))), 500)
         setInterval(() => get("get/flywheel state").then(value => {
             setFlywheelState(JSON.parse(value)["Bool"]);
         }), 250)
@@ -67,6 +69,7 @@ export default function Home() {
   return (
       <section style={{background: flywheelState ? "green" : "red"}} className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
           <a>{"Hz: " + hz.toFixed(2)}</a>
+          <a>{"Rio Load: " + load.toFixed(2) + "%"}</a>
           <a>{`Flywheel State: ${flywheelState}`}</a>
           <div className="flex flex-col gap-4 w-full">
 
@@ -77,7 +80,7 @@ export default function Home() {
                               options: autos?.Picker.options,
                               selected: idx.toString(),
                           }
-                      }))} variant="bordered">{auto}</Button>
+                      }))} variant="solid">{auto}</Button>
                   )
               })}
 

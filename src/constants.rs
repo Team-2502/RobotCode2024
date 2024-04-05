@@ -1,4 +1,4 @@
-pub const FPS_LIMIT: f64 = 200.;
+pub const FPS_LIMIT: f64 = 500.;
 pub const FR_DRIVE: i32 = 1;
 pub const FR_TURN: i32 = 2;
 pub const FR_ENCODER: i32 = 3;
@@ -51,7 +51,7 @@ pub mod intake {
     pub const INTAKE_FREE_VELOCITY: f64 = 2000.;
 
     pub const INTAKE_DOWN_THRESHOLD: f64 = -67.;
-    pub const INTAKE_UP_THRESHOLD: f64 = -3.7;
+    pub const INTAKE_UP_THRESHOLD: f64 = 3.7;
     pub const INTAKE_DOWN_GOAL: f64 = -70.;
     pub const INTAKE_UP_GOAL: f64 = 4.5;
 

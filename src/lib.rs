@@ -122,6 +122,7 @@ pub fn entrypoint() {
             let elapsed = dt.as_secs_f64();
             let left = (1. / FPS_LIMIT - elapsed).max(0.);
 
+            telemetry::put_number("rio load", last_loop.elapsed().as_secs_f64() / (1./FPS_LIMIT)).await;
             sleep(Duration::from_secs_f64(left)).await;
             telemetry::put_number("loop rate (hz)", 1. / last_loop.elapsed().as_secs_f64()).await;
             last_loop = Instant::now();
