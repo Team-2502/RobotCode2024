@@ -69,10 +69,10 @@ impl Auto {
             //Auto::BottomOut => "internal then far not through stage (2 note)",
             Auto::BottomClose => "near stage start 4 note",
             Auto::BottomCloseWait => "near stage start 2 note, delayed start",
-            Auto::BottomTwoLeave => "near stage start 2 note, then leave",
+            Auto::BottomTwoLeave => "near stage start 2 note, leave",
             //Auto::SourceTwo => "near source start 2 note, second from bottom",
             Auto::BottomWait => "near stage wait 7s one note",
-            Auto::TopWait => "near amp wait 7s one note",
+            Auto::TopWait => "near amp wait 10s one note",
             Auto::TopBlock => "near amp wait one note stop mid",
             //Auto::StageCloseFar => "Stage close far",
             //Auto::OdoTest => "Odo Test",
@@ -929,7 +929,7 @@ async fn top_one(robot: Ferris) {
     drivetrain.reset_heading();
 
     shooter.set_shooter(1.0);
-    join!(intake.zero(), sleep(Duration::from_millis(9000)),);
+    join!(intake.zero(), sleep(Duration::from_millis(10_000)),);
 
     drive("TopOne.1", &mut drivetrain).await; // scoring position
 
