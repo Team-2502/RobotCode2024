@@ -57,7 +57,7 @@ pub mod intake {
 
     pub const INTAKE_ZERO_POINT: f64 = 3.;
 
-    pub const INTAKE_DEGREES_PER_SECOND: f64 = 135.;
+    pub const INTAKE_DEGREES_PER_SECOND: f64 = 145.;
 }
 
 pub mod drivetrain {

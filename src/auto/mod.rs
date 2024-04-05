@@ -674,13 +674,17 @@ async fn bottom(robot: Ferris) {
 }
 
 pub async fn lower_intake(intake: &mut Intake) {
-    intake.actuate_to(Angle::new::<degree>(INTAKE_DOWN_GOAL));
-    wait(|| intake.actuate_position().get::<degree>() < INTAKE_DOWN_THRESHOLD).await;
+    lower_intake_trapezoidal(intake).await;
+
+    //intake.actuate_to(Angle::new::<degree>(INTAKE_DOWN_GOAL));
+    //wait(|| intake.actuate_position().get::<degree>() < INTAKE_DOWN_THRESHOLD).await;
 }
 
 pub async fn raise_intake(intake: &mut Intake) {
-    intake.actuate_to(Angle::new::<degree>(INTAKE_UP_GOAL));
-    wait(|| intake.actuate_position().get::<degree>() > INTAKE_UP_THRESHOLD).await;
+    raise_intake_trapezoidal(intake).await;
+
+    //intake.actuate_to(Angle::new::<degree>(INTAKE_UP_GOAL));
+    //wait(|| intake.actuate_position().get::<degree>() > INTAKE_UP_THRESHOLD).await;
 }
 
 async fn bottom_out(robot: Ferris) {
