@@ -5,13 +5,13 @@ import {Button, Select, SelectItem} from "@nextui-org/react";
 import {wait} from "next/dist/lib/wait";
 
 async function get(endpoint: string): Promise<string> {
-    const res = await fetch('http://10.25.2.2:5807/' + endpoint);
+    const res = await fetch('/' + endpoint);
     return await res.text()
 }
 
 async function post(endpoint: string, data: string): Promise<void> {
     const xhr = new XMLHttpRequest()
-    xhr.open("POST", 'http://10.25.2.2:5807/' + endpoint, true)
+    xhr.open("POST", '/' + endpoint, true)
     xhr.setRequestHeader('Content-Type', 'application/json')
     xhr.send(data)
 }
