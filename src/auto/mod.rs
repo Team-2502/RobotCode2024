@@ -39,6 +39,7 @@ pub enum Auto {
     BottomWait,
     //SourceTwo,
     ZeroIntake,
+    AmpOne,
     //Short,
     //PathTest,
     //Bottom,
@@ -57,6 +58,7 @@ impl Auto {
             //Auto::Short => "close",
             //Auto::PathTest => "test",
             Auto::Nop => "hit the bell with the glock a couple times",
+            Auto::AmpOne => "Amp one no delay",
             //Auto::Top => "near amp 4 note, swing b4 last",
             Auto::TopStop => "near amp 4 note, stop b4 last",
             //Auto::Center => "untested riley brain vomit",
@@ -120,6 +122,7 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         //Auto::Short => auto_short(robot).await,
         //Auto::Top => top(robot).await,
         Auto::TopStop => top_stop(robot).await,
+        Auto::AmpOne => amp_one(robot).await,
         //Auto::Center => center(robot).await,
         //Auto::Bottom => bottom(robot).await,
         //Auto::BottomOut => bottom_out(robot).await,
@@ -191,6 +194,40 @@ pub fn autos() -> AutoChooser {
     //chooser.add("tk", Auto::Long);
 
     chooser
+}
+
+async fn amp_one(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+    let _telemetry = robot.telemetry.clone();
+
+    drivetrain
+        .odometry
+        .set(Vector2::new(0.4808354377746582, 4.043473720550537));
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    shooter.set_shooter(1.0);
+
+    join!(
+        drive("BottomOne.1", &mut drivetrain), // scoring position
+        intake.zero(),
+    );
+
+    join!(
+        async {
+            // shoot
+            wait(|| shooter.get_velocity() > 5000.).await;
+            shooter.set_feeder(-0.4);
+            sleep(Duration::from_secs_f64(0.3)).await;
+            shooter.set_feeder(0.);
+        },
+        lower_intake(&mut intake)
+    );
+
+    shooter.set_shooter(0.);
+    drive("BottomOne.2", &mut drivetrain).await;
 }
 
 async fn top_stop(robot: Ferris) {
