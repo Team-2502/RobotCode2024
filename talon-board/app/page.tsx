@@ -31,10 +31,10 @@ export default function Home() {
     const [flywheelState, setFlywheelState] = useState(false)
 
     useEffect(() => {
-        get("get/auto chooser").then(value => {
+        setInterval(() => get("get/auto chooser").then(value => {
             setAutos(JSON.parse(value))
             setSelected(JSON.parse(value)["Picker"]["selected"])
-        })
+        }), 750)
 
         setInterval(() => get("get/loop rate (hz)").then(value => setHz(Number.parseFloat(JSON.parse(value)["Number"]))), 500)
         setInterval(() => get("get/rio load").then(value => setLoad(Number.parseFloat(JSON.parse(value)["Number"]))), 200)
@@ -70,7 +70,7 @@ export default function Home() {
       <section style={{background: flywheelState ? "green" : "red"}} className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
           <a>{"Hz: " + hz.toFixed(2)}</a>
           <div style={{width: "75%", background: "black", height: "30px", borderRadius: "5px"}}> 
-              <div style={{width: (load*100)+"%", height: "100%", background: "lightgreen", borderRadius: "5px", transitionDuration: "0.8s", transitionProperty: "width"}}></div> 
+              <div style={{width: Math.min(load*100, 100)+"%", height: "100%", background: "lightgreen", borderRadius: "5px", transitionDuration: "0.8s", transitionProperty: "width"}}></div> 
           </div>
           <a>{`Flywheel State: ${flywheelState}`}</a>
           <div className="flex flex-col gap-4 w-full">
@@ -82,11 +82,9 @@ export default function Home() {
                               options: autos?.Picker.options,
                               selected: idx.toString(),
                           }
-                      }))} variant="solid">{auto}</Button>
+                      }))} variant="solid" style={(autos.Picker.selected == idx) ? {background:  "green"}: {}}>{auto}</Button>
                   )
               })}
-
-              <a>{autos.Picker.options.at(autos.Picker.selected)}</a>
           </div>
       </section>
   );
