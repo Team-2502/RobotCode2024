@@ -45,7 +45,7 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers, 
     }
 
     if operator.get(5) || matches!(gamepad_state, GamepadState::Manual) {
-        if operator.get(3) || gamepad.right_stick() && !intake.at_limit() {
+        if operator.get(3) || gamepad.right_stick() {
             intake.set_actuate(0.3);
         } else if operator.get(4) || gamepad.left_stick() {
             intake.set_actuate(-0.3);
