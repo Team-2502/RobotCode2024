@@ -51,9 +51,9 @@ pub mod intake {
     pub const INTAKE_FREE_VELOCITY: f64 = 2000.;
 
     pub const INTAKE_DOWN_THRESHOLD: f64 = -67.;
-    pub const INTAKE_UP_THRESHOLD: f64 = 3.7;
+    pub const INTAKE_UP_THRESHOLD: f64 = 4.7;
     pub const INTAKE_DOWN_GOAL: f64 = -70.;
-    pub const INTAKE_UP_GOAL: f64 = 4.5;
+    pub const INTAKE_UP_GOAL: f64 = 7.6;
 
     pub const INTAKE_ZERO_POINT: f64 = 3.;
 
