@@ -40,7 +40,7 @@ pub enum Auto {
     BottomWait,
     //SourceTwo,
     ZeroIntake,
-    AmpOne,
+    StageOne,
     //Short,
     //PathTest,
     //Bottom,
@@ -59,7 +59,7 @@ impl Auto {
             //Auto::Short => "close",
             //Auto::PathTest => "test",
             Auto::Nop => "hit the bell with the glock a couple times",
-            Auto::AmpOne => "Amp one no delay",
+            Auto::StageOne => "Stage one, no delay, exit",
             //Auto::Top => "near amp 4 note, swing b4 last",
             Auto::TopStop => "near amp 4 note, stop b4 last",
             //Auto::Center => "untested riley brain vomit",
@@ -124,7 +124,7 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         //Auto::Short => auto_short(robot).await,
         //Auto::Top => top(robot).await,
         Auto::TopStop => top_stop(robot).await,
-        Auto::AmpOne => amp_one(robot).await,
+        Auto::StageOne => stage_one(robot).await,
         //Auto::Center => center(robot).await,
         //Auto::Bottom => bottom(robot).await,
         //Auto::BottomOut => bottom_out(robot).await,
@@ -199,7 +199,7 @@ pub fn autos() -> AutoChooser {
     chooser
 }
 
-async fn amp_one(robot: Ferris) {
+async fn stage_one(robot: Ferris) {
     let mut intake = robot.intake.deref().borrow_mut();
     let mut drivetrain = robot.drivetrain.deref().borrow_mut();
     let mut shooter = robot.shooter.deref().borrow_mut();
