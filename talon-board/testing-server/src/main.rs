@@ -1,7 +1,7 @@
 extern crate RobotCode2024;
 use RobotCode2024::{
     constants::TELEMETRY_PORT,
-    telemetry::{self, Pose, TELEMETRY},
+    telemetry::{self, put_number, Pose, TELEMETRY},
 };
 
 #[tokio::main]
@@ -11,6 +11,7 @@ async fn main() {
         .await
         .data
         .insert("hertz".to_owned(), telemetry::Data::Number(8.));
+    put_number("rio load", 0.322024).await;
     TELEMETRY
         .write()
         .await

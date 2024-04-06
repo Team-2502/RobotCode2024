@@ -37,7 +37,7 @@ export default function Home() {
         })
 
         setInterval(() => get("get/loop rate (hz)").then(value => setHz(Number.parseFloat(JSON.parse(value)["Number"]))), 500)
-        setInterval(() => get("get/rio load").then(value => setLoad(Number.parseFloat(JSON.parse(value)["Number"]))), 500)
+        setInterval(() => get("get/rio load").then(value => setLoad(Number.parseFloat(JSON.parse(value)["Number"]))), 200)
         setInterval(() => get("get/flywheel state").then(value => {
             setFlywheelState(JSON.parse(value)["Bool"]);
         }), 250)
@@ -69,7 +69,9 @@ export default function Home() {
   return (
       <section style={{background: flywheelState ? "green" : "red"}} className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
           <a>{"Hz: " + hz.toFixed(2)}</a>
-          <a>{"Rio Load: " + load.toFixed(2) + "%"}</a>
+          <div style={{width: "75%", background: "black", height: "30px", borderRadius: "5px"}}> 
+              <div style={{width: (load*100)+"%", height: "100%", background: "lightgreen", borderRadius: "5px", transitionDuration: "0.8s", transitionProperty: "width"}}></div> 
+          </div>
           <a>{`Flywheel State: ${flywheelState}`}</a>
           <div className="flex flex-col gap-4 w-full">
 
