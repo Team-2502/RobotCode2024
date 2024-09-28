@@ -273,7 +273,7 @@ async fn top_stop(robot: Ferris) {
     );
 
     raise_intake(&mut intake).await;
-    shoot(&intake, &mut shooter).await;
+    let _ = timeout(Duration::from_millis(1000), shoot(&intake, &mut shooter)).await;
     lower_intake(&mut intake).await;
 
     let mut failure = false;
@@ -296,7 +296,7 @@ async fn top_stop(robot: Ferris) {
     );
 
     raise_intake(&mut intake).await;
-    shoot(&intake, &mut shooter).await;
+    let _ = timeout(Duration::from_millis(1000), shoot(&intake, &mut shooter)).await;
     lower_intake(&mut intake).await;
 
     let mut failure = false;
