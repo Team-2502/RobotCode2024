@@ -6,6 +6,7 @@ use frcrs::{
     alliance_station,
     input::{Direction, Gamepad, Joystick},
 };
+use frcrs::led::Led;
 
 use tokio::{
     task::{JoinHandle, LocalSet},
@@ -41,6 +42,7 @@ pub struct Ferris {
     shooter_state: Rc<RefCell<(bool, bool)>>,
     teleop_state: Rc<RefCell<TeleopState>>,
     pub telemetry: TelemetryStore,
+    pub leds: Led,
 }
 
 #[derive(Default)]
@@ -73,6 +75,11 @@ impl Ferris {
         let climber = Rc::new(RefCell::new(Climber::new()));
         let shooter_state = Rc::new(RefCell::new((false, false)));
         let telemetry = TELEMETRY.clone();
+        let leds = Led::new(0, 82);
+        for i in 0..82 {
+            leds.set_rgb(i, 255, 0, 0);
+        }
+
         Self {
             drivetrain,
             intake,
@@ -84,6 +91,7 @@ impl Ferris {
             stage: Rc::new(RefCell::new(None)),
             teleop_state: Rc::new(RefCell::new(Default::default())),
             telemetry,
+            leds
         }
     }
 }
