@@ -50,6 +50,7 @@ pub enum Auto {
     //BottomOut,
     //StageCloseFar,
     //OdoTest,
+    BottomLeave,
     Nop,
 }
 
@@ -74,6 +75,7 @@ impl Auto {
             Auto::BottomWait => "near stage wait 7s one note",
             Auto::TopWait => "near amp wait 10s one note",
             Auto::TopBlock => "near amp wait one note stop mid",
+            Auto::BottomLeave => "bottom leave",
             //Auto::StageCloseFar => "Stage close far",
             //Auto::OdoTest => "Odo Test",
             _ => "shoot a chicken",
@@ -134,6 +136,7 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         Auto::BottomWait => bottom_one(robot).await,
         Auto::TopWait => top_one(robot).await,
         Auto::TopBlock => top_one_block(robot).await,
+        Auto::BottomLeave => bottom_leave(robot).await,
         //Auto::TopCenter => Triple_Note(robot).await,
         //Auto::SourceTwo => source_out(robot).await,
         //Auto::StageCloseFar => stage_close_far(robot).await,
@@ -197,6 +200,28 @@ pub fn autos() -> AutoChooser {
     //chooser.add("tk", Auto::Long);
 
     chooser
+}
+
+async fn bottom_leave(robot: Ferris) {
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+
+    drivetrain
+        .odometry
+        .set(Vector2::new(0.4694126546382904, 2.074124813079834));
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    join!(
+        drive("BottomLeave.1", &mut drivetrain),
+        intake.zero()
+    );
+
+    sleep(Duration::from_secs_f64(10.)).await;
+
+    lower_intake(&mut intake).await;
+    shooter.set_shooter(5500.);
 }
 
 async fn stage_one(robot: Ferris) {
@@ -933,11 +958,7 @@ async fn top_one(robot: Ferris) {
 
     drive("TopOne.1", &mut drivetrain).await; // scoring position
 
-    // shoot
-    wait(|| shooter.get_velocity() > 5000.).await;
-    shooter.set_feeder(-0.4);
-    sleep(Duration::from_secs_f64(0.3)).await;
-    shooter.set_feeder(0.);
+    sushi_shoot(&mut shooter).await;
 
     shooter.set_shooter(0.);
     drive("TopOne.2", &mut drivetrain).await;
