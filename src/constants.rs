@@ -65,7 +65,7 @@ pub mod drivetrain {
 
     pub const SWERVE_TURN_KP: f64 = 0.3;
 
-    pub const SWERVE_ROTATIONS_TO_INCHES: f64 = (1. / 6.75) * (4. * PI);
+    pub const SWERVE_ROTATIONS_TO_INCHES: f64 = (1. / 5.906) * (4. * PI);
 
     pub const SWERVE_DRIVE_KP: f64 = 0.3;
     pub const SWERVE_DRIVE_KI: f64 = 0.;

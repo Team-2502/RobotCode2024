@@ -73,6 +73,7 @@ impl Ferris {
         let climber = Rc::new(RefCell::new(Climber::new()));
         let shooter_state = Rc::new(RefCell::new((false, false)));
         let telemetry = TELEMETRY.clone();
+
         Self {
             drivetrain,
             intake,
