@@ -1,4 +1,4 @@
-workspace = { members = ["talon-board/testing-server"] }
+#workspace = { members = ["talon-board/testing-server"] }
 [package]
 name = "RobotCode2024"
 version = "0.1.0"
