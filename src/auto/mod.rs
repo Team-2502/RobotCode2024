@@ -24,6 +24,8 @@ use crate::{
 
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::{FromPrimitive, ToPrimitive};
+use serde::de::IntoDeserializer;
+use tokio::io::join;
 
 use self::path::{follow_path, follow_path_range};
 
@@ -51,6 +53,9 @@ pub enum Auto {
     //StageCloseFar,
     //OdoTest,
     BottomLeave,
+    BottomMidline,
+    TopMid2,
+    BottomWaitMid,
     Nop,
 }
 
@@ -76,6 +81,9 @@ impl Auto {
             Auto::TopWait => "near amp wait 10s one note",
             Auto::TopBlock => "near amp wait one note stop mid",
             Auto::BottomLeave => "bottom leave",
+            Auto::BottomMidline => "Bottom Midline",
+            Auto::TopMid2 => "Top mid 2",
+            Auto::BottomWaitMid => "bottom wait mid",
             //Auto::StageCloseFar => "Stage close far",
             //Auto::OdoTest => "Odo Test",
             _ => "shoot a chicken",
@@ -137,6 +145,9 @@ pub async fn run_auto(auto: Auto, robot: Ferris) {
         Auto::TopWait => top_one(robot).await,
         Auto::TopBlock => top_one_block(robot).await,
         Auto::BottomLeave => bottom_leave(robot).await,
+        Auto::BottomMidline => bottom_mid(robot).await,
+        Auto::TopMid2 => top_mid_two(robot).await,
+        Auto::BottomWaitMid => bottom_wait_mid(robot).await,
         //Auto::TopCenter => Triple_Note(robot).await,
         //Auto::SourceTwo => source_out(robot).await,
         //Auto::StageCloseFar => stage_close_far(robot).await,
@@ -200,6 +211,174 @@ pub fn autos() -> AutoChooser {
     //chooser.add("tk", Auto::Long);
 
     chooser
+}
+
+async fn bottom_wait_mid(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+
+    drivetrain.odometry.set(Vector2::new(0.469, 2.0862367153167725));
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    join!(
+        intake.zero(),
+        sleep(Duration::from_secs_f64(2.))
+    );
+
+    shooter.set_shooter(5500.);
+
+    drive("BottomWaitMid.1", &mut drivetrain).await;
+
+    sushi_shoot(&mut shooter).await;
+
+    let mut failure = false;
+
+    join!(
+        drive("BottomWaitMid.2", &mut drivetrain),
+        async {
+            sleep(Duration::from_secs_f64(3.)).await;
+            intake.set_rollers(0.4);
+            failure = timeout(Duration::from_millis(2500), intake.grab())
+                .await
+                .is_err();
+        }
+    );
+
+    join!(
+        drive("BottomWaitMid.2", &mut drivetrain),
+        timeout(Duration::from_millis(3000), stage(&mut intake, &shooter))
+    );
+
+    shoot(&mut intake, &mut shooter).await;
+
+    shooter.set_shooter(0.)
+}
+
+async fn top_mid_two(robot: Ferris) {
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+
+    drivetrain.odometry.set(Vector2::new(0.469, 7.034497));
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    shooter.set_velocity(5500.);
+
+    join!(
+        drive("TopMid.1", &mut drivetrain),
+        intake.zero(),
+    );
+
+    join!(sushi_shoot(&mut shooter), lower_intake(&mut intake));
+
+    intake.set_rollers(0.4);
+
+    let mut failure = false;
+    join!(
+        drive("TopMid.2", &mut drivetrain),
+        async {
+            failure = timeout(Duration::from_millis(2000), intake.grab())
+                .await
+                .is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(1300), stage(&mut intake, &shooter)),
+        drive("TopMid.3", &mut drivetrain)
+    );
+
+    raise_intake(&mut intake).await;
+    let _ = timeout(Duration::from_millis(1000), shoot(&intake, &mut shooter)).await;
+
+    drive("TopMid.4", &mut drivetrain).await;
+
+    join!(
+        drive("TopMid.5", &mut drivetrain),
+        async {
+            sleep(Duration::from_secs_f64(1.5)).await;
+            lower_intake(&mut intake).await;
+            failure = timeout(Duration::from_millis(2000), intake.grab())
+                .await
+                .is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    let _ = join!(
+        timeout(Duration::from_millis(2000), stage(&mut intake, &shooter)),
+        drive("TopMid.6", &mut drivetrain)
+    );
+
+    drive("TopMid.7", &mut drivetrain).await;
+
+    shoot(&mut intake, &mut shooter).await;
+
+    shooter.set_shooter(0.);
+}
+
+async fn bottom_mid(robot: Ferris) {
+    let mut drivetrain = robot.drivetrain.deref().borrow_mut();
+    let mut intake = robot.intake.deref().borrow_mut();
+    let mut shooter = robot.shooter.deref().borrow_mut();
+
+    drivetrain
+        .odometry
+        .set(Vector2::new(0.4694126546382904, 4.043473720550537));
+    drivetrain.reset_angle();
+    drivetrain.reset_heading();
+
+    shooter.set_velocity(5500.);
+
+    join!(
+        drive("BottomMid.1", &mut drivetrain),
+        intake.zero()
+    );
+
+    sushi_shoot(&mut shooter).await;
+
+    drive("BottomMid.2", &mut drivetrain).await;
+
+    let mut failure = false;
+    join!(
+        drive("BottomMid.3", &mut drivetrain),
+        async {
+            sleep(Duration::from_secs_f64(3.)).await;
+            lower_intake(&mut intake).await;
+            intake.set_rollers(0.4);
+
+            failure = timeout(Duration::from_millis(2500), intake.grab())
+                .await
+                .is_err();
+        }
+    );
+
+    if failure {
+        println!("womp womp :(");
+    }
+
+    join!(
+        timeout(Duration::from_millis(2500), stage(&mut intake, &shooter)),
+        drive("BottomMid.4", &mut drivetrain)
+    );
+
+    drive("BottomMid.4", &mut drivetrain).await;
+
+    shoot(&mut intake, &mut shooter).await;
+
+    shooter.set_shooter(0.);
+    shooter.set_feeder(0.);
+    intake.set_rollers(0.)
 }
 
 async fn bottom_leave(robot: Ferris) {
