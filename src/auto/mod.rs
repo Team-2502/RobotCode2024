@@ -60,7 +60,7 @@ impl Auto {
             //Auto::Short => "close",
             //Auto::PathTest => "test",
             Auto::Nop => "hit the bell with the glock a couple times",
-            Auto::StageOne => "Stage one, no delay, exit",
+            Auto::StageOne => "Stage one, 10s delay, exit",
             //Auto::Top => "near amp 4 note, swing b4 last",
             Auto::TopStop => "near amp 4 note, stop b4 last",
             //Auto::Center => "untested riley brain vomit",
@@ -236,6 +236,8 @@ async fn stage_one(robot: Ferris) {
     drivetrain.reset_angle();
     drivetrain.reset_heading();
 
+    sleep(Duration::from_secs_f64(10.)).await;
+
     shooter.set_shooter(1.0);
 
     join!(
@@ -244,13 +246,7 @@ async fn stage_one(robot: Ferris) {
     );
 
     join!(
-        async {
-            // shoot
-            wait(|| shooter.get_velocity() > 5000.).await;
-            shooter.set_feeder(-0.4);
-            sleep(Duration::from_secs_f64(0.3)).await;
-            shooter.set_feeder(0.);
-        },
+        sushi_shoot(&mut shooter),
         lower_intake(&mut intake)
     );
 
