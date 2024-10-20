@@ -239,6 +239,7 @@ async fn bottom_wait_mid(robot: Ferris) {
         drive("BottomWaitMid.2", &mut drivetrain),
         async {
             sleep(Duration::from_secs_f64(3.)).await;
+            lower_intake(&mut intake).await;
             intake.set_rollers(0.4);
             failure = timeout(Duration::from_millis(2500), intake.grab())
                 .await
