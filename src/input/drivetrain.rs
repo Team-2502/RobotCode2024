@@ -52,7 +52,7 @@ pub async fn control_drivetrain(
     }
 
     let hold_angle =
-        deadrz == 0. && (right_drive.get(3) || matches!(gamepad_state, GamepadState::Drive));
+        deadrz == 0. && (!right_drive.get(3) || matches!(gamepad_state, GamepadState::Drive));
 
     if !hold_angle {
         *saved_angle = Some(drivetrain.get_angle());
