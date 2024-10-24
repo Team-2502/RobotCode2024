@@ -28,13 +28,20 @@ pub async fn control_drivetrain(
     let saved_angle = &mut state.saved_angle;
     let gamepad = &mut controllers.gamepad;
     let gamepad_state = &mut controllers.gamepad_state;
+    let mut slow = true;
+    let mut last_loop = false;
 
     let joystick_range = 0.04..1.;
-    let mut power_translate = if left_drive.get(1) { 0.0..0.3 } else { 0.0..1. };
-    let mut power_rotate = if left_drive.get(1) { 0.0..0.2 } else { 0.0..1. };
+    let mut power_translate = if left_drive.get(1) { 0.0..0.3 } else if slow { 0.0..0.6 } else { 0.0..1. };
+    let mut power_rotate = if left_drive.get(1) { 0.0..0.2 } else if slow { 0.0..0.75 } else { 0.0..1. };
     let mut deadly = deadzone(left_drive.get_y(), &joystick_range, &power_translate);
     let mut deadlx = deadzone(left_drive.get_x(), &joystick_range, &power_translate);
     let mut deadrz = deadzone(right_drive.get_z(), &joystick_range, &power_rotate);
+
+    if right_drive.get(16) && !*last_loop {
+        *slow = !*slow;
+    }
+    *last_loop = right_drive.get(16);
 
     if matches!(gamepad_state, GamepadState::Drive) {
         let gamepad_range = 0. ..1.;
