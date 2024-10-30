@@ -43,6 +43,21 @@ pub const INDICATOR_PORT_RIGHT: i32 = 5;
 pub const TELEMETRY_PORT: i32 = 5807;
 pub const HALF_FIELD_WIDTH_METERS: f64 = 4.1148; // 54/4 feet
 pub const HALF_FIELD_LENGTH_METERS: f64 = 8.2296; // 54/2 feet
+pub mod vision {
+    use nalgebra::Vector2;
+    use uom::si::angle::degree;
+    use uom::si::length::{inch, meter};
+    use uom::si::f64::Length;
+    use uom::si::f64::Angle;
+    pub const LIMELIGHT_PITCH_DEGREES: f64 = 20.;
+    pub const LIMELIGHT_YAW_DEGREES:f64 = 180.;
+    pub const LIMELIGHT_HEIGHT_INCHES: f64 = 15.75;
+    pub const ROBOT_CENTER_TO_LIMELIGHT_INCHES: Vector2<f64> = Vector2::new(
+        -14.45,
+        0.
+    );
+}
+
 
 pub mod intake {
     pub const INTAKE_OCCUPIED_CURRENT: f64 = 20.;
