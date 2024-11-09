@@ -23,12 +23,19 @@ export interface Auto {
     }
 }
 
+interface Pose {
+    x: number,
+    y: number
+}
+
 export default function Home() {
     const [autos, setAutos] = useState<Auto | null>(null)
     const [selected, setSelected] = useState(0)
     const [hz, setHz] = useState(0)
     const [load, setLoad] = useState(0)
     const [flywheelState, setFlywheelState] = useState(false)
+    const [odo, setOdo] = useState<Pose>({x: 0, y: 0})
+    const [target, setTarget] = useState<Pose>({x: 0, y: 0})
 
     useEffect(() => {
         setInterval(() => get("get/auto chooser").then(value => {
@@ -41,7 +48,18 @@ export default function Home() {
         setInterval(() => get("get/flywheel state").then(value => {
             setFlywheelState(JSON.parse(value)["Bool"]);
         }), 250)
-    }, []);
+
+        setInterval(() => get("get/ox").then(x => get("get/oy").then(y => setOdo({
+            x: JSON.parse(x)["Number"],
+            y: JSON.parse(y)["Number"]
+        }))), 50)
+
+        setInterval(() => get("get/cx").then(x => get("get/cy").then(y => setTarget({
+            x: JSON.parse(x)["Number"],
+            y: JSON.parse(y)["Number"]
+        }))), 50)
+
+        }, []);
 
     //@ts-ignore
     function handleChange(e) {
@@ -73,6 +91,8 @@ export default function Home() {
               <div style={{width: Math.min(load*100, 100)+"%", height: "100%", background: "lightgreen", borderRadius: "5px", transitionDuration: "0.8s", transitionProperty: "width"}}></div> 
           </div>
           <a>{`Flywheel State: ${flywheelState}`}</a>
+          <a>{"odo: " + odo.x.toFixed(2) + ", " + odo.y.toFixed(2)}</a>
+          <a>{"target: " + target.x.toFixed(2) + ", " + target.y.toFixed(2)}</a>
           <div className="flex flex-col gap-4 w-full">
 
               {autos.Picker.options.map((auto, idx) => {

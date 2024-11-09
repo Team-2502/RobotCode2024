@@ -39,18 +39,16 @@ impl Sub for ModuleReturn {
 pub struct Odometry {
     last_modules: Vec<ModuleReturn>,
     pub position: Vector2<f64>,
-    last_apriltag: Instant,
 }
 
 impl Odometry {
     pub fn new() -> Self {
         let last_modules = Vec::new();
         let position = Vector2::new(0., 0.);
-        let last_apriltag = Instant::now();
+
         Self {
             last_modules,
             position,
-            last_apriltag,
         }
     }
 
@@ -63,15 +61,8 @@ impl Odometry {
         }
     }
 
-    pub async fn update_from_vision(&mut self, telemetry: TelemetryStore, _mirror: bool) {
-        if let Some((time, pose)) = &telemetry.read().await.apriltag_pose {
-            if self.last_apriltag >= *time {
-                return;
-            }
-
-            self.set(Vector2::new(pose.x, pose.y));
-            self.last_apriltag = time.clone();
-        }
+    pub fn set_abs(&mut self, position: Vector2<f64>) {
+        self.position = position;
     }
 
     pub fn calculate(&mut self, positions: Vec<ModuleReturn>, angle: Angle) {

@@ -73,6 +73,8 @@ pub fn entrypoint() {
             })
             .abort_handle();
 
+        frcrs::networktables::NetworkTable::init();
+
         let mut auto = None;
 
         let mut last_loop = Instant::now();

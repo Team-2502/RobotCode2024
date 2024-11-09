@@ -1,9 +1,12 @@
 use std::fs::File;
 use std::io::{Read, Write};
+use std::time::{Duration, Instant};
+use frcrs::{alliance_station, AllianceStation};
 
 use frcrs::ctre::{talon_encoder_tick, CanCoder, ControlMode, Talon};
+use frcrs::input::Joystick;
 
-use crate::constants::drivetrain::SWERVE_ROTATIONS_TO_INCHES;
+use crate::constants::drivetrain::{SWERVE_DRIVE_IE, SWERVE_DRIVE_KD, SWERVE_DRIVE_KF, SWERVE_DRIVE_KFA, SWERVE_DRIVE_KI, SWERVE_DRIVE_KP, SWERVE_ROTATIONS_TO_INCHES, SWERVE_TURN_KP};
 use crate::constants::*;
 use crate::swerve::kinematics::{ModuleState, Swerve};
 use crate::swerve::odometry::{ModuleReturn, Odometry};
@@ -11,9 +14,15 @@ use frcrs::navx::NavX;
 use nalgebra::{Rotation2, Vector2};
 use serde::Deserialize;
 use serde::Serialize;
+use tokio::time::sleep;
 use uom::si::angle::{degree, radian, revolution};
 use uom::si::f64::{Angle, Length};
-use uom::si::length::inch;
+use uom::si::length::{inch, meter};
+use uom::si::time::Time;
+use uom::si::velocity::meter_per_second;
+use wpi_trajectory::Path;
+use crate::subsystems::Vision;
+use crate::telemetry;
 
 pub struct Drivetrain {
     navx: NavX,
@@ -40,11 +49,21 @@ pub struct Drivetrain {
     pub offset: Angle,
 
     absolute_offsets: Offsets,
+
+    //vision: Vision,
 }
 
 #[derive(Serialize, Deserialize)]
 struct Offsets {
     offsets: [f64; 4],
+}
+
+#[derive(Debug, PartialEq)]
+struct Point {
+    x: f64,
+    y: f64,
+    distance: f64,
+    angle: f64
 }
 
 impl Offsets {
@@ -74,6 +93,8 @@ impl Drivetrain {
         let fl_turn = Talon::new(FL_TURN, Some("can0".to_owned()));
         let bl_turn = Talon::new(BL_TURN, Some("can0".to_owned()));
         let br_turn = Talon::new(BR_TURN, Some("can0".to_owned()));
+
+        //let vision = Vision::new("".to_owned());
 
         for (encoder, offset) in [&fr_encoder, &fl_encoder, &bl_encoder, &br_encoder]
             .iter()
@@ -116,9 +137,27 @@ impl Drivetrain {
             offset: Angle::new::<degree>(0.),
 
             absolute_offsets,
+
+            //vision,
         };
 
         dt
+    }
+
+    /*pub async fn update_limelight(&mut self) {
+        self.vision.update().await;
+    }*/
+
+    pub fn update_odo_vision(&mut self, vision: Vision) {
+        if let Some(pose) = vision.get_position_from_tag_2d(self.get_angle()) {
+            self.odometry.set(Vector2::new(pose.x.value, pose.y.value));
+        }
+    }
+
+    pub fn update_odo(&mut self, pose: Option<Vector2<Length>>) {
+        if let Some(p) = pose {
+            self.odometry.set_abs(Vector2::new(p.x.value, p.y.value));
+        }
     }
 
     pub fn write_absolute(&mut self) {
@@ -296,5 +335,109 @@ impl Drivetrain {
 
     pub fn reset_heading(&mut self) {
         self.offset = self.get_angle();
+    }
+
+    fn closest_point_on_circle(robot_x: f64, robot_y: f64) -> Point {
+        let circle_center_x = if alliance_station().red() { 16.5 } else { 0.0 };
+        let circle_center_y = 5.5;
+        let circle_radius = 2.3;
+
+        let direction_x = robot_x - circle_center_x;
+        let direction_y = robot_y - circle_center_y;
+
+        let distance_to_center = (direction_x.powi(2) + direction_y.powi(2)).sqrt();
+
+        // Avoid division by zero by ensuring the robot isn't exactly at the circle's center
+        if distance_to_center == 0.0 {
+            return Point {
+                x: circle_radius,
+                y: circle_center_y,
+                distance: circle_radius,
+                angle: 0.0
+            };
+        }
+
+        let closest_x = circle_radius * (direction_x / distance_to_center);
+        let closest_y = circle_center_y + circle_radius * (direction_y / distance_to_center);
+
+        let min_distance = distance_to_center - circle_radius;
+
+        let rotation_angle = f64::atan2(direction_y, direction_x);
+
+        let rotation_angle_degrees = rotation_angle * (180.0 / std::f64::consts::PI);
+
+        Point {
+            x: closest_x,
+            y: closest_y,
+            distance: min_distance,
+            angle: rotation_angle_degrees
+        }
+    }
+
+    pub async fn follow_circle(drivetrain: &mut Drivetrain, dt: Duration) {
+        let mut last_loop = Instant::now();
+        let mut last_error = Vector2::zeros();
+        let mut i = Vector2::zeros();
+
+        let current_pos = drivetrain.odometry.position;
+        let closest = Drivetrain::closest_point_on_circle(
+            current_pos.x,
+            current_pos.y
+        );
+
+        let position = Vector2::new(closest.x, closest.y);
+        let target_angle = Angle::new::<degree>(closest.angle);
+
+        let mut error_position = position - current_pos;
+        let mut error_angle = (target_angle - drivetrain.get_angle()).get::<radian>();
+
+        if error_position.abs().max() < SWERVE_DRIVE_IE {
+            i += error_position;
+        }
+
+        error_angle *= SWERVE_TURN_KP;
+        error_position *= -SWERVE_DRIVE_KP;
+
+        let mut speed = error_position;
+        speed += i * -SWERVE_DRIVE_KI * dt.as_secs_f64() * 9.;
+
+        let speed_s = speed;
+        speed += (speed - last_error) * -SWERVE_DRIVE_KD * dt.as_secs_f64() * 9.;
+        last_error = speed_s;
+
+        //drivetrain.set_speeds(speed.x, speed.y, error_angle);
+
+        telemetry::put_number("cx", position.x).await;
+        telemetry::put_number("cy", position.y).await;
+        telemetry::put_number("cr", target_angle.value as f64).await;
+        telemetry::put_number("ce", error_position.norm()).await;
+
+        sleep(Duration::from_millis(20)).await;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::subsystems::Drivetrain;
+    use crate::subsystems::drivetrain::Point;
+
+    #[test]
+    fn closest_point_on_circle() {
+        assert_eq!(Point {
+            x: 2.1,
+            y: 6.4,
+            distance: 1.2,
+            angle: 30.
+        }, Drivetrain::closest_point_on_circle(3.2, 7.))
+    }
+
+    #[test]
+    fn closest_point_on_circle_red() {
+        assert_eq!(Point {
+            x: 2.1,
+            y: 6.4,
+            distance: 1.2,
+            angle: 30.
+        }, Drivetrain::closest_point_on_circle(14.3, 4.5))
     }
 }

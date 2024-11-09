@@ -8,3 +8,4 @@ pub use climber::*;
 pub use drivetrain::*;
 pub use intake::*;
 pub use shooter::*;
+pub use vision::*;

@@ -12,6 +12,7 @@ use uom::si::{
 use uom::si::length::inch;
 use crate::constants::vision::ROBOT_CENTER_TO_LIMELIGHT_INCHES;
 
+#[derive(Clone)]
 pub struct Vision {
     tag_map_values: Value,
     limelight_name: String,
@@ -19,6 +20,7 @@ pub struct Vision {
     last_tx: Angle,
     last_ty: Angle
 }
+
 impl Vision {
     /// Creates new Vision struct from a limelight name (e.g., "limelight-ferris")
     /// Requires that wpilib's tagmap for the year has been put on the rio at "home/lvuser/tagmap.json".
@@ -39,11 +41,13 @@ impl Vision {
         }
     }
     /// Updates the last_id, last_tx, and last_ty variables with new data from NetworkTables
-    pub fn update(&mut self) {
+    pub async fn update(&mut self) {
         self.last_id = Limelight::get_tid(self.limelight_name.as_str());
         self.last_tx = Angle::new::<degree>(Limelight::get_tx(self.limelight_name.as_str()));
         self.last_ty = Angle::new::<degree>(Limelight::get_ty(self.limelight_name.as_str()));
-
+        crate::telemetry::put_number("id", self.last_id as f64).await;
+        crate::telemetry::put_number("tx", self.last_tx.value as f64).await;
+        crate::telemetry::put_number("ty", self.last_ty.value as f64).await;
     }
     /// Gets the targeted tag's angle from the limelight's equator as of the last update
     /// Beware: will return 0 if no tag is targeted

@@ -36,6 +36,7 @@ pub async fn control_drivetrain(
     let mut deadlx = deadzone(left_drive.get_x(), &joystick_range, &power_translate);
     let mut deadrz = deadzone(right_drive.get_z(), &joystick_range, &power_rotate);
 
+
     if matches!(gamepad_state, GamepadState::Drive) {
         let gamepad_range = 0. ..1.;
         let pow = 1.;
@@ -92,8 +93,8 @@ pub async fn control_drivetrain(
         drivetrain.reset_heading();
     }
 
-    telemetry::put_number("Odo X", drivetrain.odometry.position.x).await;
-    telemetry::put_number("Odo Y", drivetrain.odometry.position.y).await;
+    telemetry::put_number("ox", drivetrain.odometry.position.x).await;
+    telemetry::put_number("oy", drivetrain.odometry.position.y).await;
 
     telemetry::put_number("Angle", angle.get::<degree>()).await;
 }

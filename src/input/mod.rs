@@ -1,6 +1,7 @@
 use std::{
     borrow::BorrowMut, cell::RefCell, ops::Deref, rc::Rc, sync::atomic::AtomicBool, time::Duration,
 };
+use std::ops::DerefMut;
 
 use frcrs::{
     alliance_station,
@@ -16,6 +17,7 @@ use uom::si::{angle::degree, f64::Angle};
 use crate::{
     auto::{lower_intake, raise_intake}, constants::intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, telemetry::{self, TelemetryStore, TELEMETRY}
 };
+use crate::subsystems::Vision;
 
 use self::{
     climber::control_climber,
@@ -41,6 +43,7 @@ pub struct Ferris {
     shooter_state: Rc<RefCell<(bool, bool)>>,
     teleop_state: Rc<RefCell<TeleopState>>,
     pub telemetry: TelemetryStore,
+    pub vision: Vision,
 }
 
 #[derive(Default)]
@@ -49,6 +52,7 @@ struct TeleopState {
     shooter_state: ShooterControlState,
 }
 
+#[derive(Clone)]
 pub struct Controllers {
     pub left_drive: Joystick,
     pub right_drive: Joystick,
@@ -73,6 +77,7 @@ impl Ferris {
         let climber = Rc::new(RefCell::new(Climber::new()));
         let shooter_state = Rc::new(RefCell::new((false, false)));
         let telemetry = TELEMETRY.clone();
+        let vision = Vision::new("limelight".to_owned());
 
         Self {
             drivetrain,
@@ -85,13 +90,14 @@ impl Ferris {
             stage: Rc::new(RefCell::new(None)),
             teleop_state: Rc::new(RefCell::new(Default::default())),
             telemetry,
+            vision,
         }
     }
 }
 
 pub async fn container<'a>(
     controllers: &mut Controllers,
-    robot: &'a Ferris,
+    robot: &'a mut Ferris,
     executor: &'a LocalSet,
     dt: Duration,
 ) {
@@ -101,6 +107,9 @@ pub async fn container<'a>(
     } = *robot.teleop_state.deref().borrow_mut();
 
     if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
+        robot.vision.update().await;
+        let pose = robot.vision.get_position_from_tag_2d(drivetrain.get_angle());
+        drivetrain.update_odo(pose);
         control_drivetrain(&mut drivetrain, controllers, drivetrain_state).await;
     } else {
     }
@@ -125,7 +134,7 @@ pub async fn container<'a>(
 
     let Controllers {
         left_drive: _,
-        right_drive: _,
+        ref mut right_drive,
         ref mut operator,
         ref mut gamepad,
         ref mut gamepad_state,
@@ -138,6 +147,15 @@ pub async fn container<'a>(
         Direction::Right => GamepadState::Drive,
         _ => *gamepad_state,
     };
+
+    if right_drive.get(4) {
+        let drivetrain = robot.drivetrain.clone();
+        executor.spawn_local(async move {
+            if let Ok(mut drivetrain) = drivetrain.try_borrow_mut() {
+                Drivetrain::follow_circle(&mut drivetrain, dt).await;
+            }
+        });
+    }
 
     if operator.get(8)
         && robot.grab.deref().try_borrow().is_ok_and(|n| n.is_none())
