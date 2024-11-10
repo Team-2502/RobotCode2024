@@ -52,7 +52,7 @@ struct TeleopState {
     shooter_state: ShooterControlState,
 }
 
-#[derive(Clone)]
+//#[derive(Clone)]
 pub struct Controllers {
     pub left_drive: Joystick,
     pub right_drive: Joystick,
@@ -108,7 +108,12 @@ pub async fn container<'a>(
 
     if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
         robot.vision.update().await;
-        let pose = robot.vision.get_position_from_tag_2d(drivetrain.get_angle());
+        let dt_angle_for_vision = if (alliance_station().red()){
+            Angle::new::<degree>(drivetrain.get_angle().get::<degree>() + 180.)
+        } else {
+            drivetrain.get_angle()
+        };
+        let pose = robot.vision.get_position_from_tag_2d(dt_angle_for_vision);
         drivetrain.update_odo(pose);
         control_drivetrain(&mut drivetrain, controllers, drivetrain_state).await;
     } else {
@@ -152,6 +157,7 @@ pub async fn container<'a>(
         let drivetrain = robot.drivetrain.clone();
         executor.spawn_local(async move {
             if let Ok(mut drivetrain) = drivetrain.try_borrow_mut() {
+                println!("trying to follow circle");
                 Drivetrain::follow_circle(&mut drivetrain, dt).await;
             }
         });

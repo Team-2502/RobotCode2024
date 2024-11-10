@@ -107,6 +107,7 @@ impl Vision {
     /// Uses 2D calculations: distance from tag center & angle to tag center
     /// Returns Option::None if no tag is currently targeted
     pub fn get_position_from_tag_2d(&self, drivetrain_angle: Angle) -> Option<Vector2<Length>> {
+        //println!("dt angle as vision sees (deg): {}", drivetrain_angle.get::<degree>());
         let id = self.get_id();
         let dist = self.get_dist();
         match self.get_tag_position(id) {

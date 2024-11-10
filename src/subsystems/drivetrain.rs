@@ -357,7 +357,7 @@ impl Drivetrain {
             };
         }
 
-        let closest_x = circle_radius * (direction_x / distance_to_center);
+        let closest_x = circle_center_x + circle_radius * (direction_x / distance_to_center);
         let closest_y = circle_center_y + circle_radius * (direction_y / distance_to_center);
 
         let min_distance = distance_to_center - circle_radius;
@@ -405,7 +405,8 @@ impl Drivetrain {
         speed += (speed - last_error) * -SWERVE_DRIVE_KD * dt.as_secs_f64() * 9.;
         last_error = speed_s;
 
-        //drivetrain.set_speeds(speed.x, speed.y, error_angle);
+        if(alliance_station().red()) { speed.x *= -1. }
+        drivetrain.set_speeds(speed.x, speed.y, error_angle);
 
         telemetry::put_number("cx", position.x).await;
         telemetry::put_number("cy", position.y).await;

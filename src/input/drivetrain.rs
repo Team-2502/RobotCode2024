@@ -10,7 +10,7 @@ use crate::{
     subsystems::Drivetrain,
     telemetry,
 };
-
+use crate::auto::path::follow_path;
 use super::{Controllers, GamepadState};
 
 #[derive(Default)]
