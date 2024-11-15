@@ -81,7 +81,7 @@ pub async fn control_drivetrain(
         deadrz
     };
 
-    if matches!(gamepad_state, GamepadState::Climb) && gamepad.y() {
+    if left_drive.get(16) || matches!(gamepad_state, GamepadState::Climb) && gamepad.y() {
         drivetrain.zero_wheels()
     } else {
         drivetrain.set_speeds(deadly, deadlx, rot);

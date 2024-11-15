@@ -5,6 +5,7 @@ use frcrs::{alliance_station, AllianceStation};
 
 use frcrs::ctre::{talon_encoder_tick, CanCoder, ControlMode, Talon};
 use frcrs::input::Joystick;
+use frcrs::limelight::Limelight;
 
 use crate::constants::drivetrain::{SWERVE_DRIVE_IE, SWERVE_DRIVE_KD, SWERVE_DRIVE_KF, SWERVE_DRIVE_KFA, SWERVE_DRIVE_KI, SWERVE_DRIVE_KP, SWERVE_ROTATIONS_TO_INCHES, SWERVE_TURN_KP};
 use crate::constants::*;
@@ -50,7 +51,7 @@ pub struct Drivetrain {
 
     absolute_offsets: Offsets,
 
-    //vision: Vision,
+    pub vision: Vision,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -94,7 +95,7 @@ impl Drivetrain {
         let bl_turn = Talon::new(BL_TURN, Some("can0".to_owned()));
         let br_turn = Talon::new(BR_TURN, Some("can0".to_owned()));
 
-        //let vision = Vision::new("".to_owned());
+        let vision = Vision::new("limelight".to_owned());
 
         for (encoder, offset) in [&fr_encoder, &fl_encoder, &bl_encoder, &br_encoder]
             .iter()
@@ -138,15 +139,22 @@ impl Drivetrain {
 
             absolute_offsets,
 
-            //vision,
+            vision,
         };
 
         dt
     }
 
-    /*pub async fn update_limelight(&mut self) {
+    pub async fn update_limelight(&mut self) {
         self.vision.update().await;
-    }*/
+        let dt_angle_for_vision = if (alliance_station().red()){
+            Angle::new::<degree>(self.get_angle().get::<degree>() + 180.)
+        } else {
+            self.get_angle()
+        };
+        let pose = self.vision.get_position_from_tag_2d(dt_angle_for_vision);
+        self.update_odo(pose);
+    }
 
     pub fn update_odo_vision(&mut self, vision: Vision) {
         if let Some(pose) = vision.get_position_from_tag_2d(self.get_angle()) {
@@ -340,7 +348,7 @@ impl Drivetrain {
     fn closest_point_on_circle(robot_x: f64, robot_y: f64) -> Point {
         let circle_center_x = if alliance_station().red() { 16.5 } else { 0.0 };
         let circle_center_y = 5.5;
-        let circle_radius = 2.3;
+        let circle_radius = 1.9;
 
         let direction_x = robot_x - circle_center_x;
         let direction_y = robot_y - circle_center_y;
@@ -375,7 +383,6 @@ impl Drivetrain {
     }
 
     pub async fn follow_circle(drivetrain: &mut Drivetrain, dt: Duration) {
-        let mut last_loop = Instant::now();
         let mut last_error = Vector2::zeros();
         let mut i = Vector2::zeros();
 
@@ -389,14 +396,18 @@ impl Drivetrain {
         let target_angle = Angle::new::<degree>(closest.angle);
 
         let mut error_position = position - current_pos;
-        let mut error_angle = (target_angle - drivetrain.get_angle()).get::<radian>();
+        let mut error_angle = 0.;
+        //let mut error_angle = (target_angle - drivetrain.get_angle()).get::<radian>();
+        if drivetrain.vision.get_id() == 4 || drivetrain.vision.get_id() == 7 {
+            error_angle = Limelight::get_tx("limelight") * (3.14 / 180.);
+        }
 
         if error_position.abs().max() < SWERVE_DRIVE_IE {
             i += error_position;
         }
 
-        error_angle *= SWERVE_TURN_KP;
-        error_position *= -SWERVE_DRIVE_KP;
+        error_angle *= SWERVE_TURN_KP * 1.5;
+        error_position *= -SWERVE_DRIVE_KP / 5.;
 
         let mut speed = error_position;
         speed += i * -SWERVE_DRIVE_KI * dt.as_secs_f64() * 9.;
@@ -406,11 +417,13 @@ impl Drivetrain {
         last_error = speed_s;
 
         if(alliance_station().red()) { speed.x *= -1. }
+
         drivetrain.set_speeds(speed.x, speed.y, error_angle);
 
         telemetry::put_number("cx", position.x).await;
         telemetry::put_number("cy", position.y).await;
         telemetry::put_number("cr", target_angle.value as f64).await;
+        telemetry::put_number("ea", error_angle).await;
         telemetry::put_number("ce", error_position.norm()).await;
 
         sleep(Duration::from_millis(20)).await;

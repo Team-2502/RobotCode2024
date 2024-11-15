@@ -43,7 +43,6 @@ pub struct Ferris {
     shooter_state: Rc<RefCell<(bool, bool)>>,
     teleop_state: Rc<RefCell<TeleopState>>,
     pub telemetry: TelemetryStore,
-    pub vision: Vision,
 }
 
 #[derive(Default)]
@@ -77,7 +76,6 @@ impl Ferris {
         let climber = Rc::new(RefCell::new(Climber::new()));
         let shooter_state = Rc::new(RefCell::new((false, false)));
         let telemetry = TELEMETRY.clone();
-        let vision = Vision::new("limelight".to_owned());
 
         Self {
             drivetrain,
@@ -90,7 +88,6 @@ impl Ferris {
             stage: Rc::new(RefCell::new(None)),
             teleop_state: Rc::new(RefCell::new(Default::default())),
             telemetry,
-            vision,
         }
     }
 }
@@ -107,15 +104,12 @@ pub async fn container<'a>(
     } = *robot.teleop_state.deref().borrow_mut();
 
     if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
-        robot.vision.update().await;
-        let dt_angle_for_vision = if (alliance_station().red()){
-            Angle::new::<degree>(drivetrain.get_angle().get::<degree>() + 180.)
+        drivetrain.update_limelight().await;
+        if controllers.right_drive.get(4) {
+            Drivetrain::follow_circle(&mut drivetrain, dt).await;
         } else {
-            drivetrain.get_angle()
-        };
-        let pose = robot.vision.get_position_from_tag_2d(dt_angle_for_vision);
-        drivetrain.update_odo(pose);
-        control_drivetrain(&mut drivetrain, controllers, drivetrain_state).await;
+            control_drivetrain(&mut drivetrain, controllers, drivetrain_state).await;
+        }
     } else {
     }
 
@@ -152,16 +146,6 @@ pub async fn container<'a>(
         Direction::Right => GamepadState::Drive,
         _ => *gamepad_state,
     };
-
-    if right_drive.get(4) {
-        let drivetrain = robot.drivetrain.clone();
-        executor.spawn_local(async move {
-            if let Ok(mut drivetrain) = drivetrain.try_borrow_mut() {
-                println!("trying to follow circle");
-                Drivetrain::follow_circle(&mut drivetrain, dt).await;
-            }
-        });
-    }
 
     if operator.get(8)
         && robot.grab.deref().try_borrow().is_ok_and(|n| n.is_none())

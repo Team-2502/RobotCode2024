@@ -284,14 +284,11 @@ dependencies = [
 
 [[package]]
 name = "frcrs"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "axum",
  "bitvec",
- "hyper",
  "include_dir",
- "j4rs",
- "j4rs_derive",
  "jni",
  "lazy_static",
  "mime_guess",
