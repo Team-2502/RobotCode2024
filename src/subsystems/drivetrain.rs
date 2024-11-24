@@ -428,6 +428,15 @@ impl Drivetrain {
 
         sleep(Duration::from_millis(20)).await;
     }
+    pub async fn follow_txty(drivetrain: &mut Drivetrain) {
+        let error_angle = drivetrain.vision.get_tx();
+        let ty = drivetrain.vision.get_ty();
+        drivetrain.set_speeds(
+            -ty.get::<degree>() * drivetrain.get_angle().get::<radian>().cos() * SWERVE_DRIVE_KP / 10.,
+            -ty.get::<degree>() * drivetrain.get_angle().get::<radian>().sin() * SWERVE_DRIVE_KP / 10.,
+            error_angle.get::<radian>() * SWERVE_TURN_KP * 1.5
+        );
+    }
 }
 
 #[cfg(test)]

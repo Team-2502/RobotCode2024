@@ -16,12 +16,12 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers, 
     let gamepad = &mut controllers.gamepad;
     let gamepad_state = &mut controllers.gamepad_state;
     telemetry::put_bool("intake at limit {}", intake.at_limit()).await;
+    println!("{}",intake.at_limit());
     telemetry::put_number(
         "intake position {}",
         intake.actuate_position().get::<degree>(),
     )
     .await;
-
     if matches!(gamepad_state, GamepadState::Manual | GamepadState::Auto)
         && gamepad.left_trigger() > 0.
     {

@@ -15,18 +15,16 @@ use tokio::{
 use uom::si::{angle::degree, f64::Angle};
 
 use crate::{
-    auto::{lower_intake, raise_intake}, constants::intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD}, subsystems::{wait, Climber, Drivetrain, Intake, Shooter}, telemetry::{self, TelemetryStore, TELEMETRY}
+    auto::{lower_intake, raise_intake}, constants::intake::{INTAKE_DOWN_GOAL, INTAKE_DOWN_THRESHOLD, INTAKE_UP_GOAL, INTAKE_UP_THRESHOLD}, subsystems::{wait, Drivetrain, Intake, Shooter}, telemetry::{self, TelemetryStore, TELEMETRY}
 };
 use crate::subsystems::Vision;
 
 use self::{
-    climber::control_climber,
     drivetrain::{control_drivetrain, DrivetrainControlState},
     intake::control_intake,
     shooter::{control_shooter, ShooterControlState},
 };
 
-mod climber;
 mod drivetrain;
 mod intake;
 mod shooter;
@@ -36,7 +34,6 @@ pub struct Ferris {
     pub drivetrain: Rc<RefCell<Drivetrain>>,
     pub intake: Rc<RefCell<Intake>>,
     pub shooter: Rc<RefCell<Shooter>>,
-    pub climber: Rc<RefCell<Climber>>,
     grab: Rc<RefCell<Option<JoinHandle<()>>>>,
     stage: Rc<RefCell<Option<JoinHandle<()>>>>,
     grab_full: Rc<RefCell<Option<JoinHandle<()>>>>,
@@ -73,7 +70,6 @@ impl Ferris {
         let drivetrain = Rc::new(RefCell::new(Drivetrain::new()));
         let intake = Rc::new(RefCell::new(Intake::new()));
         let shooter = Rc::new(RefCell::new(Shooter::new()));
-        let climber = Rc::new(RefCell::new(Climber::new()));
         let shooter_state = Rc::new(RefCell::new((false, false)));
         let telemetry = TELEMETRY.clone();
 
@@ -81,7 +77,6 @@ impl Ferris {
             drivetrain,
             intake,
             shooter,
-            climber,
             grab: Rc::new(RefCell::new(None)),
             grab_full: Rc::new(RefCell::new(None)),
             shooter_state,
@@ -106,7 +101,7 @@ pub async fn container<'a>(
     if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
         drivetrain.update_limelight().await;
         if controllers.right_drive.get(4) {
-            Drivetrain::follow_circle(&mut drivetrain, dt).await;
+            Drivetrain::follow_txty(&mut drivetrain).await;
         } else {
             control_drivetrain(&mut drivetrain, controllers, drivetrain_state).await;
         }
@@ -121,9 +116,6 @@ pub async fn container<'a>(
         control_shooter(&mut shooter, controllers, shooter_state).await;
     }
 
-    if let Ok(mut climber) = robot.climber.try_borrow_mut() {
-        control_climber(&mut climber, controllers).await;
-    }
 
     let red = alliance_station().red();
     telemetry::put_bool("red", red).await;
@@ -255,7 +247,6 @@ pub fn stop_all(robot: &Ferris) {
     robot.drivetrain.borrow().stop();
     robot.intake.borrow().stop();
     robot.shooter.borrow().stop();
-    robot.climber.borrow().stop();
 }
 
 async fn grab_full(robot: Ferris) -> anyhow::Result<()> {

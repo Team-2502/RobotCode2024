@@ -73,7 +73,7 @@ impl Intake {
     }
 
     pub fn set_rollers(&self, value: f64) {
-        self.left_roller.set(value);
+        self.left_roller.set(value.clamp(-0.4, 0.3));
         //self.right_roller.set(value);
     }
 

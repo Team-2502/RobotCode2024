@@ -29,9 +29,6 @@ pub const SHOOTER_BOTTOM: i32 = 8;
 
 pub const AMP_BAR: i32 = 11;
 
-pub const CLIMBER_LEFT: i32 = 9;
-pub const CLIMBER_RIGHT: i32 = 10;
-
 pub const BEAM_BREAK_EMITTER: i32 = 2;
 pub const BEAM_BREAK_SIGNAL: i32 = 1;
 pub const INTAKE_LIMIT: i32 = 0;
