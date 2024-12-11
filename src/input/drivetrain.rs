@@ -11,7 +11,7 @@ use crate::{
     telemetry,
 };
 use crate::auto::path::follow_path;
-use super::{Controllers, GamepadState};
+use super::{Controllers, /*GamepadState*/};
 
 #[derive(Default)]
 pub struct DrivetrainControlState {
@@ -26,8 +26,8 @@ pub async fn control_drivetrain(
     let right_drive = &mut controllers.right_drive;
     let left_drive = &mut controllers.left_drive;
     let saved_angle = &mut state.saved_angle;
-    let gamepad = &mut controllers.gamepad;
-    let gamepad_state = &mut controllers.gamepad_state;
+    //let gamepad = &mut controllers.gamepad;
+    //let gamepad_state = &mut controllers.gamepad_state;
 
     let joystick_range = 0.04..1.;
     let mut power_translate = if left_drive.get(1) { 0.0..1.0 }  else { 0.0..0.25 };
@@ -37,7 +37,7 @@ pub async fn control_drivetrain(
     let mut deadrz = deadzone(right_drive.get_z(), &joystick_range, &power_rotate);
 
 
-    if matches!(gamepad_state, GamepadState::Drive) {
+    /* if matches!(gamepad_state, GamepadState::Drive) {
         let gamepad_range = 0. ..1.;
         let pow = 1.;
 
@@ -50,10 +50,10 @@ pub async fn control_drivetrain(
         if gamepad.right_x().abs() > 0.05 {
             deadrz += deadzone(gamepad.right_x().powf(pow), &gamepad_range, &power_rotate);
         }
-    }
+    } */
 
     let hold_angle =
-        deadrz == 0. && (right_drive.get(3) || matches!(gamepad_state, GamepadState::Drive));
+        deadrz == 0. && (right_drive.get(3) /*|| matches!(gamepad_state, GamepadState::Drive)*/);
 
     if !hold_angle {
         *saved_angle = Some(drivetrain.get_angle());
@@ -81,7 +81,7 @@ pub async fn control_drivetrain(
         deadrz
     };
 
-    if left_drive.get(16) || matches!(gamepad_state, GamepadState::Climb) && gamepad.y() {
+    if left_drive.get(16) /*|| matches!(gamepad_state, GamepadState::Climb) && gamepad.y()*/ {
         drivetrain.zero_wheels()
     } else {
         drivetrain.set_speeds(deadly, deadlx, rot);
@@ -89,7 +89,7 @@ pub async fn control_drivetrain(
 
     let angle = drivetrain.get_angle();
 
-    if left_drive.get(4) || matches!(gamepad_state, GamepadState::Climb) && gamepad.x() {
+    if left_drive.get(4) /*|| matches!(gamepad_state, GamepadState::Climb) && gamepad.x()*/ {
         drivetrain.reset_heading();
     }
 

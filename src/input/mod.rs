@@ -53,10 +53,10 @@ pub struct Controllers {
     pub left_drive: Joystick,
     pub right_drive: Joystick,
     pub operator: Joystick,
-    pub gamepad: Gamepad,
-    pub gamepad_state: GamepadState,
+    //pub gamepad: Gamepad,
+    //pub gamepad_state: GamepadState,
 }
-
+/*
 #[derive(Clone, Copy, Debug)]
 pub enum GamepadState {
     Auto,
@@ -64,7 +64,7 @@ pub enum GamepadState {
     Climb,
     Drive,
 }
-
+*/
 impl Ferris {
     pub fn new() -> Self {
         let drivetrain = Rc::new(RefCell::new(Drivetrain::new()));
@@ -127,10 +127,10 @@ pub async fn container<'a>(
         left_drive: _,
         ref mut right_drive,
         ref mut operator,
-        ref mut gamepad,
-        ref mut gamepad_state,
+        //ref mut gamepad,
+        //ref mut gamepad_state,
     } = controllers;
-
+    /*
     *gamepad_state = match gamepad.get_dpad_direction() {
         Direction::Left => GamepadState::Manual,
         Direction::Up => GamepadState::Climb,
@@ -138,7 +138,7 @@ pub async fn container<'a>(
         Direction::Right => GamepadState::Drive,
         _ => *gamepad_state,
     };
-
+    */
     if operator.get(8)
         && robot.grab.deref().try_borrow().is_ok_and(|n| n.is_none())
         && !operator.get(7)
@@ -156,15 +156,16 @@ pub async fn container<'a>(
 
     static CRASHED: AtomicBool = AtomicBool::new(false);
     if (right_drive.get(1)
-        || matches!(gamepad_state, GamepadState::Auto | GamepadState::Drive)
-            && gamepad.left_bumper())
+        //|| matches!(gamepad_state, GamepadState::Auto | GamepadState::Drive)
+        //    && gamepad.left_bumper()
+        )
         && !operator.get(7)
         && !operator.get(5)
     {
         //   We need to store the reference here. It is an RAII type, and we need to know
         // when we've borrowed it. By storing it here, instead of using it directly in the `if`,
         // we ensure that the reference does get released upon going out of scope of the `if` control clause.
-        // Thus this gets released at the end of this if block. This prevents the grab_full function from being
+        // Thus, this gets released at the end of this if block. This prevents the grab_full function from being
         // called repeatedly, which was preventing it from ever completing. --Donovan Maas
         let grab_ref = robot
             .grab_full
@@ -185,9 +186,9 @@ pub async fn container<'a>(
                     }
                 })));
         }
-    } else if !operator.get(6) && !matches!(gamepad_state, GamepadState::Auto)
+    } else if !operator.get(6) //&& !matches!(gamepad_state, GamepadState::Auto)
         || *firing
-        || matches!(gamepad_state, GamepadState::Auto) && !gamepad.left_bumper()
+        //|| matches!(gamepad_state, GamepadState::Auto) && !gamepad.left_bumper()
     {
         if let Some(grab_full) = robot.grab_full.take() {
             grab_full.abort();
@@ -196,7 +197,8 @@ pub async fn container<'a>(
 
     *staging = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_some());
     if (operator.get(7)
-        || (matches!(gamepad_state, GamepadState::Auto) && gamepad.right_trigger() > 0.3))
+        //|| (matches!(gamepad_state, GamepadState::Auto) && gamepad.right_trigger() > 0.3)
+        )
         && !operator.get(5)
         && robot.stage.deref().try_borrow().is_ok_and(|n| n.is_none())
         && robot.shooter.try_borrow().is_ok_and(|s| !s.contains_note())
@@ -211,16 +213,18 @@ pub async fn container<'a>(
                 stage(&mut intake, &shooter).await;
             }
         })));
-    } else if (!operator.get(7) && !matches!(gamepad_state, GamepadState::Auto))
+    } else if (!operator.get(7) //&& !matches!(gamepad_state, GamepadState::Auto)
+        )
         || *firing
-        || matches!(gamepad_state, GamepadState::Auto) && gamepad.right_trigger() < 0.2
+        //|| matches!(gamepad_state, GamepadState::Auto) && gamepad.right_trigger() < 0.2
     {
         if let Some(stage) = robot.stage.take() {
             stage.abort();
         }
     }
 
-    if operator.get(9) || (matches!(gamepad_state, GamepadState::Climb) && gamepad.a()) {
+    if operator.get(9) //|| (matches!(gamepad_state, GamepadState::Climb) && gamepad.a())
+    {
         let intake = robot.intake.clone();
         executor.spawn_local(async move {
             if let Ok(mut intake) = intake.try_borrow_mut() {

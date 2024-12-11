@@ -1,6 +1,6 @@
 use crate::{subsystems::Shooter, telemetry};
 
-use super::{Controllers, GamepadState};
+use super::{Controllers, /*GamepadState*/};
 
 #[derive(Default)]
 pub struct ShooterControlState {
@@ -19,8 +19,8 @@ pub async fn control_shooter(
 ) {
     let right_drive = &mut controllers.right_drive;
     let _left_drive = &mut controllers.left_drive;
-    let gamepad = &mut controllers.gamepad;
-    let gamepad_state = &mut controllers.gamepad_state;
+    //let gamepad = &mut controllers.gamepad;
+    //let gamepad_state = &mut controllers.gamepad_state;
     let operator = &mut controllers.operator;
     let shooting = &mut state.shooting;
     let staging = &mut state.staging;
@@ -30,7 +30,7 @@ pub async fn control_shooter(
     telemetry::put_number("flywheel speed", shooter.get_velocity()).await;
     telemetry::put_bool("beam break: {}", shooter.contains_note()).await;
     telemetry::put_bool("flywheel state", *gamepad_spinning).await;
-
+    /*
     if matches!(gamepad_state, GamepadState::Auto | GamepadState::Drive | GamepadState::Manual) {
         if gamepad.a() {
             // line shot
@@ -66,17 +66,17 @@ pub async fn control_shooter(
             gamepad.rumble_right(0.);
         }
     }
-
+    */
     if operator.get(2) && !*last_loop {
         *shooting = !*shooting;
     }
     *last_loop = operator.get(2);
 
     *firing = operator.get(1)
-        || matches!(
+        /*|| matches!(
             gamepad_state,
             GamepadState::Auto | GamepadState::Manual | GamepadState::Drive
-        ) && gamepad.right_bumper();
+        ) && gamepad.right_bumper()*/;
 
     if *shooting && !*gamepad_spinning {
         if shooter.amp_deployed() && !operator.get(5) {
@@ -109,14 +109,14 @@ pub async fn control_shooter(
     if !*staging {
         if *firing {
             shooter.set_feeder(-1.);
-        } else if matches!(gamepad_state, GamepadState::Manual) && gamepad.left_trigger() > 0. {
+        /*} else if matches!(gamepad_state, GamepadState::Manual) && gamepad.left_trigger() > 0. {
             shooter.set_feeder(gamepad.left_trigger());
         } else if matches!(gamepad_state, GamepadState::Manual) && gamepad.left_bumper() {
             if shooter.contains_note() {
                 shooter.set_feeder(0.1);
             } else {
                 shooter.set_feeder(-0.3);
-            }
+            }*/
         } else if operator.get(10) {
             shooter.set_feeder(0.5);
         } else {

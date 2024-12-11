@@ -8,19 +8,20 @@ use crate::{
     telemetry,
 };
 
-use super::{Controllers, GamepadState};
+use super::{Controllers, /*GamepadState*/};
 
 pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers, dt: &Duration) {
     let operator = &mut controllers.operator;
     let right_drive = &mut controllers.right_drive;
-    let gamepad = &mut controllers.gamepad;
-    let gamepad_state = &mut controllers.gamepad_state;
+    //let gamepad = &mut controllers.gamepad;
+    //let gamepad_state = &mut controllers.gamepad_state;
     telemetry::put_bool("intake at limit {}", intake.at_limit()).await;
     telemetry::put_number(
         "intake position {}",
         intake.actuate_position().get::<degree>(),
     )
     .await;
+    /*
     if matches!(gamepad_state, GamepadState::Manual | GamepadState::Auto)
         && gamepad.left_trigger() > 0.
     {
@@ -42,21 +43,21 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers, 
         intake.stop_rollers();
         gamepad.rumble_left(0.);
     }
-
-    if operator.get(5) || matches!(gamepad_state, GamepadState::Manual) {
-        if operator.get(3) || gamepad.right_stick() {
+    */
+    if operator.get(5) /*|| matches!(gamepad_state, GamepadState::Manual) */{
+        if operator.get(3)  {
             intake.set_actuate(0.3);
-        } else if operator.get(4) || gamepad.left_stick() {
+        } else if operator.get(4) {
             intake.set_actuate(-0.3);
         } else {
             intake.stop_actuate();
         }
     } else {
-        if operator.get(3) || matches!(gamepad_state, GamepadState::Auto) && gamepad.right_stick() {
+        if operator.get(3) /*|| matches!(gamepad_state, GamepadState::Auto) && gamepad.right_stick() */{
             intake.actuate_to_trapezoid(Angle::new::<degree>(INTAKE_UP_GOAL), &dt);
             //intake.actuate_to(Angle::new::<degree>(INTAKE_UP_GOAL));
         } else if operator.get(4)
-            || matches!(gamepad_state, GamepadState::Auto) && gamepad.left_stick()
+            //|| matches!(gamepad_state, GamepadState::Auto) && gamepad.left_stick()
         {
             intake.actuate_to_trapezoid(Angle::new::<degree>(INTAKE_DOWN_GOAL), &dt);
             //intake.actuate_to(Angle::new::<degree>(INTAKE_DOWN_GOAL));
