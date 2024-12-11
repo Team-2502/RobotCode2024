@@ -55,8 +55,8 @@ pub fn entrypoint() {
             left_drive,
             right_drive,
             operator,
-            gamepad,
-            gamepad_state: GamepadState::Auto,
+            //gamepad,
+            //gamepad_state: GamepadState::Auto,
         };
 
         let mut robot = Ferris::new();
