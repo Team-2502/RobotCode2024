@@ -73,7 +73,6 @@ pub async fn control_shooter(
     *last_loop = operator.get(2);
 
     *firing = operator.get(1)
-        || right_drive.get(1)
         || matches!(
             gamepad_state,
             GamepadState::Auto | GamepadState::Manual | GamepadState::Drive

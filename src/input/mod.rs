@@ -155,27 +155,36 @@ pub async fn container<'a>(
     }
 
     static CRASHED: AtomicBool = AtomicBool::new(false);
-    if (operator.get(6)
+    if (right_drive.get(1)
         || matches!(gamepad_state, GamepadState::Auto | GamepadState::Drive)
             && gamepad.left_bumper())
-        && (robot
-            .grab_full
-            .deref()
-            .try_borrow()
-            .is_ok_and(|n| n.is_none())
-            || CRASHED.load(std::sync::atomic::Ordering::SeqCst))
         && !operator.get(7)
         && !operator.get(5)
     {
-        let robot_ = robot.clone();
-        CRASHED.store(false, std::sync::atomic::Ordering::SeqCst);
-        robot
+        //   We need to store the reference here. It is an RAII type, and we need to know
+        // when we've borrowed it. By storing it here, instead of using it directly in the `if`,
+        // we ensure that the reference does get released upon going out of scope of the `if` control clause.
+        // Thus this gets released at the end of this if block. This prevents the grab_full function from being
+        // called repeatedly, which was preventing it from ever completing. --Donovan Maas
+        let grab_ref = robot
             .grab_full
-            .replace(Some(executor.spawn_local(async move {
-                if let Err(_) = grab_full(robot_).await {
-                    CRASHED.store(true, std::sync::atomic::Ordering::SeqCst);
-                }
-            })));
+            .deref()
+            .try_borrow();
+
+        if grab_ref
+            .is_ok_and(|n| n.is_none())
+            || CRASHED.load(std::sync::atomic::Ordering::SeqCst)
+        {
+            let robot_ = robot.clone();
+            CRASHED.store(false, std::sync::atomic::Ordering::SeqCst);
+            robot
+                .grab_full
+                .replace(Some(executor.spawn_local(async move {
+                    if let Err(_) = grab_full(robot_).await {
+                        CRASHED.store(true, std::sync::atomic::Ordering::SeqCst);
+                    }
+                })));
+        }
     } else if !operator.get(6) && !matches!(gamepad_state, GamepadState::Auto)
         || *firing
         || matches!(gamepad_state, GamepadState::Auto) && !gamepad.left_bumper()
@@ -250,34 +259,51 @@ pub fn stop_all(robot: &Ferris) {
 }
 
 async fn grab_full(robot: Ferris) -> anyhow::Result<()> {
+    println!("Started grab_full");
     let intake = robot.intake.clone();
     let shooter = robot.shooter.clone();
     let mut intake = intake.deref().try_borrow_mut()?;
     let shooter = shooter.deref().try_borrow()?;
+    shooter.set_feeder(-0.5);
+    intake.set_rollers(-0.5);
+    sleep(Duration::from_millis(700)).await;
+    shooter.set_feeder(0.);
+    intake.set_rollers(0.);
+    println!("Borrowed intake & shooter successfully");
     lower_intake(&mut intake).await;
     intake.set_rollers(0.6);
+    println!("Intake lowered, rollers set");
     wait(|| intake.running()).await;
+    println!("Rollers at speed");
     wait(|| intake.stalled()).await;
+    println!("Intake stalled");
     intake.set_rollers(1.);
     raise_intake(&mut intake).await;
+    wait(|| intake.at_limit()).await;
+    println!("Intake raised");
     sleep(Duration::from_millis(200)).await;
     intake.set_rollers(-0.43);
     shooter.set_feeder(-0.34);
     wait(|| shooter.contains_note()).await;
+    println!("Beambreak tripped");
     intake.set_rollers(0.0);
     intake.set_actuate(0.0);
     shooter.set_feeder(-0.10);
     wait(|| !shooter.contains_note()).await;
+    println!("Beambreak un-tripped");
     shooter.set_feeder(0.0);
+    println!("Grab complete");
     Ok(())
 }
 
 pub async fn lower_intake_trapezoidal(intake: &mut Intake) {
+    println!("started lower_intake_trapezoidal");
     loop {
-        let dt = Duration::from_millis(20);
+        let dt = Duration::from_millis(10);
         intake.actuate_to_trapezoid(Angle::new::<degree>(INTAKE_DOWN_GOAL), &dt);
         sleep(dt).await;
         if intake.actuate_position().get::<degree>() < INTAKE_DOWN_THRESHOLD {
+            println!("finished lower_intake_trapezoidal");
             return
         }
     }

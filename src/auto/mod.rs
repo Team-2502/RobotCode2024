@@ -914,8 +914,9 @@ async fn bottom(robot: Ferris) {
 }
 
 pub async fn lower_intake(intake: &mut Intake) {
+    println!("lower_intake running");
     lower_intake_trapezoidal(intake).await;
-
+    println!("lower_intake_trapezoidal ran");
     intake.actuate_to(Angle::new::<degree>(INTAKE_DOWN_GOAL));
     wait(|| intake.actuate_position().get::<degree>() < INTAKE_DOWN_THRESHOLD).await;
 }

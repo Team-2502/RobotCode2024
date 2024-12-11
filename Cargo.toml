@@ -30,9 +30,9 @@ include_dir = "0.7.3"
 anyhow = "1.0.81"
 
 [dependencies.frcrs]
-#git = "https://www.github.com/Team-2502/frcrs.git"
+git = "https://www.github.com/Team-2502/frcrs.git"
 #branch = "jni"
-path = "../frcrs"
+#path = "../frcrs"
 
 [deploy]
 team_number = 2502

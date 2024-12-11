@@ -7,7 +7,6 @@ use frcrs::{
 };
 use tokio::time::sleep;
 use uom::si::{angle::degree, f64::Angle};
-
 use self::intake::{INTAKE_DEGREES_PER_SECOND, INTAKE_ZERO_POINT};
 
 pub struct Intake {
