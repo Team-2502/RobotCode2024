@@ -32,8 +32,8 @@ pub async fn control_drivetrain(
     let joystick_range = 0.04..1.;
     let mut power_translate = if left_drive.get(1) { 0.0..1.0 }  else { 0.0..0.25 };
     let mut power_rotate = if left_drive.get(1) { 0.0..1.0 } else { 0.0.. 0.25 };
-    let mut deadly = deadzone(left_drive.get_y(), &joystick_range, &power_translate);
-    let mut deadlx = deadzone(left_drive.get_x(), &joystick_range, &power_translate);
+    let mut deadly = deadzone(right_drive.get_y(), &joystick_range, &power_translate);
+    let mut deadlx = deadzone(right_drive.get_x(), &joystick_range, &power_translate);
     let mut deadrz = deadzone(right_drive.get_z(), &joystick_range, &power_rotate);
 
 
