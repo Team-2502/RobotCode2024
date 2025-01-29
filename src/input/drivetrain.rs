@@ -51,33 +51,33 @@ pub async fn control_drivetrain(
             deadrz += deadzone(gamepad.right_x().powf(pow), &gamepad_range, &power_rotate);
         }
     } */
-
+    /*
     let hold_angle =
         deadrz == 0. && (right_drive.get(3) /*|| matches!(gamepad_state, GamepadState::Drive)*/);
 
     if !hold_angle {
         *saved_angle = Some(drivetrain.get_angle());
     }
-
+    */
     let rot = if right_drive.get(2) {
         let mut error = drivetrain.get_offset() + Angle::new::<degree>(PODIUM_SHOT_ANGLE);
         if alliance_station().blue() {
             error *= -1.;
         }
         -error.get::<radian>() * SWERVE_TURN_KP
-    } else if hold_angle {
+    } /*else if hold_angle {
         if let Some(ref saved_angle) = (saved_angle).as_ref() {
             let error = drivetrain.get_angle() - **saved_angle;
             -error.get::<radian>() * SWERVE_TURN_KP
         } else {
             0.
         }
-    } else if left_drive.get(2) {
+    } */ /*else if left_drive.get(2) {
         let angle = (drivetrain.get_angle() - drivetrain.offset).get::<degree>();
         let goal = (angle / 90.).round() * 90.;
         let error = angle - goal;
         -error.to_radians() * SWERVE_TURN_KP
-    } else {
+    }*/ else {
         deadrz
     };
 
@@ -89,9 +89,11 @@ pub async fn control_drivetrain(
 
     let angle = drivetrain.get_angle();
 
+    /*
     if left_drive.get(4) /*|| matches!(gamepad_state, GamepadState::Climb) && gamepad.x()*/ {
         drivetrain.reset_heading();
     }
+    */
 
     telemetry::put_number("ox", drivetrain.odometry.position.x).await;
     telemetry::put_number("oy", drivetrain.odometry.position.y).await;

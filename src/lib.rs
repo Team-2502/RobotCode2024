@@ -15,7 +15,7 @@ use std::time::Instant;
 use auto::{run_auto, Auto};
 use constants::FPS_LIMIT;
 use constants::TELEMETRY_PORT;
-use input::{Controllers, Ferris, GamepadState};
+use input::{Controllers, Ferris};
 
 use frcrs::observe_user_program_starting;
 use frcrs::refresh_data;

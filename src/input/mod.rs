@@ -100,11 +100,14 @@ pub async fn container<'a>(
 
     if let Ok(mut drivetrain) = robot.drivetrain.try_borrow_mut() {
         drivetrain.update_limelight().await;
+        /*
         if controllers.right_drive.get(4) {
             Drivetrain::follow_txty(&mut drivetrain).await;
         } else {
             control_drivetrain(&mut drivetrain, controllers, drivetrain_state).await;
         }
+        */
+        control_drivetrain(&mut drivetrain, controllers, drivetrain_state).await;
     } else {
     }
 
@@ -154,6 +157,7 @@ pub async fn container<'a>(
         }
     }
 
+    /*
     static CRASHED: AtomicBool = AtomicBool::new(false);
     if (right_drive.get(1)
         //|| matches!(gamepad_state, GamepadState::Auto | GamepadState::Drive)
@@ -194,7 +198,7 @@ pub async fn container<'a>(
             grab_full.abort();
         }
     }
-
+    */
     *staging = robot.stage.deref().try_borrow().is_ok_and(|n| n.is_some());
     if (operator.get(7)
         //|| (matches!(gamepad_state, GamepadState::Auto) && gamepad.right_trigger() > 0.3)
@@ -268,12 +272,13 @@ async fn grab_full(robot: Ferris) -> anyhow::Result<()> {
     let shooter = robot.shooter.clone();
     let mut intake = intake.deref().try_borrow_mut()?;
     let shooter = shooter.deref().try_borrow()?;
+    println!("Borrowed intake & shooter successfully normal sleep");
     shooter.set_feeder(-0.5);
     intake.set_rollers(-0.5);
     sleep(Duration::from_millis(700)).await;
     shooter.set_feeder(0.);
     intake.set_rollers(0.);
-    println!("Borrowed intake & shooter successfully");
+    println!("we sat for 0.7s (successfully)");
     lower_intake(&mut intake).await;
     intake.set_rollers(0.6);
     println!("Intake lowered, rollers set");

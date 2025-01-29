@@ -18,7 +18,7 @@ pub async fn control_shooter(
     state: &mut ShooterControlState,
 ) {
     let right_drive = &mut controllers.right_drive;
-    let _left_drive = &mut controllers.left_drive;
+    let left_drive = &mut controllers.left_drive;
     //let gamepad = &mut controllers.gamepad;
     //let gamepad_state = &mut controllers.gamepad_state;
     let operator = &mut controllers.operator;
@@ -67,7 +67,7 @@ pub async fn control_shooter(
         }
     }
     */
-    if operator.get(2) && !*last_loop {
+    if left_drive.get(2) && !*last_loop {
         *shooting = !*shooting;
     }
     *last_loop = operator.get(2);
@@ -84,10 +84,15 @@ pub async fn control_shooter(
         } else if right_drive.get(2) {
             shooter.set_velocity(1917.)
         } else {
-            shooter.set_shooter((operator.get_throttle() + 1.) / 2.);
+            shooter.set_shooter((left_drive.get_throttle() + 1.) / 2.);
         }
     } else if !*gamepad_spinning {
         shooter.stop_shooter();
+    }
+    if right_drive.get(4){
+        shooter.set_feeder(-0.3);
+    } else {
+        shooter.set_feeder(0.);
     }
 
     if operator.get(5) {
@@ -105,7 +110,7 @@ pub async fn control_shooter(
             shooter.stow_amp();
         }
     }
-
+    /*
     if !*staging {
         if *firing {
             shooter.set_feeder(-1.);
@@ -123,4 +128,5 @@ pub async fn control_shooter(
             shooter.stop_feeder();
         }
     }
+     */
 }

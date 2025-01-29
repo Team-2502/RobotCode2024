@@ -12,6 +12,7 @@ use super::{Controllers, /*GamepadState*/};
 
 pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers, dt: &Duration) {
     let operator = &mut controllers.operator;
+    let left_drive = &mut controllers.left_drive;
     let right_drive = &mut controllers.right_drive;
     //let gamepad = &mut controllers.gamepad;
     //let gamepad_state = &mut controllers.gamepad_state;
@@ -44,6 +45,14 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers, 
         gamepad.rumble_left(0.);
     }
     */
+    if right_drive.get(3) {
+        intake.set_rollers(0.5);
+    } else if right_drive.get(4) {
+        intake.set_rollers(-0.5);
+    } else {
+        intake.set_rollers(0.);
+    }
+
     if operator.get(5) /*|| matches!(gamepad_state, GamepadState::Manual) */{
         if operator.get(3)  {
             intake.set_actuate(0.3);
@@ -53,10 +62,10 @@ pub async fn control_intake(intake: &mut Intake, controllers: &mut Controllers, 
             intake.stop_actuate();
         }
     } else {
-        if operator.get(3) /*|| matches!(gamepad_state, GamepadState::Auto) && gamepad.right_stick() */{
+        if left_drive.get(3) /*|| matches!(gamepad_state, GamepadState::Auto) && gamepad.right_stick() */{
             intake.actuate_to_trapezoid(Angle::new::<degree>(INTAKE_UP_GOAL), &dt);
             //intake.actuate_to(Angle::new::<degree>(INTAKE_UP_GOAL));
-        } else if operator.get(4)
+        } else if left_drive.get(4)
             //|| matches!(gamepad_state, GamepadState::Auto) && gamepad.left_stick()
         {
             intake.actuate_to_trapezoid(Angle::new::<degree>(INTAKE_DOWN_GOAL), &dt);
